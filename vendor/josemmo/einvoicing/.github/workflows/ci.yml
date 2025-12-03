@@ -1,0 +1,59 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  ci:
+    name: Run tests and deploy
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.experimental || false }}
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['7.1', '7.2', '7.3', '7.4', '8.0', '8.1']
+        include:
+          - php-version: '8.2'
+            deploy: ${{ github.ref == 'refs/heads/master' }}
+          - php-version: '8.3'
+            experimental: true
+    steps:
+      # Download code from repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Setup PHP
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+          extensions: ast-stable
+
+      # Setup Composer
+      - name: Setup Composer
+        run: composer validate --strict && composer install
+
+      # Run static analyzer
+      - name: Run static analyzer
+        if: ${{ success() && matrix.php-version != '7.1' }}
+        run: vendor/bin/phan --color --no-progress-bar
+
+      # Run tests
+      - name: Run tests
+        run: vendor/bin/simple-phpunit --testdox
+
+      # Build documentation
+      - name: Build documentation
+        if: ${{ success() && matrix.deploy || false }}
+        run: |
+          php ./scripts/build-docs.php
+          docker run --rm -v ${PWD}:/docs squidfunk/mkdocs-material build
+
+       # Deploy documentation
+      - name: Deploy documentation
+        if: ${{ success() && matrix.deploy || false }}
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: site
+          clean: true # Automatically remove deleted files from the deploy branch

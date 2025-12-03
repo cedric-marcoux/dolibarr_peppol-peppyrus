@@ -1,0 +1,41 @@
+<?php return array(
+    'root' => array(
+        'name' => '__root__',
+        'pretty_version' => '1.0.0+no-version-set',
+        'version' => '1.0.0.0',
+        'reference' => null,
+        'type' => 'library',
+        'install_path' => __DIR__ . '/../../',
+        'aliases' => array(),
+        'dev' => false,
+    ),
+    'versions' => array(
+        '__root__' => array(
+            'pretty_version' => '1.0.0+no-version-set',
+            'version' => '1.0.0.0',
+            'reference' => null,
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../../',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'josemmo/einvoicing' => array(
+            'pretty_version' => 'v0.2.7',
+            'version' => '0.2.7.0',
+            'reference' => 'fb318980fafda05da66385221d590f610945ee28',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../josemmo/einvoicing',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'josemmo/uxml' => array(
+            'pretty_version' => 'v0.1.4',
+            'version' => '0.1.4.0',
+            'reference' => 'bcd7d8e410285c642116294e01581374d6be696f',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../josemmo/uxml',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+    ),
+);

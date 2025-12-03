@@ -1,0 +1,61 @@
+
+
+#
+# Générique
+#
+
+# Module label 'ModulePeppolpeppyrusName'
+ModulePeppolpeppyrusName=Peppol - Peppyrus
+# Module description 'ModulePeppolpeppyrusDesc'
+ModulePeppolpeppyrusDesc=Invia fatture elettroniche tramite la rete Peppol con Peppyrus
+# Mantenere le vecchie chiavi per compatibilità
+ModulePeppolName=Peppol - Peppyrus
+ModulePeppolDesc=Invia fatture elettroniche tramite la rete Peppol con Peppyrus
+
+#
+# Page d'administration
+#
+PeppolSetup=Configurazione del modulo Peppol
+Settings=Impostazioni
+PeppolSetupPage=Pagina di configurazione del modulo Peppol
+
+#
+# Page À propos
+#
+About=Chi siamo
+PEPPOL_FORCE_XML_WITH_VATNULLTooltip=Il formato peppol è normalmente destinato alle vendite ai professionisti, per cui è necessario un identificatore unico. Di solito si tratta del numero di partita IVA che viene utilizzato a questo scopo. Nel caso di un cliente particolare o di un cliente per il quale non si dispone di un numero di partita IVA, è possibile forzare la creazione del file PEPPOL (che quindi non sarà conforme allo standard) con un numero di partita IVA pari a ZZ00000000. Questa opzione consente di utilizzare il file XML prodotto per integrare la fattura nel flusso di dematerializzazione.
+InvoiceDoesNotHaveBankAccountLinked=La vostra fattura non ha un conto bancario collegato, quindi il vostro cliente non avrà le informazioni per pagarvi.
+PeppolAbout=Informazioni su Peppol
+PeppolAboutPage=Pagina su Peppol
+PeppolMassActionZip=Creare uno ZIP con tutti i file Peppol
+PeppolError=Errore di Peppol:
+BuyerDoesNotHaveVATDetails=Il numero di partita IVA intracomunitaria è necessario per redigere un documento conforme a Peppol.
+PeppolWarning=Nota Peppol:
+BuyerDoesNotHaveVATDetailsForce=In assenza di un numero di partita IVA per questo cliente, il file XML generato utilizza il codice IVA speciale "00000000", ma non è conforme a Peppol.
+PEPPOL_CONFIG=Configurazione generale dei clienti non titolari di partita IVA
+PEPPOL_FORCE_XML_WITH_VATNULL=Forzare la creazione di un file XML anche se il cliente non ha una partita IVA
+BankAccountLinkedWithoutIBAN=Il conto bancario collegato a questa fattura non ha un codice IBAN. Si prega di modificare il conto bancario e di generare nuovamente la fattura.
+PeppolSpecificID=Identificatore specifico Peppol
+PeppolSpecificIDTooltip=Avrà la precedenza sull'identificativo tradizionale (numero di partita IVA intra-aziendale). Assume la forma XXXX:YYYYYYYYYYYYYYYYYY - Vedere https://directory.peppol.eu/
+PeppolCheckErrorZIP=Manca il codice postale dell'azienda
+PeppolCheckErrorTown=La città della vostra azienda è vuota
+PeppolCheckErrorCountry=Il paese della vostra azienda è vuoto
+PeppolCheckErrorCustomerName=Il vostro cliente non ha un nome
+PeppolCheckErrorCustomerAddress=L'indirizzo del cliente è vuoto
+PeppolWarningAutoValidate=Errore di convalida automatica del file XML di Peppol: %s
+ErrorPeppolModuleVersionDatabase=Modulo Peppol: Si prega di notare che la versione del modulo non è coerente con la versione del database. Ricordarsi di disattivare e riattivare il modulo ...
+PeppolCheckError=Errori di conformità Peppol:
+PeppolCheckErrorVATnumber=Il vostro numero di partita IVA è vuoto
+PeppolCheckErrorAddress=L'indirizzo dell'azienda è vuoto
+PeppolCheckErrorCustomerZIP=Manca il codice postale del cliente
+PeppolCheckErrorCustomerTown=Il cliente non ha una città associata
+PeppolCheckErrorCustomerCountry=Il paese del cliente non è specificato
+PeppolCheckErrorCustomerVAT=Il vostro cliente non ha un numero di partita IVA
+PeppolCheckErrorCustomerPeppolID=L'identificativo Peppol personalizzato del terzo non è corretto
+PeppolCheckErrorCustomerPeppolIDpartA=La prima parte dell'identificatore peppol è vuota
+PeppolCheckErrorCustomerPeppolIDpartB=La seconda parte dell'identificatore peppol è vuota
+PeppolCheckErrorSellerBucarestNoSector=La vostra azienda è a Bucarest ma non avete indicato il settore (,SETTORE1 per esempio)
+PeppolCheckErrorBuyerBucarestNoSector=La vostra azienda è a Bucarest ma non avete indicato il settore (,SETTORE1 per esempio)
+CheckPeppolID=Controllo
+PEPPOL_USE_TRIGGER=Attivare Peppol sull'API dolibarr
+PEPPOL_USE_TRIGGERTooltip=Abilitazione della generazione del file XML Peppol durante la creazione di fatture tramite l'API dolibarr

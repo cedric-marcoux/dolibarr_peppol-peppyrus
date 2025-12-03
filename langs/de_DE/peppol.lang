@@ -1,0 +1,172 @@
+#
+# Allgemein
+#
+
+# Module label 'ModulePeppolpeppyrusName'
+ModulePeppolpeppyrusName = Peppol - Peppyrus
+# Module description 'ModulePeppolpeppyrusDesc'
+ModulePeppolpeppyrusDesc = E-Rechnungen über das Peppol-Netzwerk mit Peppyrus Access Point senden
+# Alte Schlüssel für Kompatibilität behalten
+ModulePeppolName = Peppol - Peppyrus
+ModulePeppolDesc = E-Rechnungen über das Peppol-Netzwerk mit Peppyrus Access Point senden
+
+#
+# Administrationsseite
+#
+PeppolSetup = Peppyrus-Konfiguration
+Settings = Einstellungen
+PeppolSetupPage = Konfiguration Ihrer Verbindung zum Peppol-Netzwerk über Peppyrus
+ModulePeppolList = Peppol (Verlauf)
+NotConfigured = Nicht konfiguriert
+
+#
+# Über-Seite
+#
+About = Über
+PeppolAbout = About Peppol with Peppyrus
+PeppolAboutPage = Elektronisches Rechnungsmodul Peppol
+
+PeppolMassActionZip = ZIP mit allen Peppol-Dateien erstellen
+PeppolError = Peppol-Fehler:
+BuyerDoesNotHaveVATDetails = Die innergemeinschaftliche USt-IdNr. ist erforderlich, um ein Dokument gemäß Peppol-Standard zu erstellen
+PeppolWarning = Peppol-Hinweis:
+BuyerDoesNotHaveVATDetailsForce = Da für diesen Kunden keine USt-IdNr. vorliegt, verwendet die generierte XML-Datei den speziellen USt-Code '00000000', entspricht aber nicht dem Peppol-Standard.
+InvoiceDoesNotHaveBankAccountLinked = Ihre Rechnung hat kein verknüpftes Bankkonto, sodass Ihr Kunde nicht über die Zahlungsinformationen verfügt
+BankAccountLinkedWithoutIBAN = Das mit dieser Rechnung verknüpfte Bankkonto hat keinen IBAN-Code. Bitte ändern Sie Ihr Bankkonto und generieren Sie die Rechnung erneut
+PeppolSpecificID = Spezifische Peppol-ID
+PeppolSpecificIDTooltip = Hat Vorrang vor der klassischen ID (Intraco-USt-IdNr.). Format: XXXX:YYYYYYYYYYYYYY - Siehe https://directory.peppol.eu/
+PeppolWarningAutoValidate = Fehler bei der automatischen Validierung der Peppol XML-Datei: %s
+ErrorPeppolModuleVersionDatabase = Peppol-Modul: Achtung, die Version Ihres Moduls stimmt nicht mit der Datenbankversion überein. Bitte deaktivieren und reaktivieren Sie das Modul...
+PeppolValidationError = Fehler bei der Validierung der Peppol-Datei
+
+PeppolCheckError = Peppol-Konformitätsfehler:
+PeppolCheckErrorVATnumber = Ihre USt-IdNr. ist leer
+PeppolCheckErrorAddress = Die Adresse Ihres Unternehmens ist leer
+PeppolCheckErrorZIP = Die Postleitzahl Ihres Unternehmens fehlt
+PeppolCheckErrorTown = Die Stadt Ihres Unternehmens ist leer
+PeppolCheckErrorCountry = Das Land Ihres Unternehmens ist leer
+PeppolCheckErrorCustomerName = Ihr Kunde hat keinen Namen
+PeppolCheckErrorCustomerAddress = Die Adresse Ihres Kunden ist leer
+PeppolCheckErrorCustomerZIP = Die Postleitzahl Ihres Kunden fehlt
+PeppolCheckErrorCustomerTown = Ihrem Kunden ist keine Stadt zugeordnet
+PeppolCheckErrorCustomerCountry = Das Land Ihres Kunden ist nicht ausgefüllt
+PeppolCheckErrorCustomerVAT = Ihr Kunde hat keine USt-IdNr.
+PeppolCheckErrorCustomerPeppolID = Die benutzerdefinierte Peppol-ID des Dritten ist nicht korrekt
+PeppolCheckErrorCustomerPeppolIDpartA = Der erste Teil der Peppol-ID ist leer
+PeppolCheckErrorCustomerPeppolIDpartB = Der zweite Teil der Peppol-ID ist leer
+PeppolCheckErrorSellerBucarestNoSector = Ihr Unternehmen befindet sich in Bukarest, aber Sie haben keinen Sektor angegeben (z.B. ,SECTOR1)
+PeppolCheckErrorBuyerBucarestNoSector = Ihr Kunde befindet sich in Bukarest, aber Sie haben keinen Sektor angegeben (z.B. ,SECTOR1)
+peppolcheckThirdpartySuccess = Drittanbieterverifizierung korrekt
+peppolcheckThirdpartyError = Fehler bei der Drittanbieterverifizierung
+CheckPeppolID = Überprüfen
+CheckPeppolIDonPublicDirectory = Überprüfen (öffentliches Verzeichnis)
+
+# Allgemeine Konfiguration
+PEPPOL_CONFIG = Allgemeine Konfiguration
+PEPPOL_FORCE_XML_WITH_VATNULL = XML-Erstellung erzwingen, auch wenn Ihr Kunde keine USt-IdNr. hat
+PEPPOL_FORCE_XML_WITH_VATNULLTooltip = Wenn aktiviert, wird eine XML-Datei auch für Kunden ohne innergemeinschaftliche USt-IdNr. (Privatpersonen) generiert. Die Datei entspricht nicht dem Peppol-Standard, kann aber für andere Zwecke verwendet werden.
+PEPPOL_USE_TRIGGER = Peppol auf der Dolibarr-API aktivieren
+PEPPOL_USE_TRIGGERTooltip = Aktiviert die automatische Generierung der Peppol XML-Datei beim Erstellen von Rechnungen über die Dolibarr-API.
+
+PEPPOL_AP_API_KEY = Peppyrus API-Schlüssel
+PEPPOL_AP_API_KEYTooltip = Ihr Schlüssel zur Verbindung mit der Peppyrus-API. Dieser Schlüssel wird von Peppyrus bereitgestellt.
+peppolBtnSend = Peppol: Senden
+peppolBtnSendTooltip = Klicken Sie auf diese Schaltfläche, um Ihre Rechnung an das Peppol-Netzwerk zu senden
+peppolNoPdfFilesAssociated = Es ist keine XML-Datei mit dieser Rechnung verknüpft
+peppolChooseFilePopup = Zu sendende Datei:
+ConfirmPeppol = Bestätigen Sie, dass Sie diese Datei über das Peppol-Netzwerk senden möchten. Je nach Ihrem Peppyrus-Vertrag können zusätzliche Gebühren anfallen...
+PEPPOL_AP_SENDER_ID = Peppol-ID Ihres Unternehmens
+PEPPOL_AP_SENDER_IDTooltip = Diese ID hat das Format 0208:0000000097. Sie wird Ihnen von Peppyrus mitgeteilt.
+peppolDocumentSentSuccessTitle = Dokument gesendet
+peppolDocumentSentSuccess = Dokument an das Peppol-Netzwerk gesendet, uuid = %s
+peppolDocumentSentError = Sendefehler!
+peppolDocumentCheck = Status des Dokuments im Peppol-Netzwerk:
+peppolBtnCheck = Peppol: Status
+peppolBtnCheckTooltip = Überprüfen Sie den Status des Dokuments im Peppol-Netzwerk
+peppolBtnCheckServer = Peppyrus-Verbindung testen
+peppolAccessPointCheckInvoiceSuccess = Dokumentenprüfung
+peppolAccessPointCheckInvoiceSuccessConfirmed = Bestätigt
+PEPPOL_PROD = Produktionsmodus
+peppolAPidFromExtrafieldErr = Dieses Dokument hat keine eindeutige Peppol-ID in seinen erweiterten Attributen...
+peppolThirdpartyCheckSuccess = Drittanbieter-Peppol-Verifizierung validiert
+peppolThirdpartyCheckError = Fehler bei der Drittanbieterverifizierung
+peppolAccessPointCheckSuccess = Peppyrus-Verbindung validiert
+peppolAccessPointCheckError = Peppyrus-Verbindungsfehler
+peppolAccessPointCheckErrorTestMode = Verbindung fehlgeschlagen: Ihr Produktions-API-Schlüssel ist in der TEST-Umgebung nicht gültig. Wechseln Sie in der Konfiguration zum PRODUKTIONS-Modus.
+peppolAccessPointCheckErrorInvalidKey = Verbindung fehlgeschlagen: Ungültiger oder abgelaufener API-Schlüssel. Überprüfen Sie Ihren Schlüssel in der Konfiguration.
+
+PeppolSpecificInvoiceID = Peppol-ID des Dokuments
+PeppolSpecificInvoiceIDTooltip = Diese Information wird verwendet, um das Dokument zu verfolgen, nachdem es an das Peppol-Netzwerk gesendet wurde. Dieses Feld wird automatisch vom Dolibarr-Modul ausgefüllt, nachdem das Dokument gesendet wurde.
+BankAccountLinkedHasNoName = Das mit der Rechnung verknüpfte Bankkonto enthält keinen Banknamen
+BankAccountLinkedHasNoIBAN = Das mit der Rechnung verknüpfte Bankkonto hat keinen IBAN-Code
+PeppolTab = Peppol-Verfolgung
+PeppolTrackDocumentInAP = Dokumentenverfolgung im Peppol-Netzwerk
+Peppolimports = Liste der auf Peppyrus verfügbaren Dokumente
+ModulePeppolImportListing = Peppol-Import
+PeppolDownloadPDF = PDF herunterladen
+
+PeppolAPStatusError = Fehler
+PeppolAPStatusDraft = Entwurf
+PeppolAPStatusInProgress = In Bearbeitung (Stufe %s)
+PeppolAPStatusNearFull = Fast vollständig
+PeppolAPStatusFull = Vollständig
+peppolDocumentIsValidTrue = Dokumentenprüfung: keine Fehler
+peppolDocumentIsValidFalse = Fehler bei der Dokumentenprüfung
+peppolConfirmSuccess = Empfangsbestätigung
+peppolConfirmError = Bestätigungsfehler
+peppolConfirmErrorNoPeppolID = Keine Peppol-ID vorhanden
+peppolConfirmErrorNotFound = Nicht gefunden
+peppolRejectSuccess = Rechnung erfolgreich abgelehnt
+peppolRejectError = Fehler beim Ablehnen der Rechnung
+peppolRejectErrorNoPeppolID = Ablehnung nicht möglich: Peppol-ID fehlt
+peppolRejectErrorNoReason = Ablehnung nicht möglich: Grund fehlt
+peppolRejectErrorNotFound = Dokument zum Ablehnen nicht gefunden
+peppolRejectErrorBadRequest = Ungültige Anfrage beim Ablehnen
+peppolFileReadError = UBL-Datei kann nicht gelesen werden
+
+peppolBtnFindPeppolID = PeppolFinder
+PeppolApplyPeppolID = Diese ID wählen
+peppolFindPeppolIDPopupTitle = Suche nach der Peppol-ID Ihres Korrespondenten
+peppolParticipantID = Peppol-ID
+peppolName = Name
+peppolCountryCode = Land
+peppolDocumentTypes = Akzeptierte Dokumenttypen
+peppolAction = Aktion
+peppolIdSet = Peppol-ID konfiguriert
+PeppolErrorNeedPDF = Die PDF-Datei der Rechnung scheint nicht vorhanden zu sein!
+
+#
+# Peppyrus API - Funktionen
+#
+peppolReportSuccess = Lieferbericht abgerufen
+peppolReportError = Fehler beim Abrufen des Berichts
+peppolReportErrorNoMessageId = Nachrichten-ID fehlt
+peppolReportNotFound = Bericht nicht gefunden
+
+peppolBestMatchSuccess = Peppol-ID gefunden
+peppolBestMatchError = Fehler bei der Suche
+peppolBestMatchErrorNoVat = USt-IdNr. fehlt
+peppolBestMatchNotFound = Kein Teilnehmer für diese USt-IdNr. gefunden
+
+peppolSearchSuccess = %s Ergebnis(se) im Peppol-Verzeichnis gefunden
+peppolSearchError = Fehler bei der Suche im Verzeichnis
+
+peppolOrgInfoSuccess = Peppol-Organisationsinformationen abgerufen
+peppolOrgInfoError = Fehler beim Abrufen der Informationen
+peppolOrgInfoNotFound = Peppol-Informationen nicht gefunden
+
+peppolAutoDetectByVat = Automatische Erkennung per USt-IdNr.
+peppolDeliveryReport = Lieferbericht
+peppolSearchDirectory = Suche im Peppol-Verzeichnis
+peppolSearchByName = Nach Name suchen
+peppolSearchByCountry = Nach Land suchen
+peppolTestPeppolInfo = PEPPOL-Info testen
+DeliveryDate = Lieferdatum
+Delivered = Geliefert
+
+# Verbindungstest-Seite
+peppolCurrentMode = Aktueller Modus
+peppolModeProduction = PRODUKTION
+peppolModeTest = TEST (Sandbox)
+peppolApiUrl = API-URL
+peppolTestModeWarning = Achtung: Im TEST-Modus müssen Sie einen Peppyrus Test-API-Schlüssel verwenden. Wenn Sie nur einen Produktionsschlüssel haben, aktivieren Sie den Produktionsmodus in der Konfiguration.

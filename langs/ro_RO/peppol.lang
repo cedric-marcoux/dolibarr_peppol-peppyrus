@@ -1,0 +1,61 @@
+
+
+#
+# Générique
+#
+
+# Module label 'ModulePeppolpeppyrusName'
+ModulePeppolpeppyrusName=Peppol - Peppyrus
+# Module description 'ModulePeppolpeppyrusDesc'
+ModulePeppolpeppyrusDesc=Trimite facturi electronice prin rețeaua Peppol cu Peppyrus
+# Păstrați cheile vechi pentru compatibilitate
+ModulePeppolName=Peppol - Peppyrus
+ModulePeppolDesc=Trimite facturi electronice prin rețeaua Peppol cu Peppyrus
+
+#
+# Page d'administration
+#
+PeppolSetup=Configurarea modulului Peppol
+Settings=Setări
+PeppolSetupPage=Pagina de configurare a modulului Peppol
+
+#
+# Page À propos
+#
+About=Despre noi
+PeppolAbout=Despre Peppol
+PeppolAboutPage=Pagina despre Peppol
+PeppolMassActionZip=Creați un ZIP cu toate fișierele Peppol
+PeppolError=Eroare Peppol:
+BuyerDoesNotHaveVATDetails=Numărul de TVA intracomunitar este necesar pentru întocmirea unui document conform Peppol
+PeppolWarning=Notă Peppol:
+BuyerDoesNotHaveVATDetailsForce=În absența unui număr de TVA pentru acest client, fișierul XML generat utilizează codul special de TVA "00000000", dar nu este conform cu Peppol.
+PEPPOL_CONFIG=Configurația generală a clienților care nu au un număr de TVA
+PEPPOL_FORCE_XML_WITH_VATNULL=Forțați crearea unui fișier XML chiar dacă clientul dumneavoastră nu are un număr de TVA
+PEPPOL_FORCE_XML_WITH_VATNULLTooltip=Formatul peppol este în mod normal destinat vânzărilor către profesioniști, astfel încât este necesar un identificator unic. Acesta este, în mod normal, numărul de TVA care este utilizat în acest scop. În cazul unui anumit client sau al unui client pentru care nu aveți un număr de TVA, puteți forța crearea fișierului PEPPOL (care, prin urmare, nu va fi conform cu standardul) cu un număr de TVA de ZZ00000000. Această opțiune vă permite să utilizați fișierul XML produs pentru a integra factura în fluxul de dematerializare.
+InvoiceDoesNotHaveBankAccountLinked=Factura dvs. nu are un cont bancar asociat, astfel încât clientul dvs. nu va avea informațiile necesare pentru a vă plăti
+BankAccountLinkedWithoutIBAN=Contul bancar legat de această factură nu are un cod IBAN. Vă rugăm să schimbați contul bancar și apoi să generați din nou factura.
+PeppolSpecificID=Identificator specific Peppol
+PeppolSpecificIDTooltip=Va avea prioritate față de identificatorul tradițional (numărul de TVA intra-companie). Acesta are forma XXXX:YYYYYYYYYYYYYYYYYYY - A se vedea https://directory.peppol.eu/
+PeppolWarningAutoValidate=Eroare de autovalidare a fișierului Peppol XML: %s
+ErrorPeppolModuleVersionDatabase=Modulul Peppol: Vă rugăm să rețineți că versiunea modulului dvs. nu este în concordanță cu versiunea bazei de date. Nu uitați să dezactivați și să reactivați modulul ...
+PeppolCheckError=Erori de conformitate Peppol:
+PeppolCheckErrorVATnumber=Numărul dumneavoastră de TVA este gol
+PeppolCheckErrorAddress=Adresa companiei dumneavoastră este goală
+PeppolCheckErrorZIP=Codul poștal al companiei dumneavoastră lipsește
+PeppolCheckErrorTown=Orașul companiei dumneavoastră este gol
+PeppolCheckErrorCountry=Țara companiei dumneavoastră este goală
+PeppolCheckErrorCustomerName=Clientul tău nu are nume
+PeppolCheckErrorCustomerAddress=Adresa clientului dvs. este goală
+PeppolCheckErrorCustomerZIP=Codul poștal al clientului dumneavoastră lipsește
+PeppolCheckErrorCustomerTown=Clientul dumneavoastră nu are un oraș asociat
+PeppolCheckErrorCustomerCountry=Țara clientului dumneavoastră nu este specificată
+PeppolCheckErrorCustomerVAT=Clientul dumneavoastră nu are un număr de TVA
+PeppolCheckErrorCustomerPeppolID=Identificatorul personalizat Peppol al terțului nu este corect
+PeppolCheckErrorCustomerPeppolIDpartA=Prima parte a identificatorului peppol este goală
+PeppolCheckErrorCustomerPeppolIDpartB=A doua parte a identificatorului peppol este goală
+PeppolCheckErrorSellerBucarestNoSector=Firma dumneavoastră este în București, dar nu ați indicat sectorul (,SECTOR1 de exemplu)
+PeppolCheckErrorBuyerBucarestNoSector=Firma dumneavoastră este în București, dar nu ați indicat sectorul (,SECTOR1 de exemplu)
+CheckPeppolID=Verificați
+PEPPOL_USE_TRIGGER=Activați Peppol pe API dolibarr
+PEPPOL_USE_TRIGGERTooltip=Activarea generării fișierului Peppol XML la crearea de facturi prin intermediul API dolibarr

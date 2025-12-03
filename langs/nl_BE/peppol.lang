@@ -1,0 +1,170 @@
+#
+# Algemeen
+#
+
+# Modulenaam 'ModulePeppolpeppyrusName'
+ModulePeppolpeppyrusName = Peppol - Peppyrus
+# Modulebeschrijving 'ModulePeppolpeppyrusDesc'
+ModulePeppolpeppyrusDesc = Verstuur e-facturen via het Peppol-netwerk met Peppyrus Access Point
+# Bewaar oude sleutels voor compatibiliteit
+ModulePeppolName = Peppol - Peppyrus
+ModulePeppolDesc = Verstuur e-facturen via het Peppol-netwerk met Peppyrus Access Point
+
+#
+# Beheerpagina
+#
+PeppolSetup = Peppyrus Configuratie
+Settings = Instellingen
+PeppolSetupPage = Configureer uw verbinding met het Peppol-netwerk via Peppyrus
+NotConfigured = Niet geconfigureerd
+
+#
+# Over-pagina
+#
+About = Over
+PeppolAbout = About Peppol with Peppyrus
+PeppolAboutPage = Module voor elektronische facturatie Peppol
+
+PeppolMassActionZip = Maak een ZIP-bestand met alle Peppol-bestanden
+PeppolError = Peppol-fout:
+BuyerDoesNotHaveVATDetails = Het btw-nummer is vereist om een Peppol-conform document te maken.
+PeppolWarning = Peppol-opmerking:
+BuyerDoesNotHaveVATDetailsForce = Als er geen btw-nummer is voor deze klant, gebruikt het gegenereerde XML-bestand de speciale btw-code '00000000', maar dit is niet Peppol-conform.
+InvoiceDoesNotHaveBankAccountLinked = Je factuur heeft geen gekoppelde bankrekening, waardoor de klant niet beschikt over de informatie die nodig is om te betalen.
+BankAccountLinkedWithoutIBAN = De aan deze factuur gekoppelde bankrekening heeft geen IBAN-code. Pas je bankrekening aan en genereer de factuur opnieuw.
+PeppolSpecificID = Specifieke Peppol-identificatie
+PeppolSpecificIDTooltip = Heeft voorrang op de klassieke identificatie (intracommunautair btw-nummer). Vorm: XXXX:YYYYYYYYYYYYY - Zie https://directory.peppol.eu/
+PeppolWarningAutoValidate = Fout bij automatische validatie van Peppol XML-bestand: %s
+ErrorPeppolModuleVersionDatabase = Peppol-module: de versie van je module komt niet overeen met de versie van de database. Deactiveer en activeer de module opnieuw...
+
+PeppolCheckError = Peppol-conformiteitsfouten:
+PeppolCheckErrorVATnumber = Je btw-nummer is leeg
+PeppolCheckErrorAddress = Het adres van je bedrijf ontbreekt
+PeppolCheckErrorZIP = De postcode van je bedrijf ontbreekt
+PeppolCheckErrorTown = De stad van je bedrijf ontbreekt
+PeppolCheckErrorCountry = Het land van je bedrijf ontbreekt
+PeppolCheckErrorCustomerName = De klant heeft geen naam
+PeppolCheckErrorCustomerAddress = Het adres van de klant ontbreekt
+PeppolCheckErrorCustomerZIP = De postcode van de klant ontbreekt
+PeppolCheckErrorCustomerTown = De klant heeft geen plaatsnaam
+PeppolCheckErrorCustomerCountry = Het land van de klant ontbreekt
+PeppolCheckErrorCustomerVAT = De klant heeft geen btw-nummer
+PeppolCheckErrorCustomerPeppolID = De aangepaste Peppol-ID van de derde partij is niet correct
+PeppolCheckErrorCustomerPeppolIDpartA = Eerste deel van de Peppol-ID is leeg
+PeppolCheckErrorCustomerPeppolIDpartB = Tweede deel van de Peppol-ID is leeg
+PeppolCheckErrorSellerBucarestNoSector = Je bedrijf is gevestigd in Boekarest maar je hebt geen sector opgegeven (bijv. ,SECTOR1)
+peppolCheckErrorBuyerBucarestNoSector = Je klant is gevestigd in Boekarest maar je hebt geen sector opgegeven (bijv. ,SECTOR1)
+peppolcheckThirdpartySuccess = Derdepartijverificatie correct
+peppolcheckThirdpartyError = Fout bij verificatie van derde partij
+CheckPeppolID = Controleren
+CheckPeppolIDonPublicDirectory = Controleren (publieke directory)
+
+# Algemene configuratie
+PEPPOL_CONFIG = Algemene configuratie
+PEPPOL_FORCE_XML_WITH_VATNULL = Forceer XML-creatie zelfs als uw klant geen BTW-nummer heeft
+PEPPOL_FORCE_XML_WITH_VATNULLTooltip = Indien ingeschakeld, wordt een XML-bestand gegenereerd zelfs voor klanten zonder intracommunautair BTW-nummer (particulieren). Het bestand zal niet Peppol-conform zijn maar kan voor andere doeleinden worden gebruikt.
+PEPPOL_USE_TRIGGER = Activeer Peppol op Dolibarr API
+PEPPOL_USE_TRIGGERTooltip = Schakel automatische generatie van Peppol XML-bestand in bij het aanmaken van facturen via de Dolibarr API.
+
+PEPPOL_AP_API_KEY = Peppyrus API-sleutel
+PEPPOL_AP_API_KEYTooltip = Je sleutel om verbinding te maken met de Peppyrus API. Deze sleutel wordt verstrekt door Peppyrus.
+peppolBtnSend = Peppol: Verzenden
+peppolBtnSendTooltip = Klik op deze knop om je factuur te verzenden via het Peppol-netwerk
+peppolNoPdfFilesAssociated = Er zijn geen XML-bestanden gekoppeld aan deze factuur.
+peppolChooseFilePopup = Te verzenden bestand:
+ConfirmPeppol = Bevestig dat je dit bestand via het Peppol-netwerk wilt verzenden. Er kunnen extra kosten van toepassing zijn afhankelijk van je Peppyrus-contract.
+PEPPOL_AP_SENDER_ID = Peppol-ID van je bedrijf
+PEPPOL_AP_SENDER_IDTooltip = Deze ID is in de vorm 0208:0000000097. Deze wordt verstrekt door Peppyrus.
+peppolDocumentSentSuccess = Document verzonden naar het Peppol-netwerk, uuid = %s
+peppolDocumentSentError = Fout bij verzenden!
+peppolDocumentCheck = Status van het document in het Peppol-netwerk:
+peppolBtnCheck = Peppol: Status
+peppolBtnCheckTooltip = Controleer de status van het document binnen het Peppol-netwerk
+peppolBtnCheckServer = Test Peppyrus-verbinding
+peppolAccessPointCheckInvoiceSuccess = Documentverificatie
+peppolAccessPointCheckInvoiceSuccessConfirmed = Bevestigd
+PEPPOL_PROD = Productiemodus
+peppolAPidFromExtrafieldErr = Dit document heeft geen unieke Peppol-ID in zijn extra velden...
+peppolThirdpartyCheckSuccess = Peppol-verificatie derde partij gevalideerd
+peppolThirdpartyCheckError = Fout bij verificatie derde partij
+peppolAccessPointCheckSuccess = Peppyrus-verbinding gevalideerd
+peppolAccessPointCheckError = Peppyrus-verbindingsfout
+peppolAccessPointCheckErrorTestMode = Verbinding mislukt: uw productie API-sleutel werkt niet in de TEST-omgeving. Schakel over naar PRODUCTIE-modus in de configuratie.
+peppolAccessPointCheckErrorInvalidKey = Verbinding mislukt: ongeldige of verlopen API-sleutel. Controleer uw sleutel in de configuratie.
+
+PeppolSpecificInvoiceID = Peppol-ID van het document
+PeppolSpecificInvoiceIDTooltip = Deze informatie wordt gebruikt om het document te volgen nadat het is verzonden naar het Peppol-netwerk. Dit veld wordt automatisch ingevuld door de Dolibarr-module zodra het document is verzonden.
+BankAccountLinkedHasNoName = De gekoppelde bankrekening vermeldt geen banknaam.
+BankAccountLinkedHasNoIBAN = De gekoppelde bankrekening heeft geen IBAN-code.
+PeppolTab = Peppol-tracering
+PeppolTrackDocumentInAP = Documenttracering in het Peppol-netwerk
+Peppolimports = Lijst van documenten beschikbaar op Peppyrus
+ModulePeppolImportListing = Peppol Import
+PeppolDownloadPDF = Download PDF
+
+PeppolAPStatusError = Fout
+PeppolAPStatusDraft = Concept
+PeppolAPStatusInProgress = In behandeling (%s niveau)
+PeppolAPStatusNearFull = Bijna voltooid
+PeppolAPStatusFull = Voltooid
+peppolDocumentIsValidTrue = Documentverificatie: geen fouten
+peppolDocumentIsValidFalse = Fouten tijdens documentverificatie
+
+peppolConfirmSuccess = Ontvangstbevestiging
+peppolConfirmError = Fout bij bevestiging
+peppolConfirmErrorNoPeppolID = Geen Peppol-ID aanwezig.
+peppolConfirmErrorNotFound = Niet gevonden
+peppolRejectSuccess = Factuur succesvol geweigerd
+peppolRejectError = Fout bij het weigeren van de factuur
+peppolRejectErrorNoPeppolID = Onmogelijk om te weigeren: Peppol-ID ontbreekt
+peppolRejectErrorNoReason = Onmogelijk om te weigeren: reden ontbreekt
+peppolRejectErrorNotFound = Document niet gevonden voor weigering
+peppolRejectErrorBadRequest = Ongeldige aanvraag voor weigering
+peppolFileReadError = Kan UBL-bestand niet lezen
+
+peppolBtnFindPeppolID = PeppolFinder
+PeppolApplyPeppolID = Kies deze identificatie
+peppolFindPeppolIDPopupTitle = Zoeken naar Peppol-ID van correspondent
+peppolParticipantID = Peppol-identificatie
+peppolName = Naam
+peppolCountryCode = Land
+peppolDocumentTypes = Geaccepteerde documenttypes
+peppolAction = Actie
+peppolIdSet = Peppol-identificatie geconfigureerd
+PeppolErrorNeedPDF = Het PDF-bestand van de factuur lijkt niet aanwezig te zijn!
+
+#
+# Peppyrus API - Functies
+#
+peppolReportSuccess = Leveringsrapport opgehaald
+peppolReportError = Fout bij ophalen rapport
+peppolReportErrorNoMessageId = Bericht-ID ontbreekt
+peppolReportNotFound = Rapport niet gevonden
+
+peppolBestMatchSuccess = Peppol-ID gevonden
+peppolBestMatchError = Zoekfout
+peppolBestMatchErrorNoVat = Btw-nummer ontbreekt
+peppolBestMatchNotFound = Geen deelnemer gevonden voor dit btw-nummer
+
+peppolSearchSuccess = %s resultaat/resultaten gevonden in Peppol-directory
+peppolSearchError = Fout bij zoeken in directory
+
+peppolOrgInfoSuccess = Peppol-info organisatie opgehaald
+peppolOrgInfoError = Fout bij ophalen info
+peppolOrgInfoNotFound = Peppol-info niet gevonden
+
+peppolAutoDetectByVat = Automatisch detecteren via btw
+peppolDeliveryReport = Leveringsrapport
+peppolSearchDirectory = Zoeken in Peppol-directory
+peppolSearchByName = Zoeken op naam
+peppolSearchByCountry = Zoeken op land
+peppolTestPeppolInfo = Test PEPPOL-info
+DeliveryDate = Leveringsdatum
+Delivered = Geleverd
+
+# Verbindingstest pagina
+peppolCurrentMode = Huidige modus
+peppolModeProduction = PRODUCTIE
+peppolModeTest = TEST (sandbox)
+peppolApiUrl = API URL
+peppolTestModeWarning = Waarschuwing: In TEST-modus moet je een Peppyrus test API-sleutel gebruiken. Als je alleen een productiesleutel hebt, schakel dan de productiemodus in via de configuratie.

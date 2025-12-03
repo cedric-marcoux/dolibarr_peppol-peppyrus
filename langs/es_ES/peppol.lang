@@ -1,0 +1,61 @@
+
+
+#
+# Générique
+#
+
+# Module label 'ModulePeppolpeppyrusName'
+ModulePeppolpeppyrusName=Peppol - Peppyrus
+# Module description 'ModulePeppolpeppyrusDesc'
+ModulePeppolpeppyrusDesc=Enviar facturas electrónicas a través de la red Peppol con Peppyrus
+# Mantener claves antiguas para compatibilidad
+ModulePeppolName=Peppol - Peppyrus
+ModulePeppolDesc=Enviar facturas electrónicas a través de la red Peppol con Peppyrus
+
+#
+# Page d'administration
+#
+PeppolSetup=Configuración del módulo Peppol
+Settings=Ajustes
+PeppolSetupPage=Página de configuración del módulo Peppol
+
+#
+# Page À propos
+#
+About=Quiénes somos
+PeppolAbout=Acerca de Peppol
+PeppolAboutPage=Página sobre Peppol
+PeppolMassActionZip=Crear un ZIP con todos los archivos Peppol
+PeppolError=Error de Peppol:
+BuyerDoesNotHaveVATDetails=El número de IVA intracomunitario es necesario para elaborar un documento conforme a Peppol
+PeppolWarning=Nota Peppol:
+BuyerDoesNotHaveVATDetailsForce=En ausencia de un número de IVA para este cliente, el archivo XML generado utiliza el código de IVA especial "00000000", pero no es compatible con Peppol.
+PEPPOL_CONFIG=Configuración general de los clientes que no tienen número de IVA
+PEPPOL_FORCE_XML_WITH_VATNULL=Forzar la creación de un fichero XML aunque su cliente no tenga número de IVA
+PEPPOL_FORCE_XML_WITH_VATNULLTooltip=El formato peppol se destina normalmente a la venta a profesionales, por lo que se necesita un identificador único. Normalmente es el número de IVA que se utiliza para este fin. En el caso de un cliente concreto o de un cliente para el que no disponga de número de IVA, puede forzar la creación del fichero PEPPOL (que, por tanto, no será conforme con la norma) con un número de IVA de ZZ00000000. Esta opción le permite utilizar el fichero XML generado para integrar la factura en su flujo de desmaterialización.
+InvoiceDoesNotHaveBankAccountLinked=Su factura no tiene una cuenta bancaria vinculada, por lo que su cliente no dispondrá de la información necesaria para pagarle.
+CheckPeppolID=Consulte
+BankAccountLinkedWithoutIBAN=La cuenta bancaria vinculada a esta factura no tiene código IBAN. Por favor, cambie su cuenta bancaria y vuelva a generar la factura.
+PeppolSpecificID=Identificador específico Peppol
+PeppolSpecificIDTooltip=Tendrá prioridad sobre el identificador tradicional (número de IVA intraempresa). Adopta la forma XXXX:YYYYYYYYYYYY - Véase https://directory.peppol.eu/
+PeppolWarningAutoValidate=Error de autovalidación del archivo XML de Peppol: %s
+ErrorPeppolModuleVersionDatabase=Módulo Peppol: Tenga en cuenta que la versión de su módulo no coincide con la versión de la base de datos. Recuerde desactivar y reactivar el módulo ...
+PeppolCheckError=Errores de cumplimiento de Peppol:
+PeppolCheckErrorVATnumber=Su número de IVA está vacío
+PeppolCheckErrorAddress=La dirección de su empresa está vacía
+PeppolCheckErrorZIP=Falta el código postal de su empresa
+PeppolCheckErrorTown=La ciudad de su empresa está vacía
+PeppolCheckErrorCountry=El país de su empresa está vacío
+PeppolCheckErrorCustomerName=Su cliente no tiene nombre
+PeppolCheckErrorCustomerAddress=La dirección de su cliente está vacía
+PeppolCheckErrorCustomerZIP=Falta el código postal de su cliente
+PeppolCheckErrorCustomerPeppolID=El identificador Peppol personalizado del tercero no es correcto
+PeppolCheckErrorCustomerPeppolIDpartA=La primera parte del identificador peppol está vacía
+PeppolCheckErrorCustomerPeppolIDpartB=La segunda parte del identificador peppol está vacía
+PeppolCheckErrorSellerBucarestNoSector=Su empresa está en Bucarest pero no ha indicado el Sector (,SECTOR1 por ejemplo)
+PeppolCheckErrorBuyerBucarestNoSector=Su empresa está en Bucarest pero no ha indicado el Sector (,SECTOR1 por ejemplo)
+PEPPOL_USE_TRIGGER=Activar Peppol en la API dolibarr
+PEPPOL_USE_TRIGGERTooltip=Activar la generación del fichero XML Peppol al crear facturas a través de la API dolibarr.
+PeppolCheckErrorCustomerTown=Su cliente no tiene ciudad asociada
+PeppolCheckErrorCustomerCountry=No se especifica el país de su cliente
+PeppolCheckErrorCustomerVAT=Su cliente no tiene número de IVA

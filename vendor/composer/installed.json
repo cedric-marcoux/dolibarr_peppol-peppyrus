@@ -1,0 +1,118 @@
+{
+    "packages": [
+        {
+            "name": "josemmo/einvoicing",
+            "version": "v0.2.7",
+            "version_normalized": "0.2.7.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/josemmo/einvoicing.git",
+                "reference": "fb318980fafda05da66385221d590f610945ee28"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/josemmo/einvoicing/zipball/fb318980fafda05da66385221d590f610945ee28",
+                "reference": "fb318980fafda05da66385221d590f610945ee28",
+                "shasum": ""
+            },
+            "require": {
+                "josemmo/uxml": "^0.1.4",
+                "php": ">=7.1"
+            },
+            "require-dev": {
+                "ext-openssl": "*",
+                "phan/phan": "*",
+                "phpdocumentor/reflection": "^3.0|^5.1",
+                "symfony/phpunit-bridge": "*"
+            },
+            "time": "2023-10-03T18:14:45+00:00",
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-4": {
+                    "Einvoicing\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "José Miguel Moreno",
+                    "email": "josemmo@pm.me",
+                    "homepage": "https://github.com/josemmo"
+                }
+            ],
+            "description": "Library for reading and creating European-compliant electronic invoices (EN 16931)",
+            "homepage": "https://github.com/josemmo/einvoicing",
+            "keywords": [
+                "cii",
+                "invoice",
+                "invoicing",
+                "peppol",
+                "ubl"
+            ],
+            "support": {
+                "issues": "https://github.com/josemmo/einvoicing/issues",
+                "source": "https://github.com/josemmo/einvoicing/tree/v0.2.7"
+            },
+            "install-path": "../josemmo/einvoicing"
+        },
+        {
+            "name": "josemmo/uxml",
+            "version": "v0.1.4",
+            "version_normalized": "0.1.4.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/josemmo/uxml.git",
+                "reference": "bcd7d8e410285c642116294e01581374d6be696f"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/josemmo/uxml/zipball/bcd7d8e410285c642116294e01581374d6be696f",
+                "reference": "bcd7d8e410285c642116294e01581374d6be696f",
+                "shasum": ""
+            },
+            "require": {
+                "lib-libxml": "*",
+                "php": ">=7.1"
+            },
+            "require-dev": {
+                "phan/phan": "*",
+                "symfony/phpunit-bridge": "*"
+            },
+            "time": "2022-05-28T16:43:25+00:00",
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-4": {
+                    "UXML\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "José Miguel Moreno",
+                    "email": "josemmo@pm.me",
+                    "homepage": "https://github.com/josemmo"
+                }
+            ],
+            "description": "Uncomplicated XML manipulation library with a clean and concise syntax",
+            "homepage": "https://github.com/josemmo/uxml",
+            "keywords": [
+                "xml"
+            ],
+            "support": {
+                "issues": "https://github.com/josemmo/uxml/issues",
+                "source": "https://github.com/josemmo/uxml/tree/v0.1.4"
+            },
+            "install-path": "../josemmo/uxml"
+        }
+    ],
+    "dev": false,
+    "dev-package-names": []
+}

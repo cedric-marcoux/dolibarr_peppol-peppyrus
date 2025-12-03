@@ -1,0 +1,170 @@
+#
+# Generic
+#
+
+# Module label 'ModulePeppolpeppyrusName'
+ModulePeppolpeppyrusName = Peppol - Peppyrus
+# Module description 'ModulePeppolpeppyrusDesc'
+ModulePeppolpeppyrusDesc = Send e-invoices via Peppol network using Peppyrus Access Point
+# Keep old keys for backward compatibility
+ModulePeppolName = Peppol - Peppyrus
+ModulePeppolDesc = Send e-invoices via Peppol network using Peppyrus Access Point
+
+#
+# Administration page
+#
+PeppolSetup = Peppyrus Configuration
+Settings = Settings
+PeppolSetupPage = Configure your connection to the Peppol network via Peppyrus
+NotConfigured = Not configured
+
+#
+# About page
+#
+About = About
+PeppolAbout = About Peppol with Peppyrus
+PeppolAboutPage = Peppol electronic invoicing module
+
+PeppolMassActionZip = Create a ZIP with all Peppol files
+PeppolError = Peppol error:
+BuyerDoesNotHaveVATDetails = The VAT number is required to create a Peppol-compliant document.
+PeppolWarning = Peppol note:
+BuyerDoesNotHaveVATDetailsForce = In the absence of a VAT number for this customer, the XML file generated uses the special VAT code '00000000' but is not Peppol-compliant.
+InvoiceDoesNotHaveBankAccountLinked = Your invoice doesn't have a linked bank account, so your customer won't have the information needed to pay you.
+BankAccountLinkedWithoutIBAN = The bank account linked to this invoice does not have an IBAN code. Please modify your bank account and then re-generate the invoice.
+PeppolSpecificID = Specific Peppol identifier
+PeppolSpecificIDTooltip = Takes precedence over the classic identifier (intraco VAT number). It takes the form XXXX:YYYYYYYYYYYYY - See https://directory.peppol.eu/
+PeppolWarningAutoValidate = Peppol XML file auto-validation error: %s
+ErrorPeppolModuleVersionDatabase = Peppol module: Please note that the version of your module is not consistent with the version of the database, so remember to deactivate and reactivate the module ...
+
+PeppolCheckError = Peppol compliance errors:
+PeppolCheckErrorVATnumber = Your VAT number is empty
+PeppolCheckErrorAddress = Your company address is empty
+PeppolCheckErrorZIP = Your company's zip code is missing
+PeppolCheckErrorTown = Company city is empty
+PeppolCheckErrorCountry = Your company's country is empty.
+PeppolCheckErrorCustomerName = Your customer has no name
+PeppolCheckErrorCustomerAddress = Your customer's address is empty
+PeppolCheckErrorCustomerZIP = Your customer's zip code is missing
+PeppolCheckErrorCustomerTown = Your customer doesn't have a town associated with it
+PeppolCheckErrorCustomerCountry = Your customer's country is missing.
+PeppolCheckErrorCustomerVAT = Your customer does not have a VAT number.
+PeppolCheckErrorCustomerPeppolID = The third party's custom Peppol ID is not correct
+PeppolCheckErrorCustomerPeppolIDpartA = First part of Peppol ID is empty
+PeppolCheckErrorCustomerPeppolIDpartB = Second part of peppol ID is empty
+PeppolCheckErrorSellerBucarestNoSector = Your company is in Bucharest but you haven't indicated the Sector (,SECTOR1 for example)
+peppolCheckErrorBuyerBucarestNoSector = Your company is in Bucharest but you didn't specify the Sector (,SECTOR1 for example)
+peppolcheckThirdpartySuccess = Third party verification correct
+peppolcheckThirdpartyError = Third party verification error
+CheckPeppolID = Check
+CheckPeppolIDonPublicDirectory = Check (public directory)
+
+# General configuration
+PEPPOL_CONFIG = General configuration
+PEPPOL_FORCE_XML_WITH_VATNULL = Force XML creation even if your customer has no VAT number
+PEPPOL_FORCE_XML_WITH_VATNULLTooltip = If enabled, an XML file will be generated even for customers without an intra-community VAT number (individuals). The file will not be Peppol compliant but can be used for other purposes.
+PEPPOL_USE_TRIGGER = Enable Peppol on Dolibarr API
+PEPPOL_USE_TRIGGERTooltip = Enable automatic generation of Peppol XML file when creating invoices via Dolibarr API.
+
+PEPPOL_AP_API_KEY = Peppyrus API Key
+PEPPOL_AP_API_KEYTooltip = Your key to connect to the Peppyrus API. This key is provided by Peppyrus.
+peppolBtnSend = Peppol : Send
+peppolBtnSendTooltip = Click this button to send your invoice to the Peppol network
+peppolNoPdfFilesAssociated = There are no XML files associated with this invoice.
+peppolChooseFilePopup = File to be sent:
+ConfirmPeppol = Confirm that you want to send this file over the Peppol network. Additional charges may apply depending on your Peppyrus contract...
+PEPPOL_AP_SENDER_ID = Your company's Peppol ID
+PEPPOL_AP_SENDER_IDTooltip = This ID is in the form 0208:0000000097. It must be communicated to you by Peppyrus.
+peppolDocumentSentSuccess = Send the document to Peppol network, uuid = %s
+peppolDocumentSentError = Sending error!
+peppolDocumentCheck = Document status in the Peppol network:
+peppolBtnCheck = Peppol : Status
+peppolBtnCheckTooltip = Check document status within Peppol network
+peppolBtnCheckServer = Test Peppyrus connection
+peppolAccessPointCheckInvoiceSuccess = Document verification
+peppolAccessPointCheckInvoiceSuccessConfirmed = Confirmed
+PEPPOL_PROD = Production mode
+peppolAPidFromExtrafieldErr = This document does not have a unique peppol identifier in its extended attributes...
+peppolThirdpartyCheckSuccess = Third party Peppol verification validated
+peppolThirdpartyCheckError = Third party verification error
+peppolAccessPointCheckSuccess = Peppyrus connection validated
+peppolAccessPointCheckError = Peppyrus connection error
+peppolAccessPointCheckErrorTestMode = Connection failed: your production API key is not valid on the TEST environment. Switch to PRODUCTION mode in configuration.
+peppolAccessPointCheckErrorInvalidKey = Connection failed: invalid or expired API key. Check your key in configuration.
+
+PeppolSpecificInvoiceID=Peppol ID of the document
+PeppolSpecificInvoiceIDTooltip=This information is used to track the document once it has been sent to the peppol network. This field will be filled in automatically by the dolibarr module once the document has been sent to the peppol network.
+BankAccountLinkedHasNoName = The bank account linked to the invoice does not indicate the name of the bank.
+BankAccountLinkedHasNoIBAN = The bank account linked to the invoice has no IBAN code.
+PeppolTab = Peppol tracking
+PeppolTrackDocumentInAP = Document tracking in the Peppol network
+Peppolimports = List of documents available on Peppyrus
+ModulePeppolImportListing = Peppol Import
+PeppolDownloadPDF = Download PDF
+
+PeppolAPStatusError = Error
+PeppolAPStatusDraft = In draft
+PeppolAPStatusInProgress = In progress (%s level)
+PeppolAPStatusNearFull = Almost complete
+PeppolAPStatusFull = Complete
+peppolDocumentIsValidTrue = Document verification: no errors
+peppolDocumentIsValidFalse = Errors during document verification
+
+peppolConfirmSuccess = Confirmation of receipt
+peppolConfirmError = Confirmation error
+peppolConfirmErrorNoPeppolID = There is no Peppol ID.
+peppolConfirmErrorNotFound = Not found
+peppolRejectSuccess = Invoice successfully rejected
+peppolRejectError = Error when rejecting invoice
+peppolRejectErrorNoPeppolID = Impossible to reject: Peppol ID missing
+peppolRejectErrorNoReason = Impossible to reject: reason missing
+peppolRejectErrorNotFound = Document not found for rejection
+peppolRejectErrorBadRequest = Invalid request for rejection
+peppolFileReadError = Unable to read UBL file
+
+peppolBtnFindPeppolID = PeppolFinder
+PeppolApplyPeppolID = Choose this identifier
+peppolFindPeppolIDPopupTitle = Search for the Peppol identifier of your correspondent
+peppolParticipantID = Peppol identifier
+peppolName = Name
+peppolCountryCode = Country
+peppolDocumentTypes = Accepted document types
+peppolAction = Action
+peppolIdSet = Peppol identifier configured
+PeppolErrorNeedPDF = The invoice PDF file does not seem to be present!
+
+#
+# Peppyrus API - Features
+#
+peppolReportSuccess = Delivery report retrieved
+peppolReportError = Error retrieving report
+peppolReportErrorNoMessageId = Missing message ID
+peppolReportNotFound = Report not found
+
+peppolBestMatchSuccess = Peppol ID found
+peppolBestMatchError = Search error
+peppolBestMatchErrorNoVat = Missing VAT number
+peppolBestMatchNotFound = No participant found for this VAT number
+
+peppolSearchSuccess = %s result(s) found in Peppol directory
+peppolSearchError = Error searching directory
+
+peppolOrgInfoSuccess = Organization Peppol info retrieved
+peppolOrgInfoError = Error retrieving info
+peppolOrgInfoNotFound = Peppol info not found
+
+peppolAutoDetectByVat = Auto-detect by VAT
+peppolDeliveryReport = Delivery report
+peppolSearchDirectory = Search Peppol directory
+peppolSearchByName = Search by name
+peppolSearchByCountry = Search by country
+peppolTestPeppolInfo = Test PEPPOL info
+DeliveryDate = Delivery date
+Delivered = Delivered
+
+# Connection test page
+peppolCurrentMode = Current mode
+peppolModeProduction = PRODUCTION
+peppolModeTest = TEST (sandbox)
+peppolApiUrl = API URL
+peppolTestModeWarning = Warning: In TEST mode, you must use a Peppyrus test API key. If you only have a production key, enable production mode in the configuration.

@@ -1,0 +1,172 @@
+#
+# Générique
+#
+
+# Module label 'ModulePeppolpeppyrusName'
+ModulePeppolpeppyrusName = Peppol - Peppyrus
+# Module description 'ModulePeppolpeppyrusDesc'
+ModulePeppolpeppyrusDesc = Envoi de factures électroniques via le réseau Peppol avec Peppyrus
+# Garder les anciennes clés pour la compatibilité
+ModulePeppolName = Peppol - Peppyrus
+ModulePeppolDesc = Envoi de factures électroniques via le réseau Peppol avec Peppyrus
+
+#
+# Page d'administration
+#
+PeppolSetup = Configuration Peppyrus
+Settings = Paramètres
+PeppolSetupPage = Configuration de votre connexion au réseau Peppol via Peppyrus
+ModulePeppolList = Peppol (Historique)
+NotConfigured = Non configuré
+
+#
+# Page À propos
+#
+About = À propos
+PeppolAbout = À propos de Peppol with Peppyrus
+PeppolAboutPage = Module de facturation électronique Peppol
+
+PeppolMassActionZip = Créer un ZIP avec tous les fichiers Peppol
+PeppolError = Erreur Peppol:
+BuyerDoesNotHaveVATDetails = Le numéro de TVA intra-communautaire est nécessaire pour établir un document conforme à la norme Peppol
+PeppolWarning = Note Peppol:
+BuyerDoesNotHaveVATDetailsForce = En l'absence de numéro de TVA pour ce client le fichier XML généré utilise le code de TVA spécial '00000000' mais n'est pas conforme à la norme Peppol.
+InvoiceDoesNotHaveBankAccountLinked = Votre facture n'a pas de compte bancaire liée, votre client n'aura donc pas les informations permettant de vous payer
+BankAccountLinkedWithoutIBAN = Le compte bancaire lié à cette facture n'a pas de code IBAN, veuillez modifier votre compte bancaire et re-générez ensuite la facture
+PeppolSpecificID = Identifiant Peppol spécifique
+PeppolSpecificIDTooltip = Sera prioritaire sur l'identifiant classique (numéro de TVA intraco). Il est de la forme XXXX:YYYYYYYYYYYYYY - Voir https://directory.peppol.eu/
+PeppolWarningAutoValidate = Erreur d'auto-validation du fichier XML Peppol: %s
+ErrorPeppolModuleVersionDatabase = Module Peppol: Attention la version de votre module n'est pas cohérente par rapport à la version de la base de données, pensez bien à désactiver et réactiver le module ...
+PeppolValidationError = Erreur de validation du fichier Peppol
+
+PeppolCheckError = Erreurs de conformité Peppol:
+PeppolCheckErrorVATnumber = Votre numéro de TVA est vide
+PeppolCheckErrorAddress = L'adresse de votre société est vide
+PeppolCheckErrorZIP = Le code postal de votre société est absent
+PeppolCheckErrorTown = La ville de votre société est vide
+PeppolCheckErrorCountry = Le pays de votre société est vide
+PeppolCheckErrorCustomerName = Votre client n'a pas de nom
+PeppolCheckErrorCustomerAddress = L'adresse de votre client est vide
+PeppolCheckErrorCustomerZIP = Le code postal de votre client est absent
+PeppolCheckErrorCustomerTown = Votre client n'a pas de ville associée
+PeppolCheckErrorCustomerCountry = Le pays de votre client n'est pas renseigné
+PeppolCheckErrorCustomerVAT = Votre client n'a pas de numéro de TVA
+PeppolCheckErrorCustomerPeppolID = L'identifiant Peppol personnalisé du tiers n'est pas correct
+PeppolCheckErrorCustomerPeppolIDpartA = La première partie de l'identifiant peppol est vide
+PeppolCheckErrorCustomerPeppolIDpartB = La seconde partie de l'identifiant peppol est vide
+PeppolCheckErrorSellerBucarestNoSector = Votre société est à Bucarest mais vous n'avez pas indiqué le Secteur (,SECTOR1 par exemple)
+PeppolCheckErrorBuyerBucarestNoSector = Votre société est à Bucarest mais vous n'avez pas indiqué le Secteur (,SECTOR1 par exemple)
+peppolcheckThirdpartySuccess = Vérification du Tiers correcte
+peppolcheckThirdpartyError = Erreur de vérification du tiers
+CheckPeppolID = Vérifier
+CheckPeppolIDonPublicDirectory = Vérifier (annuaire public)
+
+# Configuration générale
+PEPPOL_CONFIG = Configuration générale
+PEPPOL_FORCE_XML_WITH_VATNULL = Forcer la création d'un XML même si votre client n'a pas de numéro de TVA
+PEPPOL_FORCE_XML_WITH_VATNULLTooltip = Si activé, un fichier XML sera généré même pour les clients sans numéro de TVA intracommunautaire (particuliers). Le fichier ne sera pas conforme à la norme Peppol mais pourra être utilisé pour d'autres usages.
+PEPPOL_USE_TRIGGER = Activer Peppol sur l'API de Dolibarr
+PEPPOL_USE_TRIGGERTooltip = Activer la génération automatique du fichier XML Peppol lors de la création de factures via l'API Dolibarr.
+
+PEPPOL_AP_API_KEY = Clé API Peppyrus
+PEPPOL_AP_API_KEYTooltip = Votre clé pour vous connecter à l'API Peppyrus. Cette clé vous est fournie par Peppyrus.
+peppolBtnSend = Peppol : Envoyer
+peppolBtnSendTooltip = Cliquez sur ce bouton pour envoyer votre facture dans le réseau Peppol
+peppolNoPdfFilesAssociated = Il n'y a pas de fichier XML lié à cette facture
+peppolChooseFilePopup = Fichier à envoyer:
+ConfirmPeppol = Confirmez que vous voulez bien envoyer ce fichier sur le réseau Peppol. Des frais complémentaires peuvent s'appliquer en fonction de votre contrat Peppyrus...
+PEPPOL_AP_SENDER_ID = Identifiant Peppol de votre entreprise
+PEPPOL_AP_SENDER_IDTooltip = Cet ID est de la forme 0208:0000000097. Il doit vous être communiqué par Peppyrus.
+peppolDocumentSentSuccessTitle = Document envoyé
+peppolDocumentSentSuccess = Envoi du document sur le réseau Peppol, uuid = %s
+peppolDocumentSentError = Erreur d'envoi !
+peppolDocumentCheck = Etat du document dans le réseau Peppol :
+peppolBtnCheck = Peppol : Etat
+peppolBtnCheckTooltip = Vérifier l'état du document au sein du réseau Peppol
+peppolBtnCheckServer = Tester la connexion Peppyrus
+peppolAccessPointCheckInvoiceSuccess = Vérification du document
+peppolAccessPointCheckInvoiceSuccessConfirmed = Confirmée
+PEPPOL_PROD = Mode production
+peppolAPidFromExtrafieldErr = Ce document n'a pas d'identifiant peppol unique dans ses attributs étendus...
+peppolThirdpartyCheckSuccess = Vérification du tiers sur Peppol validée
+peppolThirdpartyCheckError = Erreur de vérification du tiers
+peppolAccessPointCheckSuccess = Connexion Peppyrus validée
+peppolAccessPointCheckError = Erreur de connexion Peppyrus
+peppolAccessPointCheckErrorTestMode = Échec de connexion : votre clé API de production n'est pas valide sur l'environnement de TEST. Passez en mode PRODUCTION dans la configuration.
+peppolAccessPointCheckErrorInvalidKey = Échec de connexion : clé API invalide ou expirée. Vérifiez votre clé dans la configuration.
+
+PeppolSpecificInvoiceID=ID Peppol du document
+PeppolSpecificInvoiceIDTooltip=Cette information est utilisée pour le suivi du document une fois envoyé dans le réseau peppol. Ce champ sera complété automatiquement par le module dolibarr après l'envoi du document dans le réseau peppol.
+BankAccountLinkedHasNoName = Le compte bancaire lié à la facture n'indique pas le nom de la banque
+BankAccountLinkedHasNoIBAN = Le compte bancaire lié à la facture n'a pas de code IBAN
+PeppolTab = Suivi Peppol
+PeppolTrackDocumentInAP = Suivi du document dans le réseau Peppol
+Peppolimports = Liste des documents disponibles sur Peppyrus
+ModulePeppolImportListing = Import Peppol
+PeppolDownloadPDF = Télécharger le PDF
+
+PeppolAPStatusError = Erreur
+PeppolAPStatusDraft = En projet
+PeppolAPStatusInProgress = En cours (niveau %s)
+PeppolAPStatusNearFull = Presque complet
+PeppolAPStatusFull = Complet
+peppolDocumentIsValidTrue = Vérification du document : pas d'erreurs
+peppolDocumentIsValidFalse = Erreurs lors de la vérification du document
+peppolConfirmSuccess = Confirmation de la réception
+peppolConfirmError = Erreur de confirmation
+peppolConfirmErrorNoPeppolID = Il n'y a pas d'identifiant Peppol
+peppolConfirmErrorNotFound = Introuvable
+peppolRejectSuccess = Facture rejetée avec succès
+peppolRejectError = Erreur lors du rejet de la facture
+peppolRejectErrorNoPeppolID = Impossible de rejeter : ID Peppol manquant
+peppolRejectErrorNoReason = Impossible de rejeter : raison manquante
+peppolRejectErrorNotFound = Document non trouvé pour rejet
+peppolRejectErrorBadRequest = Requête invalide lors du rejet
+peppolFileReadError = Impossible de lire le fichier UBL
+
+peppolBtnFindPeppolID = PeppolFinder
+PeppolApplyPeppolID = Choisir cet identifiant
+peppolFindPeppolIDPopupTitle = Recherche de l'identifiant Peppol de votre correspondant
+peppolParticipantID = Identifiant Peppol
+peppolName = Nom
+peppolCountryCode = Pays
+peppolDocumentTypes = Type de documents acceptés
+peppolAction = Action
+peppolIdSet = Identifiant Peppol configuré
+PeppolErrorNeedPDF = Le fichier PDF de la facture ne semble pas être présent !
+
+#
+# Peppyrus API - Fonctionnalités
+#
+peppolReportSuccess = Rapport de livraison récupéré
+peppolReportError = Erreur lors de la récupération du rapport
+peppolReportErrorNoMessageId = ID du message manquant
+peppolReportNotFound = Rapport non trouvé
+
+peppolBestMatchSuccess = Identifiant Peppol trouvé
+peppolBestMatchError = Erreur lors de la recherche
+peppolBestMatchErrorNoVat = Numéro de TVA manquant
+peppolBestMatchNotFound = Aucun participant trouvé pour ce numéro de TVA
+
+peppolSearchSuccess = %s résultat(s) trouvé(s) dans l'annuaire Peppol
+peppolSearchError = Erreur lors de la recherche dans l'annuaire
+
+peppolOrgInfoSuccess = Informations Peppol de l'organisation récupérées
+peppolOrgInfoError = Erreur lors de la récupération des informations
+peppolOrgInfoNotFound = Informations Peppol non trouvées
+
+peppolAutoDetectByVat = Détection auto par TVA
+peppolDeliveryReport = Rapport de livraison
+peppolSearchDirectory = Recherche dans l'annuaire Peppol
+peppolSearchByName = Rechercher par nom
+peppolSearchByCountry = Rechercher par pays
+peppolTestPeppolInfo = Tester info PEPPOL
+DeliveryDate = Date de livraison
+Delivered = Livré
+
+# Page de test connexion
+peppolCurrentMode = Mode actuel
+peppolModeProduction = PRODUCTION
+peppolModeTest = TEST (bac à sable)
+peppolApiUrl = URL de l'API
+peppolTestModeWarning = Attention : En mode TEST, vous devez utiliser une clé API de test Peppyrus. Si vous avez uniquement une clé de production, activez le mode production dans la configuration.
