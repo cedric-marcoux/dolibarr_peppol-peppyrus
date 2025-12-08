@@ -1,5 +1,5 @@
 <?php
-namespace custom\peppol;
+namespace custom\peppolpeppyrus;
 
 require_once DOL_DOCUMENT_ROOT.'/compta/facture/class/facture.class.php';
 require_once DOL_DOCUMENT_ROOT.'/societe/class/societe.class.php';

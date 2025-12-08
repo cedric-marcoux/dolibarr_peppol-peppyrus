@@ -38,6 +38,7 @@ PeppolSpecificIDTooltip = Hat Vorrang vor der klassischen ID (Intraco-USt-IdNr.)
 PeppolWarningAutoValidate = Fehler bei der automatischen Validierung der Peppol XML-Datei: %s
 ErrorPeppolModuleVersionDatabase = Peppol-Modul: Achtung, die Version Ihres Moduls stimmt nicht mit der Datenbankversion überein. Bitte deaktivieren und reaktivieren Sie das Modul...
 PeppolValidationError = Fehler bei der Validierung der Peppol-Datei
+PeppolErrorPrivateCustomer = The customer is of type "Private individual". To generate a Peppol XML file, please change the third party type to "Company" or another professional type.
 
 PeppolCheckError = Peppol-Konformitätsfehler:
 PeppolCheckErrorVATnumber = Ihre USt-IdNr. ist leer
@@ -92,6 +93,8 @@ PEPPOL_PROD = Produktionsmodus
 peppolAPidFromExtrafieldErr = Dieses Dokument hat keine eindeutige Peppol-ID in seinen erweiterten Attributen...
 peppolThirdpartyCheckSuccess = Drittanbieter-Peppol-Verifizierung validiert
 peppolThirdpartyCheckError = Fehler bei der Drittanbieterverifizierung
+peppolThirdpartyNotFound = Recipient not found in Peppol directory
+peppolThirdpartyNotFoundTestMode = Recipient not found in Peppol directory (normal in TEST mode - sending continues)
 peppolAccessPointCheckSuccess = Peppyrus-Verbindung validiert
 peppolAccessPointCheckError = Peppyrus-Verbindungsfehler
 peppolAccessPointCheckErrorTestMode = Verbindung fehlgeschlagen: Ihr Produktions-API-Schlüssel ist in der TEST-Umgebung nicht gültig. Wechseln Sie in der Konfiguration zum PRODUKTIONS-Modus.

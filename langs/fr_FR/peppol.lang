@@ -39,6 +39,7 @@ PeppolWarningAutoValidate = Erreur d'auto-validation du fichier XML Peppol: %s
 ErrorPeppolModuleVersionDatabase = Module Peppol: Attention la version de votre module n'est pas cohérente par rapport à la version de la base de données, pensez bien à désactiver et réactiver le module ...
 PeppolValidationError = Erreur de validation du fichier Peppol
 
+PeppolErrorPrivateCustomer = Le client est de type "Particulier". Pour générer un fichier XML Peppol, veuillez modifier le type du tiers en "Entreprise" ou autre type professionnel dans sa fiche.
 PeppolCheckError = Erreurs de conformité Peppol:
 PeppolCheckErrorVATnumber = Votre numéro de TVA est vide
 PeppolCheckErrorAddress = L'adresse de votre société est vide
@@ -92,6 +93,8 @@ PEPPOL_PROD = Mode production
 peppolAPidFromExtrafieldErr = Ce document n'a pas d'identifiant peppol unique dans ses attributs étendus...
 peppolThirdpartyCheckSuccess = Vérification du tiers sur Peppol validée
 peppolThirdpartyCheckError = Erreur de vérification du tiers
+peppolThirdpartyNotFound = Le destinataire n'a pas été trouvé dans l'annuaire Peppol
+peppolThirdpartyNotFoundTestMode = Le destinataire n'a pas été trouvé dans l'annuaire Peppol (normal en mode TEST - l'envoi continue)
 peppolAccessPointCheckSuccess = Connexion Peppyrus validée
 peppolAccessPointCheckError = Erreur de connexion Peppyrus
 peppolAccessPointCheckErrorTestMode = Échec de connexion : votre clé API de production n'est pas valide sur l'environnement de TEST. Passez en mode PRODUCTION dans la configuration.

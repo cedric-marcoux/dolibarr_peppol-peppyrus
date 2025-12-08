@@ -14,7 +14,7 @@ if (count($matches) == 0) {
 	require_once __DIR__ . '/../vendor/scoper-autoload.php';
 }
 
-use custom\peppol\Peppol;
+use custom\peppolpeppyrus\Peppol;
 
 /**
  * Class ActionsPeppolpeppyrus
@@ -232,7 +232,7 @@ class ActionsPeppolpeppyrus
 			$inv = new Peppol($db, $objFacture);
 			try {
 				$ret = $inv->makePDF($orig_pdf);
-			} catch (Exception $e) {
+			} catch (\Exception $e) {
 				dol_syslog("Peppolpeppyrus exception occurs on makePDF : " . $e->getMessage(), LOG_ERR);
 			}
 		} else {

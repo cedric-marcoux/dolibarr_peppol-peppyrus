@@ -74,7 +74,7 @@ require_once DOL_DOCUMENT_ROOT . '/projet/class/project.class.php';
 dol_include_once('/peppolpeppyrus/class/peppol.class.php');
 dol_include_once('/peppolpeppyrus/lib/peppol.lib.php');
 
-use custom\peppol\Peppol;
+use custom\peppolpeppyrus\Peppol;
 
 
 // Load translation files required by the page

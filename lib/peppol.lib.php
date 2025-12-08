@@ -145,9 +145,12 @@ function peppolGetRetainedWarrantyAmount($invoice, $rounding)
  */
 function peppolListOfFilesLinkedTo(CommonObject $obj)
 {
+	global $conf;
 	require_once DOL_DOCUMENT_ROOT . '/ecm/class/ecmfiles.class.php';
+
 	$ecmfile = new EcmFiles($obj->db);
 	$result = $ecmfile->fetchAll('', '', 0, 0, array('t.src_object_type' => $obj->element, 't.src_object_id' => $obj->id));
+
 	$filearray = array();
 	if (is_array($ecmfile->lines) && count($ecmfile->lines) > 0) {
 		foreach ($ecmfile->lines as $key => $fileEntry) {
@@ -158,6 +161,17 @@ function peppolListOfFilesLinkedTo(CommonObject $obj)
 			}
 		}
 	}
+
+	// Fallback: search directly on disk if not found via ECM
+	if (count($filearray) == 0 && $obj->element == 'facture') {
+		$dir = $conf->facture->dir_output . '/' . $obj->ref;
+		$xmlfile = $obj->ref . '_peppol.xml';
+		$fullpath = $dir . '/' . $xmlfile;
+		if (file_exists($fullpath)) {
+			$filearray[$xmlfile] = $xmlfile;
+		}
+	}
+
 	dol_syslog("peppolListOfFilesLinkedTo list is = " . json_encode($filearray));
 	return $filearray;
 }
@@ -173,6 +187,7 @@ function peppolFindFileToUse(CommonObject $obj, $defaultPath)
 {
 	global $conf;
 	$filename = "";
+
 	if (GETPOSTISSET('selectFilename')) {
 		$filename = dol_sanitizeFileName(GETPOST('selectFilename', "aZ09"));
 	} else {
@@ -211,7 +226,7 @@ function peppolGetAPObject()
 
 	dol_syslog("peppolGetAPObject ap=$ap");
 	if (dol_include_once('/peppolpeppyrus/class/' . $ap)) {
-		$classname = "\\custom\\peppol\\Peppyrus";
+		$classname = "\\custom\\peppolpeppyrus\\Peppyrus";
 		dol_syslog("peppolGetAPObject classname=$classname");
 		$obj = new $classname($db);
 	}

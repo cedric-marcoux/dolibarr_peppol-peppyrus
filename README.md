@@ -121,3 +121,102 @@ GPLv3 or later.
 
 For issues and feature requests, please use the GitHub issue tracker:
 [https://github.com/cedric-marcoux/dolibarr_peppol-peppyrus/issues](https://github.com/cedric-marcoux/dolibarr_peppol-peppyrus/issues)
+
+---
+
+# Development / Testing Environment
+
+## Test Environment (DEV)
+
+Peppyrus provides a separate test environment for development and testing purposes.
+
+### Test API
+
+- **Test API URL**: `https://api.test.peppyrus.be/v1/`
+- **Test Portal**: `https://customer.test.peppyrus.be/`
+
+### Getting a Test API Key
+
+1. Contact Peppyrus to request a test/development API key
+2. The test API key is different from the production key
+3. Configure both keys in the module settings:
+   - **PEPPOL_AP_API_KEY**: Production API key
+   - **PEPPOL_AP_API_KEY_DEV**: Test/Development API key
+
+### Configuration for Testing
+
+In the module settings (`Configuration > Modules > Peppol-Peppyrus > Setup`):
+
+1. Set **Mode production** to `No` (unchecked)
+2. Enter your **Test API Key** in the DEV field
+3. Enter your **Peppol Sender ID** (your company's Peppol ID)
+
+### Important: Test Environment Limitations
+
+**The test environment is isolated from the production PEPPOL network.**
+
+This means:
+
+1. **Recipients must also be registered in the test environment**
+   - You cannot send test invoices to real PEPPOL participants
+   - Only participants registered with Peppyrus TEST can receive test invoices
+   - For testing, send invoices **to yourself** (use your own Peppol ID as recipient)
+
+2. **Directory lookups may not find real participants**
+   - The test directory only contains test participants
+   - A "participant not found" warning is normal in test mode
+
+3. **Messages sent in test mode**
+   - Are visible in your test inbox at `https://customer.test.peppyrus.be/`
+   - Do NOT reach real recipients on the production PEPPOL network
+   - Invoices sent to non-test participants will appear in the "failed" folder
+
+### Testing Workflow
+
+1. **Self-testing**: Send an invoice to your own Peppol ID
+   - The invoice will appear in your OUTBOX (sent) and INBOX (received)
+   - This validates the complete send/receive flow
+
+2. **Check delivery status**: Use the "Peppol: Status" button on the invoice
+   - `confirmed: true` = Successfully delivered
+   - `folder: failed` = Delivery failed (recipient not in test network)
+
+3. **View messages**: Check your test portal inbox
+   - `https://customer.test.peppyrus.be/customer/[your-account]/message/inbox`
+
+### Switching to Production
+
+When ready to go live:
+
+1. Set **Mode production** to `Yes` (checked)
+2. Ensure your **Production API Key** is configured
+3. Verify your company is registered in the production PEPPOL network
+4. Test with a real invoice to a known PEPPOL participant
+
+### Troubleshooting Test Mode
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| "Recipient not found" warning | Normal in test mode | Ignore warning, invoice still sent |
+| Invoice in "failed" folder | Recipient not in test network | Send to yourself for testing |
+| "API key invalid" error | Using wrong key for environment | Check DEV key configuration |
+| No XML generated | Customer type is "Private" | Change customer type to "Company" |
+
+---
+
+# Changelog
+
+## Version 2.1.1
+- Fix: API keys containing numbers were being truncated when saved
+- Fix: XML file not found when sending (added disk fallback)
+- Fix: Namespace corrections for module rename
+- Improvement: Better error messages for private customers
+- Improvement: Warning instead of error for "recipient not found" in test mode
+
+## Version 2.1.0
+- Add: Support for DEV/TEST API key
+- Add: Separate configuration for test and production environments
+
+## Version 2.0.0
+- Initial release for Peppyrus access point
+- Renamed from original peppol module to peppolpeppyrus

@@ -6,7 +6,7 @@
  * \brief       This file is a CRUD class file for Peppolimport (Create/Read/Update/Delete)
  */
 
-namespace custom\peppol;
+namespace custom\peppolpeppyrus;
 
 // Put here all includes required by your class file
 require_once DOL_DOCUMENT_ROOT . '/core/class/commonobject.class.php';

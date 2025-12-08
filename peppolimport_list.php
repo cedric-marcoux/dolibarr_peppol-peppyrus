@@ -136,7 +136,7 @@ $pageprev = $page - 1;
 $pagenext = $page + 1;
 
 // Initialize technical objects
-$object = new custom\peppol\Peppolimport($db);
+$object = new custom\peppolpeppyrus\Peppolimport($db);
 $diroutputmassaction = $conf->peppolpeppyrus->dir_output.'/temp/massgeneration/'.$user->id;
 $hookmanager->initHooks(array('peppolimportlist')); // Note that conf->hooks_modules contains array
 
@@ -273,7 +273,7 @@ if (empty($reshook)) {
 	}
 
 	// Mass actions
-	$objectclass = 'custom\peppol\Peppolimport';
+	$objectclass = 'custom\peppolpeppyrus\Peppolimport';
 	$objectlabel = 'Peppolimport';
 	$uploaddir = $conf->peppolpeppyrus->dir_output;
 	include DOL_DOCUMENT_ROOT.'/core/actions_massactions.inc.php';
@@ -297,7 +297,7 @@ if (empty($reshook)) {
 				$listeFichiers .= "'" . $object->id . "'";
 			} else {
 				$importHtml .= createTableRow($i, $langs->trans('ERROR_FILE_DOES_NOT_EXISTS', $object->filename), '', '', '');
-				$object->status = custom\peppol\Peppolimport::STATUS_ERROR;
+				$object->status = custom\peppolpeppyrus\Peppolimport::STATUS_ERROR;
 				$object->update($user);
 			}
 			$i++;
@@ -621,7 +621,7 @@ print_barre_liste($title, $page, $_SERVER["PHP_SELF"], $param, $sortfield, $sort
 // Add code for pre mass action (confirmation or email presend form)
 $topicmail = "SendPeppolimportRef";
 $modelmail = "peppolimport";
-$objecttmp = new custom\peppol\Peppolimport($db);
+$objecttmp = new custom\peppolpeppyrus\Peppolimport($db);
 $trackid = 'xxxx'.$object->id;
 include DOL_DOCUMENT_ROOT.'/core/tpl/massactions_pre.tpl.php';
 

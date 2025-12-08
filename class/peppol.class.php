@@ -8,7 +8,7 @@
  * All peppol job
  */
 
-namespace custom\peppol;
+namespace custom\peppolpeppyrus;
 
 dol_include_once('/peppolpeppyrus/lib/peppol.lib.php');
 dol_include_once('/peppolpeppyrus/lib/backports.lib.php');
@@ -147,6 +147,9 @@ class Peppol
 				dol_syslog("peppol:: makePDF for a private people but PEPPOL_FORCE_XML_WITH_VATNULL is set, continue");
 			} else {
 				dol_syslog("peppol:: makePDF for a private people -> no xml output", LOG_INFO);
+				$this->error = $langs->trans("PeppolErrorPrivateCustomer");
+				$this->errors[] = $langs->trans("PeppolErrorPrivateCustomer");
+				setEventMessages($langs->trans("PeppolErrorPrivateCustomer"), null, 'warnings');
 				return -3;
 			}
 		} else {

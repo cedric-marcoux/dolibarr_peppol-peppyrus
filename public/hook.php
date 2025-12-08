@@ -1,6 +1,6 @@
 <?php
 
-namespace custom\peppol;
+namespace custom\peppolpeppyrus;
 
 /**
  *     	\file       htdocs/custom/peppolpeppyrus/public/hook.php

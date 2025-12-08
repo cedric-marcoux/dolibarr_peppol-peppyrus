@@ -311,7 +311,7 @@ class InterfacePeppolTriggers extends DolibarrTriggers
 					$res = $inv->fetch($object->src_object_id);
 					if ($res) {
 						dol_syslog("Trigger peppol get details = ".json_encode($inv));
-						$peppol = new \custom\peppol\Peppol($this->db, $inv);
+						$peppol = new \custom\peppolpeppyrus\Peppol($this->db, $inv);
 						$dir = $conf->facture->dir_output.'/'.get_exdir($inv->id, 2, 0, 0, $inv, 'invoice');
 						$filename = $dir."/".$object->filename;
 						$peppol->makePDF($filename);

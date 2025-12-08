@@ -8,7 +8,36 @@ CLAUDE.md
 .vscode/
 *.swp
 *.swo
+*~
 
 # OS
 .DS_Store
 Thumbs.db
+
+# PHP/Composer cache
+vendor/cache/
+*.cache
+*.log
+
+# Credentials and sensitive data
+.env
+.env.*
+credentials.json
+*.key
+*.pem
+config.local.php
+
+# Test files
+test_*.php
+*_test.php
+tests/tmp/
+/tmp/
+
+# Build artifacts
+*.zip
+*.tar.gz
+*.bak
+
+# Debug files
+peppol_debug.log
+debug.log

@@ -1,6 +1,6 @@
 <?php
 
-namespace custom\peppol;
+namespace custom\peppolpeppyrus;
 
 /**
  * This class help you create setup render

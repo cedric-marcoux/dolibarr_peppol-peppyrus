@@ -7,7 +7,7 @@
  *
  */
 
-namespace custom\peppol;
+namespace custom\peppolpeppyrus;
 
 require_once 'peppolap.class.php';
 
@@ -242,8 +242,15 @@ class Peppyrus extends PeppolAP
 			return -2;
 		}
 
-		// Verify thirdparty exists in PEPPOL network
-		$this->checkThirdparty($object->thirdparty);
+		// Verify thirdparty exists in PEPPOL network (non-blocking check, just a warning)
+		$checkResult = $this->checkThirdparty($object->thirdparty);
+		if ($checkResult < 0) {
+			// In TEST mode, participant may not be in directory - continue anyway
+			if (!getDolGlobalString('PEPPOL_PROD')) {
+				dol_syslog("Peppyrus::sendToAccessPoint checkThirdparty failed but we are in TEST mode, continuing...", LOG_WARNING);
+			}
+			// Don't block the send - the check is informational only
+		}
 
 		// Read the XML file content and encode it in base64
 		$xmlContent = file_get_contents($filename);
@@ -385,7 +392,12 @@ class Peppyrus extends PeppolAP
 				$ret = -2;
 			}
 		} elseif (is_array($result) && $result['http_code'] == 404) {
-			setEventMessage($langs->trans('peppolThirdpartyNotFound'), 'errors');
+			// In TEST mode, show as warning instead of error
+			if (!getDolGlobalString('PEPPOL_PROD')) {
+				setEventMessage($langs->trans('peppolThirdpartyNotFoundTestMode'), 'warnings');
+			} else {
+				setEventMessage($langs->trans('peppolThirdpartyNotFound'), 'errors');
+			}
 			dol_syslog("Peppyrus::checkThirdparty participant not found in SMP", LOG_WARNING);
 			$ret = -3;
 		} else {

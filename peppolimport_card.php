@@ -84,7 +84,7 @@ $backtopageforcancel = GETPOST('backtopageforcancel', 'alpha');
 //$lineid   = GETPOST('lineid', 'int');
 
 // Initialize technical objects
-$object = new custom\peppol\Peppolimport($db);
+$object = new custom\peppolpeppyrus\Peppolimport($db);
 $object->fetch($id);
 $extrafields = new ExtraFields($db);
 $diroutputmassaction = $conf->peppolpeppyrus->dir_output . '/temp/massgeneration/' . $user->id;

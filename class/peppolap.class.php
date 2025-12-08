@@ -7,7 +7,7 @@
  *
  */
 
-namespace custom\peppol;
+namespace custom\peppolpeppyrus;
 
 /**
  * Class PeppolAP
