@@ -55,13 +55,15 @@ if ($action == 'update' && !empty($user->admin)) {
 	}
 
 	// Update PEPPOL_AP_API_KEY (Production)
-	$api_key = GETPOST('PEPPOL_AP_API_KEY', 'alpha');
+	// Use 'alphanohtml' to allow alphanumeric characters (API keys contain numbers)
+	$api_key = GETPOST('PEPPOL_AP_API_KEY', 'alphanohtml');
 	if (!dolibarr_set_const($db, 'PEPPOL_AP_API_KEY', $api_key, 'chaine', 0, '', $conf->entity)) {
 		$error++;
 	}
 
 	// Update PEPPOL_AP_API_KEY_DEV (Test/Development)
-	$api_key_dev = GETPOST('PEPPOL_AP_API_KEY_DEV', 'alpha');
+	// Use 'alphanohtml' to allow alphanumeric characters (API keys contain numbers)
+	$api_key_dev = GETPOST('PEPPOL_AP_API_KEY_DEV', 'alphanohtml');
 	if (!dolibarr_set_const($db, 'PEPPOL_AP_API_KEY_DEV', $api_key_dev, 'chaine', 0, '', $conf->entity)) {
 		$error++;
 	}
