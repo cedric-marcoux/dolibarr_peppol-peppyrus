@@ -59,3 +59,7 @@ PeppolCheckErrorBuyerBucarestNoSector=La vostra azienda è a Bucarest ma non ave
 CheckPeppolID=Controllo
 PEPPOL_USE_TRIGGER=Attivare Peppol sull'API dolibarr
 PEPPOL_USE_TRIGGERTooltip=Abilitazione della generazione del file XML Peppol durante la creazione di fatture tramite l'API dolibarr
+PEPPOL_AP_API_KEY=Chiave API Peppyrus (Produzione)
+PEPPOL_AP_API_KEYTooltip=La tua chiave per connetterti all'API Peppyrus in modalità PRODUZIONE. Questa chiave ti viene fornita da Peppyrus.
+PEPPOL_AP_API_KEY_DEV=Chiave API Peppyrus (Test/DEV)
+PEPPOL_AP_API_KEY_DEVTooltip=La tua chiave per connetterti all'API Peppyrus in modalità TEST. Usa questa chiave per test nell'ambiente di sviluppo.

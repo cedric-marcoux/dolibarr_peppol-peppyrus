@@ -54,9 +54,15 @@ if ($action == 'update' && !empty($user->admin)) {
 		$error++;
 	}
 
-	// Update PEPPOL_AP_API_KEY
+	// Update PEPPOL_AP_API_KEY (Production)
 	$api_key = GETPOST('PEPPOL_AP_API_KEY', 'alpha');
 	if (!dolibarr_set_const($db, 'PEPPOL_AP_API_KEY', $api_key, 'chaine', 0, '', $conf->entity)) {
+		$error++;
+	}
+
+	// Update PEPPOL_AP_API_KEY_DEV (Test/Development)
+	$api_key_dev = GETPOST('PEPPOL_AP_API_KEY_DEV', 'alpha');
+	if (!dolibarr_set_const($db, 'PEPPOL_AP_API_KEY_DEV', $api_key_dev, 'chaine', 0, '', $conf->entity)) {
 		$error++;
 	}
 
@@ -152,11 +158,18 @@ if ($action == 'edit') {
 	print '<td><input type="text" name="PEPPOL_AP_SENDER_ID" id="PEPPOL_AP_SENDER_ID" class="flat minwidth400" value="' . getDolGlobalString('PEPPOL_AP_SENDER_ID', '') . '" placeholder="0208:0000000097"></td>';
 	print '</tr>';
 
-	// PEPPOL_AP_API_KEY
+	// PEPPOL_AP_API_KEY (Production)
 	print '<tr class="oddeven">';
 	print '<td><label for="PEPPOL_AP_API_KEY">' . $langs->trans("PEPPOL_AP_API_KEY") . '</label>';
 	print '<br><span class="opacitymedium small">' . $langs->trans("PEPPOL_AP_API_KEYTooltip") . '</span></td>';
 	print '<td><input type="text" name="PEPPOL_AP_API_KEY" id="PEPPOL_AP_API_KEY" class="flat minwidth400" value="' . getDolGlobalString('PEPPOL_AP_API_KEY', '') . '"></td>';
+	print '</tr>';
+
+	// PEPPOL_AP_API_KEY_DEV (Test/Development)
+	print '<tr class="oddeven">';
+	print '<td><label for="PEPPOL_AP_API_KEY_DEV">' . $langs->trans("PEPPOL_AP_API_KEY_DEV") . '</label>';
+	print '<br><span class="opacitymedium small">' . $langs->trans("PEPPOL_AP_API_KEY_DEVTooltip") . '</span></td>';
+	print '<td><input type="text" name="PEPPOL_AP_API_KEY_DEV" id="PEPPOL_AP_API_KEY_DEV" class="flat minwidth400" value="' . getDolGlobalString('PEPPOL_AP_API_KEY_DEV', '') . '"></td>';
 	print '</tr>';
 
 	// PEPPOL_PROD
@@ -237,7 +250,7 @@ if ($action == 'edit') {
 	print '<td>' . ($sender_id ? $sender_id : '<span class="opacitymedium">' . $langs->trans("NotConfigured") . '</span>') . '</td>';
 	print '</tr>';
 
-	// PEPPOL_AP_API_KEY
+	// PEPPOL_AP_API_KEY (Production)
 	print '<tr class="oddeven">';
 	print '<td>' . $langs->trans("PEPPOL_AP_API_KEY") . '</td>';
 	$api_key = getDolGlobalString('PEPPOL_AP_API_KEY', '');
@@ -245,6 +258,19 @@ if ($action == 'edit') {
 		// Mask API key for security
 		$masked = substr($api_key, 0, 4) . str_repeat('*', max(0, strlen($api_key) - 8)) . substr($api_key, -4);
 		print '<td>' . $masked . '</td>';
+	} else {
+		print '<td><span class="opacitymedium">' . $langs->trans("NotConfigured") . '</span></td>';
+	}
+	print '</tr>';
+
+	// PEPPOL_AP_API_KEY_DEV (Test/Development)
+	print '<tr class="oddeven">';
+	print '<td>' . $langs->trans("PEPPOL_AP_API_KEY_DEV") . '</td>';
+	$api_key_dev = getDolGlobalString('PEPPOL_AP_API_KEY_DEV', '');
+	if ($api_key_dev) {
+		// Mask API key for security
+		$masked_dev = substr($api_key_dev, 0, 4) . str_repeat('*', max(0, strlen($api_key_dev) - 8)) . substr($api_key_dev, -4);
+		print '<td>' . $masked_dev . '</td>';
 	} else {
 		print '<td><span class="opacitymedium">' . $langs->trans("NotConfigured") . '</span></td>';
 	}

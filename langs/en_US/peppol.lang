@@ -66,8 +66,10 @@ PEPPOL_FORCE_XML_WITH_VATNULLTooltip = If enabled, an XML file will be generated
 PEPPOL_USE_TRIGGER = Enable Peppol on Dolibarr API
 PEPPOL_USE_TRIGGERTooltip = Enable automatic generation of Peppol XML file when creating invoices via Dolibarr API.
 
-PEPPOL_AP_API_KEY = Peppyrus API Key
-PEPPOL_AP_API_KEYTooltip = Your key to connect to the Peppyrus API. This key is provided by Peppyrus.
+PEPPOL_AP_API_KEY = Peppyrus API Key (Production)
+PEPPOL_AP_API_KEYTooltip = Your key to connect to the Peppyrus API in PRODUCTION mode. This key is provided by Peppyrus.
+PEPPOL_AP_API_KEY_DEV = Peppyrus API Key (Test/DEV)
+PEPPOL_AP_API_KEY_DEVTooltip = Your key to connect to the Peppyrus API in TEST mode. Use this key to test on the development environment.
 peppolBtnSend = Peppol : Send
 peppolBtnSendTooltip = Click this button to send your invoice to the Peppol network
 peppolNoPdfFilesAssociated = There are no XML files associated with this invoice.

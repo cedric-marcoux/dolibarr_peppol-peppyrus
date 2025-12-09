@@ -23,17 +23,37 @@ class Peppyrus extends PeppolAP
 	public $setupNeeds = ['PEPPOL_AP_SENDER_ID', 'PEPPOL_AP_API_KEY', 'PEPPOL_PROD'];
 
 	/**
+	 * Get the appropriate API key based on current mode (PROD or DEV)
+	 *
+	 * @return  string  API key for current environment
+	 */
+	protected function getApiKey()
+	{
+		$isProd = getDolGlobalString('PEPPOL_PROD', '0') == '1';
+
+		if ($isProd) {
+			return getDolGlobalString('PEPPOL_AP_API_KEY', '');
+		} else {
+			// Use DEV key if available, fallback to PROD key for backward compatibility
+			$devKey = getDolGlobalString('PEPPOL_AP_API_KEY_DEV', '');
+			return !empty($devKey) ? $devKey : getDolGlobalString('PEPPOL_AP_API_KEY', '');
+		}
+	}
+
+	/**
 	 * Validate API configuration
 	 *
 	 * @return  int <= 0 if configuration invalid, > 0 if valid
 	 */
 	protected function validateConfiguration()
 	{
-		$apiKey = getDolGlobalString('PEPPOL_AP_API_KEY');
+		$apiKey = $this->getApiKey();
+		$isProd = getDolGlobalString('PEPPOL_PROD', '0') == '1';
 
 		if (empty($apiKey)) {
-			dol_syslog("Peppyrus::validateConfiguration Missing API key", LOG_ERR);
-			$this->errors[] = "Missing API key configuration (PEPPOL_AP_API_KEY)";
+			$keyName = $isProd ? 'PEPPOL_AP_API_KEY' : 'PEPPOL_AP_API_KEY_DEV';
+			dol_syslog("Peppyrus::validateConfiguration Missing API key for " . ($isProd ? 'PROD' : 'DEV') . " mode", LOG_ERR);
+			$this->errors[] = "Missing API key configuration (" . $keyName . ")";
 			return -1;
 		}
 
@@ -107,7 +127,7 @@ class Peppyrus extends PeppolAP
 			return -10;
 		}
 
-		$apiKey = getDolGlobalString('PEPPOL_AP_API_KEY');
+		$apiKey = $this->getApiKey();
 
 		if (is_object($object)) {
 			$object->fetch_optionals();
@@ -196,7 +216,7 @@ class Peppyrus extends PeppolAP
 			return -10;
 		}
 
-		$apiKey = getDolGlobalString('PEPPOL_AP_API_KEY');
+		$apiKey = $this->getApiKey();
 		$mySenderPeppolId = getDolGlobalString('PEPPOL_AP_SENDER_ID');
 
 		if (empty($object->thirdparty)) {
@@ -323,7 +343,7 @@ class Peppyrus extends PeppolAP
 			return -10;
 		}
 
-		$apiKey = getDolGlobalString('PEPPOL_AP_API_KEY');
+		$apiKey = $this->getApiKey();
 
 		if (!isset($thirdparty->array_options) || empty($thirdparty->array_options)) {
 			$thirdparty->fetch_optionals();
@@ -398,7 +418,7 @@ class Peppyrus extends PeppolAP
 			return -10;
 		}
 
-		$apiKey = getDolGlobalString('PEPPOL_AP_API_KEY');
+		$apiKey = $this->getApiKey();
 
 		// Get messages from INBOX folder, filter for unconfirmed messages
 		$url = $this->getApiUrl() . "message/list?folder=INBOX&confirmed=false&perPage=100";
@@ -495,7 +515,7 @@ class Peppyrus extends PeppolAP
 			return -10;
 		}
 
-		$apiKey = getDolGlobalString('PEPPOL_AP_API_KEY');
+		$apiKey = $this->getApiKey();
 
 		if (empty($pi->peppolid)) {
 			setEventMessage($langs->trans('peppolGetInvoiceErrorNoPeppolID'), 'errors');
@@ -603,7 +623,7 @@ class Peppyrus extends PeppolAP
 			return -10;
 		}
 
-		$apiKey = getDolGlobalString('PEPPOL_AP_API_KEY');
+		$apiKey = $this->getApiKey();
 
 		if (empty($pi->peppolid)) {
 			setEventMessage($langs->trans('peppolConfirmErrorNoPeppolID'), 'errors');
@@ -698,7 +718,7 @@ class Peppyrus extends PeppolAP
 			return -10;
 		}
 
-		$apiKey = getDolGlobalString('PEPPOL_AP_API_KEY');
+		$apiKey = $this->getApiKey();
 
 		if (empty($messageId)) {
 			setEventMessage($langs->trans('peppolReportErrorNoMessageId'), 'errors');
@@ -744,7 +764,7 @@ class Peppyrus extends PeppolAP
 			return -10;
 		}
 
-		$apiKey = getDolGlobalString('PEPPOL_AP_API_KEY');
+		$apiKey = $this->getApiKey();
 
 		if (empty($vatNumber)) {
 			setEventMessage($langs->trans('peppolBestMatchErrorNoVat'), 'errors');
@@ -798,7 +818,7 @@ class Peppyrus extends PeppolAP
 			return -10;
 		}
 
-		$apiKey = getDolGlobalString('PEPPOL_AP_API_KEY');
+		$apiKey = $this->getApiKey();
 
 		$queryParams = [];
 		$allowedParams = ['query', 'participantId', 'name', 'country', 'geoInfo', 'contact', 'identifierScheme', 'identifierValue'];
@@ -847,7 +867,7 @@ class Peppyrus extends PeppolAP
 			return -10;
 		}
 
-		$apiKey = getDolGlobalString('PEPPOL_AP_API_KEY');
+		$apiKey = $this->getApiKey();
 
 		$url = $this->getApiUrl() . "organization/peppol";
 

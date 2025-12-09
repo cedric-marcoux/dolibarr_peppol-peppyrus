@@ -66,8 +66,10 @@ PEPPOL_FORCE_XML_WITH_VATNULLTooltip = Indien ingeschakeld, wordt een XML-bestan
 PEPPOL_USE_TRIGGER = Activeer Peppol op Dolibarr API
 PEPPOL_USE_TRIGGERTooltip = Schakel automatische generatie van Peppol XML-bestand in bij het aanmaken van facturen via de Dolibarr API.
 
-PEPPOL_AP_API_KEY = Peppyrus API-sleutel
-PEPPOL_AP_API_KEYTooltip = Je sleutel om verbinding te maken met de Peppyrus API. Deze sleutel wordt verstrekt door Peppyrus.
+PEPPOL_AP_API_KEY = Peppyrus API-sleutel (Productie)
+PEPPOL_AP_API_KEYTooltip = Je sleutel om verbinding te maken met de Peppyrus API in PRODUCTIE-modus. Deze sleutel wordt verstrekt door Peppyrus.
+PEPPOL_AP_API_KEY_DEV = Peppyrus API-sleutel (Test/DEV)
+PEPPOL_AP_API_KEY_DEVTooltip = Je sleutel om verbinding te maken met de Peppyrus API in TEST-modus. Gebruik deze sleutel voor tests in de ontwikkelomgeving.
 peppolBtnSend = Peppol: Verzenden
 peppolBtnSendTooltip = Klik op deze knop om je factuur te verzenden via het Peppol-netwerk
 peppolNoPdfFilesAssociated = Er zijn geen XML-bestanden gekoppeld aan deze factuur.

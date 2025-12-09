@@ -68,8 +68,10 @@ PEPPOL_FORCE_XML_WITH_VATNULLTooltip = Wenn aktiviert, wird eine XML-Datei auch 
 PEPPOL_USE_TRIGGER = Peppol auf der Dolibarr-API aktivieren
 PEPPOL_USE_TRIGGERTooltip = Aktiviert die automatische Generierung der Peppol XML-Datei beim Erstellen von Rechnungen über die Dolibarr-API.
 
-PEPPOL_AP_API_KEY = Peppyrus API-Schlüssel
-PEPPOL_AP_API_KEYTooltip = Ihr Schlüssel zur Verbindung mit der Peppyrus-API. Dieser Schlüssel wird von Peppyrus bereitgestellt.
+PEPPOL_AP_API_KEY = Peppyrus API-Schlüssel (Produktion)
+PEPPOL_AP_API_KEYTooltip = Ihr Schlüssel zur Verbindung mit der Peppyrus-API im PRODUKTIONS-Modus. Dieser Schlüssel wird von Peppyrus bereitgestellt.
+PEPPOL_AP_API_KEY_DEV = Peppyrus API-Schlüssel (Test/DEV)
+PEPPOL_AP_API_KEY_DEVTooltip = Ihr Schlüssel zur Verbindung mit der Peppyrus-API im TEST-Modus. Verwenden Sie diesen Schlüssel für Tests in der Entwicklungsumgebung.
 peppolBtnSend = Peppol: Senden
 peppolBtnSendTooltip = Klicken Sie auf diese Schaltfläche, um Ihre Rechnung an das Peppol-Netzwerk zu senden
 peppolNoPdfFilesAssociated = Es ist keine XML-Datei mit dieser Rechnung verknüpft

@@ -59,3 +59,7 @@ PeppolCheckErrorBuyerBucarestNoSector=Firma dumneavoastră este în București, 
 CheckPeppolID=Verificați
 PEPPOL_USE_TRIGGER=Activați Peppol pe API dolibarr
 PEPPOL_USE_TRIGGERTooltip=Activarea generării fișierului Peppol XML la crearea de facturi prin intermediul API dolibarr
+PEPPOL_AP_API_KEY=Cheie API Peppyrus (Producție)
+PEPPOL_AP_API_KEYTooltip=Cheia dumneavoastră pentru conectare la API-ul Peppyrus în modul PRODUCȚIE. Această cheie vă este furnizată de Peppyrus.
+PEPPOL_AP_API_KEY_DEV=Cheie API Peppyrus (Test/DEV)
+PEPPOL_AP_API_KEY_DEVTooltip=Cheia dumneavoastră pentru conectare la API-ul Peppyrus în modul TEST. Utilizați această cheie pentru teste în mediul de dezvoltare.
