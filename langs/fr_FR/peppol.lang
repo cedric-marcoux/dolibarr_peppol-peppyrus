@@ -175,3 +175,31 @@ peppolModeProduction = PRODUCTION
 peppolModeTest = TEST (bac à sable)
 peppolApiUrl = URL de l'API
 peppolTestModeWarning = Attention : En mode TEST, vous devez utiliser une clé API de test Peppyrus. Si vous avez uniquement une clé de production, activez le mode production dans la configuration.
+
+#
+# Erreurs API centralisées (v2.1.3)
+#
+peppolErrorConnection = Erreur de connexion au serveur Peppyrus
+peppolErrorJsonDecode = Erreur de décodage de la réponse JSON
+peppolErrorAuthenticationProd = Clé API de production invalide ou expirée. Vérifiez votre configuration.
+peppolErrorAuthenticationTest = Clé API de test invalide. Utilisez une clé API valide pour l'environnement TEST.
+peppolErrorNotFound = Ressource non trouvée sur le serveur Peppyrus
+peppolErrorValidation = Erreur de validation
+peppolErrorUnexpected = Erreur inattendue du serveur Peppyrus
+peppolSendSuccess = Document envoyé avec succès sur le réseau Peppol
+peppolSendError = Erreur lors de l'envoi du document
+peppolSendErrorNoMessageId = Le serveur n'a pas retourné d'identifiant de message
+peppolSendValidationError = Erreur de validation du document
+peppolInvoicesListSuccess = Liste des factures récupérée
+peppolInvoicesListError = Erreur lors de la récupération des factures
+peppolNoInvoicesFound = Aucune facture en attente
+peppolGetInvoiceSuccess = Facture récupérée avec succès
+peppolGetInvoiceError = Erreur lors de la récupération de la facture
+peppolGetInvoiceErrorNoPeppolID = ID Peppol manquant pour récupérer la facture
+peppolGetInvoiceErrorNoContent = Le serveur n'a pas retourné de contenu
+peppolGetInvoiceErrorSave = Erreur lors de la sauvegarde du fichier XML
+peppolGetInvoiceNotFound = Facture non trouvée sur le serveur
+peppolPdfNotAvailable = Le PDF n'est pas disponible séparément via Peppyrus (intégré au XML)
+peppolRejectNotAvailable = Le rejet de facture n'est pas disponible via l'API Peppyrus
+peppolCheckErrorNoPeppolID = L'identifiant Peppol du tiers est vide
+PeppolCheckErrorSenderPeppolID = L'identifiant Peppol de votre entreprise n'est pas configuré

@@ -61,6 +61,135 @@ class Peppyrus extends PeppolAP
 	}
 
 	/**
+	 * Handle API response with proper error codes
+	 *
+	 * @param   array   $result   CURL result from getURLContent
+	 * @param   string  $context  Method name for logging
+	 *
+	 * @return  array   ['success' => bool, 'data' => mixed, 'error_code' => int, 'error_msg' => string]
+	 */
+	protected function handleApiResponse($result, $context = '')
+	{
+		global $langs;
+
+		// Check CURL errors first (connection, timeout, etc.)
+		if (isset($result['curl_error_msg']) && !empty($result['curl_error_msg'])) {
+			dol_syslog("Peppyrus::{$context} CURL error: " . $result['curl_error_msg'], LOG_ERR);
+			return [
+				'success' => false,
+				'data' => null,
+				'error_code' => -100,
+				'error_msg' => $langs->trans('peppolErrorConnection') . ': ' . $result['curl_error_msg']
+			];
+		}
+
+		$httpCode = $result['http_code'] ?? 0;
+		$content = $result['content'] ?? '';
+
+		// Handle by HTTP code according to Peppyrus API documentation
+		switch ($httpCode) {
+			case 200:
+				if (empty($content)) {
+					// Some endpoints return empty content on success (like confirm)
+					return ['success' => true, 'data' => true, 'error_code' => 0, 'error_msg' => ''];
+				}
+				$json = json_decode($content);
+				if ($json === null && json_last_error() !== JSON_ERROR_NONE) {
+					dol_syslog("Peppyrus::{$context} JSON decode error: " . json_last_error_msg(), LOG_ERR);
+					return [
+						'success' => false,
+						'data' => null,
+						'error_code' => -101,
+						'error_msg' => $langs->trans('peppolErrorJsonDecode') . ': ' . json_last_error_msg()
+					];
+				}
+				return ['success' => true, 'data' => $json, 'error_code' => 0, 'error_msg' => ''];
+
+			case 401:
+				dol_syslog("Peppyrus::{$context} Authentication failed (401)", LOG_ERR);
+				$isProd = getDolGlobalString('PEPPOL_PROD', '0') == '1';
+				$errorMsg = $isProd
+					? $langs->trans('peppolErrorAuthenticationProd')
+					: $langs->trans('peppolErrorAuthenticationTest');
+				return [
+					'success' => false,
+					'data' => null,
+					'error_code' => -401,
+					'error_msg' => $errorMsg
+				];
+
+			case 404:
+				dol_syslog("Peppyrus::{$context} Resource not found (404)", LOG_WARNING);
+				return [
+					'success' => false,
+					'data' => null,
+					'error_code' => -404,
+					'error_msg' => $langs->trans('peppolErrorNotFound')
+				];
+
+			case 422:
+				$errorMsg = $this->parseValidationError($content);
+				dol_syslog("Peppyrus::{$context} Validation error (422): {$errorMsg}", LOG_ERR);
+				return [
+					'success' => false,
+					'data' => null,
+					'error_code' => -422,
+					'error_msg' => $langs->trans('peppolErrorValidation') . ': ' . $errorMsg
+				];
+
+			case 0:
+				dol_syslog("Peppyrus::{$context} No response (HTTP 0) - possible timeout or network issue", LOG_ERR);
+				return [
+					'success' => false,
+					'data' => null,
+					'error_code' => -100,
+					'error_msg' => $langs->trans('peppolErrorConnection')
+				];
+
+			default:
+				dol_syslog("Peppyrus::{$context} Unexpected HTTP code: {$httpCode}", LOG_ERR);
+				return [
+					'success' => false,
+					'data' => null,
+					'error_code' => -$httpCode,
+					'error_msg' => $langs->trans('peppolErrorUnexpected') . " (HTTP {$httpCode})"
+				];
+		}
+	}
+
+	/**
+	 * Parse validation error from 422 response
+	 *
+	 * @param   string  $content  Response content
+	 *
+	 * @return  string  Formatted error message
+	 */
+	protected function parseValidationError($content)
+	{
+		$errorMsg = 'Unknown validation error';
+
+		if (empty($content)) {
+			return $errorMsg;
+		}
+
+		$json = json_decode($content);
+
+		if ($json && isset($json->message)) {
+			$errorMsg = $json->message;
+			if (isset($json->errors) && is_array($json->errors)) {
+				foreach ($json->errors as $e) {
+					$errorMsg .= '<br>- ' . (is_string($e) ? $e : json_encode($e));
+				}
+			}
+		} elseif (!empty($content)) {
+			// Fallback: use raw content without HTML tags
+			$errorMsg = strip_tags($content);
+		}
+
+		return $errorMsg;
+	}
+
+	/**
 	 * Get api url (test / prod endpoint code factoring)
 	 *
 	 * @return  string  uri like https://....
@@ -119,7 +248,6 @@ class Peppyrus extends PeppolAP
 		global $langs;
 
 		$url = "";
-		$ret = 0;
 		$check_invoice = false;
 
 		if ($this->validateConfiguration() < 0) {
@@ -133,13 +261,29 @@ class Peppyrus extends PeppolAP
 			$object->fetch_optionals();
 			if (array_key_exists('options_peppol_id', $object->array_options)) {
 				if ($object->array_options['options_peppol_id'] != "") {
-					$url = $this->getApiUrl() . "message/" . $object->array_options['options_peppol_id'];
+					// Invoice has been sent - check message status
+					$url = $this->getApiUrl() . "message/" . urlencode($object->array_options['options_peppol_id']);
 					$check_invoice = true;
 				}
 			}
 		}
+
+		// If invoice not yet sent, check the recipient in Peppol directory instead
+		if ($url == "" && is_object($object)) {
+			// Try to get thirdparty from the object (invoice)
+			if (empty($object->thirdparty) && is_callable(array($object, 'fetch_thirdparty'))) {
+				$object->fetch_thirdparty();
+			}
+
+			if (!empty($object->thirdparty) && is_object($object->thirdparty)) {
+				// Check if recipient exists in Peppol directory
+				dol_syslog("Peppyrus::checkAccessPoint Invoice not sent yet, checking recipient in Peppol directory");
+				return $this->checkThirdparty($object->thirdparty);
+			}
+		}
+
+		// Fallback: just verify API connectivity
 		if ($url == "") {
-			// Get organization info to verify connectivity
 			$url = $this->getApiUrl() . "organization/info";
 		}
 
@@ -150,13 +294,12 @@ class Peppyrus extends PeppolAP
 
 		dol_syslog("Peppyrus::checkAccessPoint CURL result is " . json_encode($result));
 
-		if (is_array($result) && $result['http_code'] == 200 && isset($result['content'])) {
-			$json = json_decode($result['content']);
-			if ($json === null && json_last_error() !== JSON_ERROR_NONE) {
-				dol_syslog("Peppyrus::checkAccessPoint JSON decode error: " . json_last_error_msg(), LOG_ERR);
-				setEventMessage($langs->trans('Error') . ' JSON decode', 'errors');
-				$ret = -3;
-			} elseif ($check_invoice) {
+		// Use centralized response handler
+		$response = $this->handleApiResponse($result, 'checkAccessPoint');
+
+		if ($response['success']) {
+			$json = $response['data'];
+			if ($check_invoice) {
 				$message = $langs->trans('peppolAccessPointCheckInvoiceSuccess');
 				if (isset($json->confirmed)) {
 					$message .= ' - ' . $langs->trans('peppolAccessPointCheckInvoiceSuccessConfirmed');
@@ -171,34 +314,11 @@ class Peppyrus extends PeppolAP
 				}
 			}
 			setEventMessages($message, null, 'mesgs');
-			$ret = 1;
+			return 1;
 		} else {
-			$httpCode = isset($result['http_code']) ? $result['http_code'] : 0;
-			$isProd = getDolGlobalString('PEPPOL_PROD', '0') == '1';
-
-			if ($httpCode == 401) {
-				if (!$isProd) {
-					$message = $langs->trans('peppolAccessPointCheckErrorTestMode');
-				} else {
-					$message = $langs->trans('peppolAccessPointCheckErrorInvalidKey');
-				}
-			} else {
-				$message = $langs->trans('peppolAccessPointCheckError');
-				if ($httpCode > 0) {
-					$message .= ' (HTTP ' . $httpCode . ')';
-				}
-			}
-			setEventMessage($message, 'errors');
-			$ret = -1;
+			setEventMessage($response['error_msg'], 'errors');
+			return $response['error_code'];
 		}
-
-		if (isset($result['curl_error_msg']) && $result['curl_error_msg'] != "") {
-			setEventMessages($langs->trans('ConnectResult'), [$result['curl_error_msg']], 'errors');
-			dol_syslog("Peppyrus::checkAccessPoint CURL error message is " . $result['curl_error_msg']);
-			$ret = -2;
-		}
-
-		return $ret;
 	}
 
 	/**
@@ -290,13 +410,11 @@ class Peppyrus extends PeppolAP
 
 		dol_syslog("Peppyrus::sendToAccessPoint CURL result is " . json_encode($result));
 
-		if (is_array($result) && $result['http_code'] == 200 && isset($result['content'])) {
-			$json = json_decode($result['content']);
-			if ($json === null && json_last_error() !== JSON_ERROR_NONE) {
-				dol_syslog("Peppyrus::sendToAccessPoint JSON decode error: " . json_last_error_msg(), LOG_ERR);
-				setEventMessage($langs->trans('Error') . ' JSON decode', 'errors');
-				return -8;
-			}
+		// Use centralized response handler
+		$response = $this->handleApiResponse($result, 'sendToAccessPoint');
+
+		if ($response['success']) {
+			$json = $response['data'];
 
 			if (isset($json->id)) {
 				$message = $langs->trans('peppolSendSuccess') . ' - Message ID: ' . $json->id;
@@ -316,43 +434,16 @@ class Peppyrus extends PeppolAP
 					dol_syslog("Peppol update extrafields : can't get object->array_options['options_peppol_id'] !");
 				}
 
-				$ret = 1;
+				return 1;
 			} else {
 				setEventMessage($langs->trans('peppolSendErrorNoMessageId'), 'errors');
-				$ret = -4;
+				return -4;
 			}
-		} elseif (is_array($result) && $result['http_code'] == 422) {
-			// Unprocessable entity
-			$errorMsg = 'Unknown validation error';
-			$content = isset($result['content']) ? $result['content'] : '';
-			$jsonError = json_decode($content);
-
-			if ($jsonError && isset($jsonError->message)) {
-				$errorMsg = $jsonError->message;
-				if (isset($jsonError->errors) && is_array($jsonError->errors)) {
-					foreach ($jsonError->errors as $e) {
-						$errorMsg .= '<br>- ' . (is_string($e) ? $e : json_encode($e));
-					}
-				}
-			} elseif (!empty($content)) {
-				$errorMsg = strip_tags($content);
-			}
-
-			setEventMessages($langs->trans('peppolSendValidationError'), [$errorMsg], 'errors');
-			dol_syslog("Peppyrus::sendToAccessPoint validation error (422): " . $errorMsg, LOG_ERR);
-			$ret = -5;
 		} else {
-			setEventMessage($langs->trans('peppolSendError'), 'errors');
-			$ret = -6;
+			// Error handled by handleApiResponse
+			setEventMessage($response['error_msg'], 'errors');
+			return $response['error_code'];
 		}
-
-		if (isset($result['curl_error_msg']) && $result['curl_error_msg'] != "") {
-			setEventMessages($langs->trans('ConnectResult'), [$result['curl_error_msg']], 'errors');
-			dol_syslog("Peppyrus::sendToAccessPoint CURL error message is " . $result['curl_error_msg']);
-			$ret = -7;
-		}
-
-		return $ret;
 	}
 
 	/**
@@ -397,8 +488,11 @@ class Peppyrus extends PeppolAP
 
 		dol_syslog("Peppyrus::checkThirdparty CURL result is " . json_encode($result));
 
-		if (is_array($result) && $result['http_code'] == 200 && isset($result['content'])) {
-			$json = json_decode($result['content']);
+		// Use centralized response handler
+		$response = $this->handleApiResponse($result, 'checkThirdparty');
+
+		if ($response['success']) {
+			$json = $response['data'];
 
 			if (isset($json->participantId)) {
 				$message = $langs->trans('peppolThirdpartyCheckSuccess') . ' - ' . $json->participantId;
@@ -409,32 +503,23 @@ class Peppyrus extends PeppolAP
 				}
 
 				setEventMessages($message, null, 'mesgs');
-				$ret = 1;
+				return 1;
 			} else {
 				setEventMessage($langs->trans('peppolThirdpartyCheckError'), 'errors');
-				$ret = -2;
+				return -2;
 			}
-		} elseif (is_array($result) && $result['http_code'] == 404) {
+		} elseif ($response['error_code'] == -404) {
 			// In TEST mode, show as warning instead of error
 			if (!getDolGlobalString('PEPPOL_PROD')) {
 				setEventMessage($langs->trans('peppolThirdpartyNotFoundTestMode'), 'warnings');
 			} else {
 				setEventMessage($langs->trans('peppolThirdpartyNotFound'), 'errors');
 			}
-			dol_syslog("Peppyrus::checkThirdparty participant not found in SMP", LOG_WARNING);
-			$ret = -3;
+			return -3;
 		} else {
-			setEventMessage($langs->trans('peppolThirdpartyCheckError'), 'errors');
-			$ret = -4;
+			setEventMessage($response['error_msg'], 'errors');
+			return $response['error_code'];
 		}
-
-		if (isset($result['curl_error_msg']) && $result['curl_error_msg'] != "") {
-			setEventMessages($langs->trans('ConnectResult'), [$result['curl_error_msg']], 'errors');
-			dol_syslog("Peppyrus::checkThirdparty CURL error message is " . $result['curl_error_msg']);
-			$ret = -5;
-		}
-
-		return $ret;
 	}
 
 	/**
@@ -465,71 +550,65 @@ class Peppyrus extends PeppolAP
 
 		dol_syslog("Peppyrus::getSupplierInvoicesList CURL result is " . json_encode($result));
 
-		if (is_array($result) && $result['http_code'] == 200 && isset($result['content'])) {
-			$json = json_decode($result['content']);
+		// Use centralized response handler
+		$response = $this->handleApiResponse($result, 'getSupplierInvoicesList');
 
-			if (isset($json->items) && is_array($json->items)) {
-				$messageCount = count($json->items);
+		if (!$response['success']) {
+			setEventMessage($response['error_msg'], 'errors');
+			return $response['error_code'];
+		}
 
-				$message = $langs->trans('peppolInvoicesListSuccess') . ' - ' . $messageCount . ' message(s) found';
+		$json = $response['data'];
 
-				if (isset($json->meta)) {
-					$message .= ' (Page ' . $json->meta->currentPage . '/' . $json->meta->pages . ')';
-				}
+		if (!isset($json->items) || !is_array($json->items)) {
+			setEventMessage($langs->trans('peppolNoInvoicesFound'), 'warnings');
+			return 0;
+		}
 
-				setEventMessages($message, null, 'mesgs');
+		$messageCount = count($json->items);
 
-				// Store the list for later processing
-				//$this->supplierInvoicesList = $json->items;
-				foreach ($json->items as $entry) {
-					$pi = new Peppolimport($db);
-					$res = $pi->fetch(0, null, $entry->id);
-					if ($res > 0) {
-						dol_syslog("Invoice already imported, next");
-						continue;
-					}
+		$message = $langs->trans('peppolInvoicesListSuccess') . ' - ' . $messageCount . ' message(s) found';
 
-					$pi->setValues([
-						"peppolid" => $entry->id,
-						"senderID" => $entry->sender,
-						"receiverID" => $entry->recipient,
-					]);
-					$res = $pi->create($user);
-					if ($res > 0) {
-						$res = $pi->validate($user);
-						dol_syslog("Peppolimport Validate return " . json_encode($res));
-						$resXml = $this->getSupplierInvoice($pi);
-						$resPdf = $this->getSupplierInvoicePdf($pi);
+		if (isset($json->meta)) {
+			$message .= ' (Page ' . $json->meta->currentPage . '/' . $json->meta->pages . ')';
+		}
 
-						// Confirm to AP in case of no errors
-						if ($resXml > 0 && $resPdf > 0) {
-							$resConfirm = $this->confirmSupplierInvoice($pi);
-							if ($resConfirm <= 0) {
-								dol_syslog("scrada::getSupplierInvoicesList Error confirming invoice: " . $resConfirm, LOG_WARNING);
-							}
-						}
-					} else {
-						dol_syslog("Peppolimport Error : " . json_encode($res));
-					}
-				}
+		setEventMessages($message, null, 'mesgs');
 
-				$ret = $messageCount;
-			} else {
-				setEventMessage($langs->trans('peppolNoInvoicesFound'), 'warnings');
-				$ret = 0;
+		// Process each message
+		foreach ($json->items as $entry) {
+			$pi = new Peppolimport($db);
+			$res = $pi->fetch(0, null, $entry->id);
+			if ($res > 0) {
+				dol_syslog("Invoice already imported, next");
+				continue;
 			}
-		} else {
-			setEventMessage($langs->trans('peppolInvoicesListError'), 'errors');
-			$ret = -1;
+
+			$pi->setValues([
+				"peppolid" => $entry->id,
+				"senderID" => $entry->sender,
+				"receiverID" => $entry->recipient,
+			]);
+			$res = $pi->create($user);
+			if ($res > 0) {
+				$res = $pi->validate($user);
+				dol_syslog("Peppolimport Validate return " . json_encode($res));
+				$resXml = $this->getSupplierInvoice($pi);
+				$resPdf = $this->getSupplierInvoicePdf($pi);
+
+				// Confirm to AP in case of no errors
+				if ($resXml > 0 && $resPdf > 0) {
+					$resConfirm = $this->confirmSupplierInvoice($pi);
+					if ($resConfirm <= 0) {
+						dol_syslog("Peppyrus::getSupplierInvoicesList Error confirming invoice: " . $resConfirm, LOG_WARNING);
+					}
+				}
+			} else {
+				dol_syslog("Peppolimport Error : " . json_encode($res));
+			}
 		}
 
-		if (isset($result['curl_error_msg']) && $result['curl_error_msg'] != "") {
-			setEventMessages($langs->trans('ConnectResult'), [$result['curl_error_msg']], 'errors');
-			dol_syslog("Peppyrus::getSupplierInvoicesList CURL error message is " . $result['curl_error_msg']);
-			$ret = -2;
-		}
-
-		return $ret;
+		return $messageCount;
 	}
 
 	/**
@@ -568,54 +647,45 @@ class Peppyrus extends PeppolAP
 
 		dol_syslog("Peppyrus::getSupplierInvoice CURL result code: " . ($result['http_code'] ?? 'unknown'));
 
-		if (is_array($result) && $result['http_code'] == 200 && isset($result['content'])) {
-			$json = json_decode($result['content']);
+		// Use centralized response handler
+		$response = $this->handleApiResponse($result, 'getSupplierInvoice');
 
-			if (isset($json->fileContent)) {
-				// Decode base64 content
-				$xmlContent = base64_decode($json->fileContent);
-
-				// Save XML content
-				$retsave = $pi->saveXML($xmlContent);
-
-				if ($retsave <= 0) {
-					dol_syslog("Peppyrus::getSupplierInvoice error saving XML file : " . $retsave, LOG_ERR);
-					setEventMessage($langs->trans('peppolGetInvoiceErrorSave'), 'errors');
-					$ret = -3;
-				} else {
-					$message = $langs->trans('peppolGetInvoiceSuccess');
-
-					// Add message details
-					if (isset($json->sender)) {
-						$message .= ' - Sender: ' . $json->sender;
-					}
-					if (isset($json->created)) {
-						$message .= ' - Date: ' . $json->created;
-					}
-
-					setEventMessages($message, null, 'mesgs');
-					$ret = 1;
-				}
-			} else {
-				setEventMessage($langs->trans('peppolGetInvoiceErrorNoContent'), 'errors');
-				$ret = -4;
-			}
-		} elseif (is_array($result) && $result['http_code'] == 404) {
-			setEventMessage($langs->trans('peppolGetInvoiceNotFound'), 'errors');
-			dol_syslog("Peppyrus::getSupplierInvoice message not found (404)", LOG_WARNING);
-			$ret = -5;
-		} else {
-			setEventMessage($langs->trans('peppolGetInvoiceError'), 'errors');
-			$ret = -6;
+		if (!$response['success']) {
+			setEventMessage($response['error_msg'], 'errors');
+			return $response['error_code'];
 		}
 
-		if (isset($result['curl_error_msg']) && $result['curl_error_msg'] != "") {
-			setEventMessages($langs->trans('ConnectResult'), [$result['curl_error_msg']], 'errors');
-			dol_syslog("Peppyrus::getSupplierInvoice CURL error message is " . $result['curl_error_msg']);
-			$ret = -2;
+		$json = $response['data'];
+
+		if (!isset($json->fileContent)) {
+			setEventMessage($langs->trans('peppolGetInvoiceErrorNoContent'), 'errors');
+			return -4;
 		}
 
-		return $ret;
+		// Decode base64 content
+		$xmlContent = base64_decode($json->fileContent);
+
+		// Save XML content
+		$retsave = $pi->saveXML($xmlContent);
+
+		if ($retsave <= 0) {
+			dol_syslog("Peppyrus::getSupplierInvoice error saving XML file : " . $retsave, LOG_ERR);
+			setEventMessage($langs->trans('peppolGetInvoiceErrorSave'), 'errors');
+			return -3;
+		}
+
+		$message = $langs->trans('peppolGetInvoiceSuccess');
+
+		// Add message details
+		if (isset($json->sender)) {
+			$message .= ' - Sender: ' . $json->sender;
+		}
+		if (isset($json->created)) {
+			$message .= ' - Date: ' . $json->created;
+		}
+
+		setEventMessages($message, null, 'mesgs');
+		return 1;
 	}
 
 	/**
@@ -676,36 +746,30 @@ class Peppyrus extends PeppolAP
 
 		dol_syslog("Peppyrus::confirmSupplierInvoice CURL result is " . json_encode($result));
 
-		if (is_array($result) && $result['http_code'] == 200) {
+		// Use centralized response handler
+		$response = $this->handleApiResponse($result, 'confirmSupplierInvoice');
+
+		$ret = 0;
+		$message = '';
+
+		if ($response['success']) {
 			$message = $langs->trans('peppolConfirmSuccess');
 			setEventMessage($message, 'mesgs');
 			$ret = 1;
-		} elseif (is_array($result) && $result['http_code'] == 404) {
-			// Already confirmed or not found
+		} elseif ($response['error_code'] == -404) {
+			// Already confirmed or not found - treat as warning not error
 			$message = $langs->trans('peppolConfirmErrorNotFound');
 			setEventMessage($message, 'warnings');
-			dol_syslog("Peppyrus::confirmSupplierInvoice Document not found or already confirmed (404)", LOG_WARNING);
 			$ret = -2;
 		} else {
-			$message = "";
-			if (isset($result['content'])) {
-				$message = $result['content'];
-			}
-			setEventMessages($langs->trans('peppolConfirmError'), [$message], 'errors');
-			dol_syslog("Peppyrus::confirmSupplierInvoice HTTP code: " . ($result['http_code'] ?? 'unknown'), LOG_ERR);
-			$ret = -3;
-		}
-
-		if (isset($result['curl_error_msg']) && $result['curl_error_msg'] != "") {
-			$message = $result['curl_error_msg'];
-			setEventMessages($langs->trans('ConnectResult'), [$message], 'errors');
-			dol_syslog("Peppyrus::confirmSupplierInvoice CURL error message is " . $result['curl_error_msg'], LOG_ERR);
-			$ret = -4;
+			$message = $response['error_msg'];
+			setEventMessage($message, 'errors');
+			$ret = $response['error_code'];
 		}
 
 		// Log the confirmation action
 		if (function_exists('peppolAddLog')) {
-			peppolAddLog('peppyrus', $pi->fk_invoice, 2, $result['http_code'] ?? 0, $message ?? '', json_encode($result));
+			peppolAddLog('peppyrus', $pi->fk_invoice, 2, $result['http_code'] ?? 0, $message, json_encode($result));
 		}
 
 		return $ret;
@@ -769,16 +833,16 @@ class Peppyrus extends PeppolAP
 
 		dol_syslog("Peppyrus::getMessageReport CURL result is " . json_encode($result));
 
-		if (is_array($result) && $result['http_code'] == 200 && isset($result['content'])) {
+		// Use centralized response handler
+		$response = $this->handleApiResponse($result, 'getMessageReport');
+
+		if ($response['success']) {
 			$json = json_decode($result['content'], true);
 			setEventMessage($langs->trans('peppolReportSuccess'), 'mesgs');
 			return $json;
-		} elseif (is_array($result) && $result['http_code'] == 404) {
-			setEventMessage($langs->trans('peppolReportNotFound'), 'errors');
-			return -2;
 		} else {
-			setEventMessage($langs->trans('peppolReportError'), 'errors');
-			return -3;
+			setEventMessage($response['error_msg'], 'errors');
+			return $response['error_code'];
 		}
 	}
 
@@ -821,19 +885,22 @@ class Peppyrus extends PeppolAP
 
 		dol_syslog("Peppyrus::findPeppolIdByVat CURL result is " . json_encode($result));
 
-		if (is_array($result) && $result['http_code'] == 200 && isset($result['content'])) {
+		// Use centralized response handler
+		$response = $this->handleApiResponse($result, 'findPeppolIdByVat');
+
+		if ($response['success']) {
 			$json = json_decode($result['content'], true);
 			if (isset($json['participantId'])) {
 				$message = $langs->trans('peppolBestMatchSuccess') . ' - ' . $json['participantId'];
 				setEventMessage($message, 'mesgs');
 			}
 			return $json;
-		} elseif (is_array($result) && $result['http_code'] == 404) {
+		} elseif ($response['error_code'] == -404) {
 			setEventMessage($langs->trans('peppolBestMatchNotFound'), 'warnings');
 			return -2;
 		} else {
-			setEventMessage($langs->trans('peppolBestMatchError'), 'errors');
-			return -3;
+			setEventMessage($response['error_msg'], 'errors');
+			return $response['error_code'];
 		}
 	}
 
@@ -876,15 +943,18 @@ class Peppyrus extends PeppolAP
 
 		dol_syslog("Peppyrus::searchPeppolDirectory CURL result is " . json_encode($result));
 
-		if (is_array($result) && $result['http_code'] == 200 && isset($result['content'])) {
+		// Use centralized response handler
+		$response = $this->handleApiResponse($result, 'searchPeppolDirectory');
+
+		if ($response['success']) {
 			$json = json_decode($result['content'], true);
 			$count = is_array($json) ? count($json) : 0;
 			$message = $langs->trans('peppolSearchSuccess', $count);
 			setEventMessage($message, 'mesgs');
 			return $json;
 		} else {
-			setEventMessage($langs->trans('peppolSearchError'), 'errors');
-			return -1;
+			setEventMessage($response['error_msg'], 'errors');
+			return $response['error_code'];
 		}
 	}
 
@@ -913,16 +983,16 @@ class Peppyrus extends PeppolAP
 
 		dol_syslog("Peppyrus::getOrganizationPeppolInfo CURL result is " . json_encode($result));
 
-		if (is_array($result) && $result['http_code'] == 200 && isset($result['content'])) {
+		// Use centralized response handler
+		$response = $this->handleApiResponse($result, 'getOrganizationPeppolInfo');
+
+		if ($response['success']) {
 			$json = json_decode($result['content'], true);
 			setEventMessage($langs->trans('peppolOrgInfoSuccess'), 'mesgs');
 			return $json;
-		} elseif (is_array($result) && $result['http_code'] == 404) {
-			setEventMessage($langs->trans('peppolOrgInfoNotFound'), 'errors');
-			return -2;
 		} else {
-			setEventMessage($langs->trans('peppolOrgInfoError'), 'errors');
-			return -3;
+			setEventMessage($response['error_msg'], 'errors');
+			return $response['error_code'];
 		}
 	}
 }

@@ -206,6 +206,15 @@ When ready to go live:
 
 # Changelog
 
+## Version 2.1.3
+- Refactor: Centralized API response handling with `handleApiResponse()` method
+- Improvement: All HTTP error codes (200, 401, 404, 422) now properly handled in all API methods
+- Improvement: JSON decode errors checked with `json_last_error()` in all methods
+- Improvement: Better error messages with specific translations for each error type
+- Improvement: CURL connection errors (timeout, network) now properly reported
+- Add: 20+ new translation keys for error messages (FR, EN)
+- Code quality: Reduced code duplication across API methods
+
 ## Version 2.1.2
 - Security: Sanitize input parameters to prevent XSS
 - Improvement: Added fallback notification when PDF is not available from Access Point

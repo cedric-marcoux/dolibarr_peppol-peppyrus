@@ -172,3 +172,31 @@ peppolModeProduction = PRODUCTION
 peppolModeTest = TEST (sandbox)
 peppolApiUrl = API URL
 peppolTestModeWarning = Warning: In TEST mode, you must use a Peppyrus test API key. If you only have a production key, enable production mode in the configuration.
+
+#
+# Centralized API errors (v2.1.3)
+#
+peppolErrorConnection = Connection error to Peppyrus server
+peppolErrorJsonDecode = JSON response decode error
+peppolErrorAuthenticationProd = Invalid or expired production API key. Check your configuration.
+peppolErrorAuthenticationTest = Invalid test API key. Use a valid API key for the TEST environment.
+peppolErrorNotFound = Resource not found on Peppyrus server
+peppolErrorValidation = Validation error
+peppolErrorUnexpected = Unexpected error from Peppyrus server
+peppolSendSuccess = Document successfully sent to Peppol network
+peppolSendError = Error sending document
+peppolSendErrorNoMessageId = Server did not return a message ID
+peppolSendValidationError = Document validation error
+peppolInvoicesListSuccess = Invoice list retrieved
+peppolInvoicesListError = Error retrieving invoices
+peppolNoInvoicesFound = No pending invoices
+peppolGetInvoiceSuccess = Invoice retrieved successfully
+peppolGetInvoiceError = Error retrieving invoice
+peppolGetInvoiceErrorNoPeppolID = Missing Peppol ID to retrieve invoice
+peppolGetInvoiceErrorNoContent = Server did not return content
+peppolGetInvoiceErrorSave = Error saving XML file
+peppolGetInvoiceNotFound = Invoice not found on server
+peppolPdfNotAvailable = PDF is not available separately via Peppyrus (embedded in XML)
+peppolRejectNotAvailable = Invoice rejection is not available via Peppyrus API
+peppolCheckErrorNoPeppolID = Third party Peppol ID is empty
+PeppolCheckErrorSenderPeppolID = Your company Peppol ID is not configured
