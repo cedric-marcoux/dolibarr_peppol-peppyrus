@@ -206,6 +206,12 @@ When ready to go live:
 
 # Changelog
 
+## Version 2.1.2
+- Security: Sanitize input parameters to prevent XSS
+- Improvement: Added fallback notification when PDF is not available from Access Point
+- Improvement: Enhanced API error handling (JSON decoding)
+- Improvement: Better validation feedback for 422 errors
+
 ## Version 2.1.1
 - Fix: API keys containing numbers were being truncated when saved
 - Fix: XML file not found when sending (added disk fallback)

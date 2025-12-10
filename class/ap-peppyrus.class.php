@@ -152,7 +152,11 @@ class Peppyrus extends PeppolAP
 
 		if (is_array($result) && $result['http_code'] == 200 && isset($result['content'])) {
 			$json = json_decode($result['content']);
-			if ($check_invoice) {
+			if ($json === null && json_last_error() !== JSON_ERROR_NONE) {
+				dol_syslog("Peppyrus::checkAccessPoint JSON decode error: " . json_last_error_msg(), LOG_ERR);
+				setEventMessage($langs->trans('Error') . ' JSON decode', 'errors');
+				$ret = -3;
+			} elseif ($check_invoice) {
 				$message = $langs->trans('peppolAccessPointCheckInvoiceSuccess');
 				if (isset($json->confirmed)) {
 					$message .= ' - ' . $langs->trans('peppolAccessPointCheckInvoiceSuccessConfirmed');
@@ -288,6 +292,11 @@ class Peppyrus extends PeppolAP
 
 		if (is_array($result) && $result['http_code'] == 200 && isset($result['content'])) {
 			$json = json_decode($result['content']);
+			if ($json === null && json_last_error() !== JSON_ERROR_NONE) {
+				dol_syslog("Peppyrus::sendToAccessPoint JSON decode error: " . json_last_error_msg(), LOG_ERR);
+				setEventMessage($langs->trans('Error') . ' JSON decode', 'errors');
+				return -8;
+			}
 
 			if (isset($json->id)) {
 				$message = $langs->trans('peppolSendSuccess') . ' - Message ID: ' . $json->id;
@@ -314,7 +323,21 @@ class Peppyrus extends PeppolAP
 			}
 		} elseif (is_array($result) && $result['http_code'] == 422) {
 			// Unprocessable entity
-			$errorMsg = isset($result['content']) ? $result['content'] : 'Unknown validation error';
+			$errorMsg = 'Unknown validation error';
+			$content = isset($result['content']) ? $result['content'] : '';
+			$jsonError = json_decode($content);
+
+			if ($jsonError && isset($jsonError->message)) {
+				$errorMsg = $jsonError->message;
+				if (isset($jsonError->errors) && is_array($jsonError->errors)) {
+					foreach ($jsonError->errors as $e) {
+						$errorMsg .= '<br>- ' . (is_string($e) ? $e : json_encode($e));
+					}
+				}
+			} elseif (!empty($content)) {
+				$errorMsg = strip_tags($content);
+			}
+
 			setEventMessages($langs->trans('peppolSendValidationError'), [$errorMsg], 'errors');
 			dol_syslog("Peppyrus::sendToAccessPoint validation error (422): " . $errorMsg, LOG_ERR);
 			$ret = -5;
@@ -610,8 +633,8 @@ class Peppyrus extends PeppolAP
 		// PDFs are typically embedded in the message or need to be generated
 		// For now, return success but log that PDF extraction is not available
 
-		// dol_syslog("Peppyrus::getSupplierInvoicePdf - Peppyrus does not provide a separate PDF endpoint", LOG_INFO);
-		// setEventMessage($langs->trans('peppolPdfNotAvailable'), 'warnings');
+		dol_syslog("Peppyrus::getSupplierInvoicePdf - Peppyrus does not provide a separate PDF endpoint", LOG_INFO);
+		setEventMessage($langs->trans('peppolPdfNotAvailable'), 'warnings');
 
 		// Return success to not block the import process
 		return 1;

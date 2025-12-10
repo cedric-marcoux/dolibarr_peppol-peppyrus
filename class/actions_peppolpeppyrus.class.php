@@ -439,8 +439,8 @@ class ActionsPeppolpeppyrus
 				if (!empty($object->array_options['options_peppol_id'])) {
 					$classAction = "butActionRefused";
 				}
-				print '<div class="inline-block divButAction"><a class="' . $classAction . ' classfortooltip" title="' . $langs->trans('peppolBtnSendTooltip') . '" href="' . $_SERVER["PHP_SELF"] . '?id=' . $object->id . '&action=peppolSendFile"><i class=\"fa fa-paper-plane\"></i>' . $langs->trans('peppolBtnSend') . '</a></div>';
-				print '<div class="inline-block divButAction"><a class="butAction classfortooltip" title="' . $langs->trans('peppolBtnCheckTooltip') . '" href="' . $_SERVER["PHP_SELF"] . '?id=' . $object->id . '&action=peppolCheck"><i class=\"fa fa-paper-plane\"></i>' . $langs->trans('peppolBtnCheck') . '</a></div>';
+				print '<div class="inline-block divButAction"><a class="' . $classAction . ' classfortooltip" title="' . $langs->trans('peppolBtnSendTooltip') . '" href="' . dol_escape_htmltag($_SERVER["PHP_SELF"]) . '?id=' . $object->id . '&action=peppolSendFile"><i class=\"fa fa-paper-plane\"></i>' . $langs->trans('peppolBtnSend') . '</a></div>';
+				print '<div class="inline-block divButAction"><a class="butAction classfortooltip" title="' . $langs->trans('peppolBtnCheckTooltip') . '" href="' . dol_escape_htmltag($_SERVER["PHP_SELF"]) . '?id=' . $object->id . '&action=peppolCheck"><i class=\"fa fa-paper-plane\"></i>' . $langs->trans('peppolBtnCheck') . '</a></div>';
 			}
 		}
 		if (in_array('thirdpartycard', $contextArray)) {
@@ -492,7 +492,7 @@ class ActionsPeppolpeppyrus
 			);
 
 			$formconfirm = $form->formconfirm(
-				$_SERVER["PHP_SELF"] . '?id=' . $object->id,
+				dol_escape_htmltag($_SERVER["PHP_SELF"]) . '?id=' . $object->id,
 				$langs->trans('peppolBtnSend'),
 				$langs->trans('ConfirmPeppol', $object->ref),
 				'confirm_peppolSendFile',
