@@ -212,6 +212,7 @@ When ready to go live:
 - Improvement: JSON decode errors checked with `json_last_error()` in all methods
 - Improvement: Better error messages with specific translations for each error type
 - Improvement: CURL connection errors (timeout, network) now properly reported
+- Fix: "Peppol Status" button now checks recipient in Peppol directory when invoice not yet sent
 - Add: 20+ new translation keys for error messages (FR, EN)
 - Code quality: Reduced code duplication across API methods
 
