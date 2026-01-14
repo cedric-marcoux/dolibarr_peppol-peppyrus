@@ -126,7 +126,8 @@ if ($action == 'select') {
 		$thirdparty->array_options['options_peppol_id'] = $participantid;
 	}
 
-	$thirdparty->update($thirdparty->id,$user);
+	// Save extrafield - update() alone doesn't save extrafields in Dolibarr!
+	$thirdparty->insertExtraFields();
 	setEventMessage($langs->trans('peppolIdSet'));
 	print "<script>window.top.location.href = \"" . dol_buildpath('/societe/card.php?id='.$socid, 1) . "\";</script>";
 	// header('Location: '.dol_buildpath('/societe/card.php?id='.$socid, 1));

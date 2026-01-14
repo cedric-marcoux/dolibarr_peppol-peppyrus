@@ -206,6 +206,10 @@ When ready to go live:
 
 # Changelog
 
+## Version 2.1.8
+- Fix: PeppolFinder now actually saves Peppol ID to customer record (was using update() instead of insertExtraFields())
+- Fix: Both search.php and peppol_search_directory.php now correctly persist the extrafield
+
 ## Version 2.1.7
 - Fix: PeppolFinder now correctly saves Peppol ID in format "schemeCode:value" (e.g., "0208:0475670182")
 - Fix: BR-CL-10 - Peppol ID selected from directory search was saved without scheme code, causing invalid identifier error

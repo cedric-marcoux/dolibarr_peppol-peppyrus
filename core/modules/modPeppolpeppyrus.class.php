@@ -58,7 +58,7 @@ class modPeppolpeppyrus extends DolibarrModules
 		$this->editor_url = '';
 
 		// Possible values for version are: 'development', 'experimental', 'dolibarr', 'dolibarr_deprecated' or a version string like 'x.y.z'
-		$this->version = '2.1.7';
+		$this->version = '2.1.8';
 		// Url to the file with your last numberversion of this module
 		$this->url_last_version = '';
 
