@@ -206,6 +206,10 @@ When ready to go live:
 
 # Changelog
 
+## Version 2.1.7
+- Fix: PeppolFinder now correctly saves Peppol ID in format "schemeCode:value" (e.g., "0208:0475670182")
+- Fix: BR-CL-10 - Peppol ID selected from directory search was saved without scheme code, causing invalid identifier error
+
 ## Version 2.1.6
 - Fix: BR-CL-10 - EndpointID value now uppercase (was lowercase causing ISO 6523 ICD validation error)
 - Fix: PEPPOL-EN16931-R120 - Complete fix for line amount calculation (v2.1.5 fix was incomplete)

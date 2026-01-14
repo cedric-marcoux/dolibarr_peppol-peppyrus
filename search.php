@@ -111,7 +111,21 @@ if ($action == 'autodetect' && $socid > 0 && $thirdparty) {
 if ($action == 'select') {
 	$participantid = GETPOST('participantid');
 	$peppol_scheme = GETPOST('peppol_scheme');
-	$thirdparty->array_options['options_peppol_id'] = $participantid;
+
+	// Extract ICD scheme code from full scheme identifier (e.g., "iso6523-actorid-upis::0208" -> "0208")
+	$schemeCode = '';
+	if (preg_match('/::(\d+)$/', $peppol_scheme, $matches)) {
+		$schemeCode = $matches[1];
+	}
+
+	// Save as "schemeCode:participantId" (e.g., "0208:0475670182")
+	if (!empty($schemeCode) && !empty($participantid)) {
+		$thirdparty->array_options['options_peppol_id'] = $schemeCode . ':' . $participantid;
+	} else {
+		// Fallback: save participantid as-is if scheme extraction failed
+		$thirdparty->array_options['options_peppol_id'] = $participantid;
+	}
+
 	$thirdparty->update($thirdparty->id,$user);
 	setEventMessage($langs->trans('peppolIdSet'));
 	print "<script>window.top.location.href = \"" . dol_buildpath('/societe/card.php?id='.$socid, 1) . "\";</script>";
