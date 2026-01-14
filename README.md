@@ -206,6 +206,11 @@ When ready to go live:
 
 # Changelog
 
+## Version 2.2.1
+- Fix: BR-CL-10 - Removed dead code that was overwriting schemeID with null (Luxembourg workaround from 2024-09)
+- Fix: Simplified ElectronicAddress logic - custom Peppol ID (0208 scheme) now takes proper priority over VAT-based scheme (9925)
+- Fix: Removed duplicate/confusing setElectronicAddress calls
+
 ## Version 2.2.0
 - Fix: BR-CL-10 - Force fetch_optionals() to ensure custom Peppol ID is always loaded
 - Fix: Ensure custom buyerIdent is used as final ElectronicAddress (was being overwritten)

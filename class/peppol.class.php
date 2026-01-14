@@ -469,28 +469,18 @@ class Peppol
 				$buyer->setPostalCode($objFacture->thirdparty->zip);
 			}
 		}
+		// Set VAT number if available
 		if (!empty($buyerVAT)) {
 			$buyer->setVatNumber($buyerVAT);
-			if (empty($buyerIdent)) {
-				dol_syslog("peppol set ElectronicAddress because buyerIdent is empty");
-				$buyer->setElectronicAddress(new Identifier($buyerVAT, peppolGetIdentifierSchemeFromVatNumber($buyerVAT)));
-				//2024-09-10 voir TS2406-0081 luxembourg
-				$buyer->setElectronicAddress(new Identifier($buyerVAT, null));
-			} else {
-				dol_syslog("peppol do not set ElectronicAddress, buyerIdent is not empty, addIdentifier with buyerIdent");
-				$buyer->setElectronicAddress($buyerIdent);
-			}
 		}
 
-		//note peppol 2025-05-23 "Buyer electronic address MUST be provided Test=cbc:EndpointID"
-		// Only set VAT-based address if NO custom buyerIdent exists
-		if (empty($buyerIdent) && !empty($buyerVAT)) {
-			dol_syslog("peppol set ElectronicAddress because buyerIdent is empty, using VAT-based scheme");
-			$buyer->setElectronicAddress(new Identifier($buyerVAT, peppolGetIdentifierSchemeFromVatNumber($buyerVAT)));
-		} elseif (!empty($buyerIdent)) {
-			// Ensure custom buyerIdent is used (may have been overwritten above)
-			dol_syslog("peppol FINAL setElectronicAddress with custom buyerIdent");
+		// Electronic Address: priority to custom buyerIdent (e.g. 0208 scheme), otherwise use VAT-based scheme (e.g. 9925)
+		if (!empty($buyerIdent)) {
+			dol_syslog("peppol setElectronicAddress with custom buyerIdent (scheme from extrafield)");
 			$buyer->setElectronicAddress($buyerIdent);
+		} elseif (!empty($buyerVAT)) {
+			dol_syslog("peppol setElectronicAddress with VAT-based scheme");
+			$buyer->setElectronicAddress(new Identifier($buyerVAT, peppolGetIdentifierSchemeFromVatNumber($buyerVAT)));
 		}
 
 		//BT-24 roumanie
