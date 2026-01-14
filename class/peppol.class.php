@@ -664,7 +664,8 @@ class Peppol
 			}
 
 			//chez peppol il faut donner le montant * quantité, la division est faite de l'autre côté
-			$subprice = peppolAmountToFloat($line->subprice ? $line->subprice : 0.00) * $qty;
+			// Fix PEPPOL-EN16931-R120: use round() to avoid float precision issues
+			$subprice = round(($line->subprice ? $line->subprice : 0.00) * $qty, 2);
 
 			//pour les remises (lignes négatives)
 			//cas particulier si dolibarr a quantité négative et montant positif on inverse
@@ -811,7 +812,8 @@ class Peppol
 			//Si on est déjà sur une ligne de remise on ne regarde pas le % de remise
 			if (!$remiseLigne) {
 				if (!empty($line->remise_percent)) {
-					$remise_abs = $subprice - $line->total_ht;
+					// Fix PEPPOL-EN16931-R120: ensure allowance makes LineExtensionAmount = total_ht exactly
+					$remise_abs = round($subprice - $line->total_ht, 2);
 					dol_syslog("  peppol line add remise (Allowance): " . $line->remise_percent . " absolute remise=" . $remise_abs);
 					$allowance = (new AllowanceOrCharge())->setReason('Discount')
 						->setReasonCode(95)

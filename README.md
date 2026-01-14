@@ -206,6 +206,10 @@ When ready to go live:
 
 # Changelog
 
+## Version 2.1.5
+- Fix: PEPPOL-EN16931-R120 line amount rounding errors
+- Fix: Use round() instead of peppolAmountToFloat() for line calculations to match Dolibarr totals exactly
+
 ## Version 2.1.4
 - Fix: Force uppercase on VAT identifiers to comply with BR-CO-09 (ISO 3166-1 alpha-2 country prefix)
 - Fix: Seller and Buyer VAT numbers now correctly formatted in XML output
