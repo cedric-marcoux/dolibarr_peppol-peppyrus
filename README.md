@@ -206,6 +206,11 @@ When ready to go live:
 
 # Changelog
 
+## Version 2.1.6
+- Fix: BR-CL-10 - EndpointID value now uppercase (was lowercase causing ISO 6523 ICD validation error)
+- Fix: PEPPOL-EN16931-R120 - Complete fix for line amount calculation (v2.1.5 fix was incomplete)
+- Fix: Price and allowance now use same rounded unit price for consistent Peppol validation
+
 ## Version 2.1.5
 - Fix: PEPPOL-EN16931-R120 line amount rounding errors
 - Fix: Use round() instead of peppolAmountToFloat() for line calculations to match Dolibarr totals exactly

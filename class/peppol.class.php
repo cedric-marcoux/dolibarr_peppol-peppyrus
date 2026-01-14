@@ -367,7 +367,7 @@ class Peppol
 		if (!empty($mypeppolid)) {
 			if (strpos($mypeppolid, ":")) {
 				$mypeppolidarr = explode(":", $mypeppolid);
-				$sellerIdentifyer = new Identifier($mypeppolidarr[1], $mypeppolidarr[0]);
+				$sellerIdentifyer = new Identifier(strtoupper($mypeppolidarr[1]), $mypeppolidarr[0]); // Fix BR-CL-10: uppercase for ISO 3166-1
 				$seller->setElectronicAddress($sellerIdentifyer);
 				$seller->addIdentifier($sellerIdentifyerVAT);
 			} else {
@@ -664,8 +664,9 @@ class Peppol
 			}
 
 			//chez peppol il faut donner le montant * quantité, la division est faite de l'autre côté
-			// Fix PEPPOL-EN16931-R120: use round() to avoid float precision issues
-			$subprice = round(($line->subprice ? $line->subprice : 0.00) * $qty, 2);
+			// Fix PEPPOL-EN16931-R120: round unit price FIRST, then calculate subprice
+			$unitPrice = round(($line->subprice ? $line->subprice : 0.00), 2);
+			$subprice = round($unitPrice * $qty, 2); // Uses rounded unitPrice for consistency
 
 			//pour les remises (lignes négatives)
 			//cas particulier si dolibarr a quantité négative et montant positif on inverse
@@ -741,7 +742,7 @@ class Peppol
 					->setName($libelle)
 					->setId($lineref)
 					//->setPrice($subprice, $qty) //return as prev situation (qty) - juin 2023
-					->setPrice($line->subprice, 1) //20251120 - change get dolibarr line unit price
+					->setPrice($unitPrice, 1) //Fix R120: use same rounded price as allowance calc - change get dolibarr line unit price
 					->setQuantity($qty);
 				if ($tva_tx > 0) {
 					$peppolLine->setVatRate($tva_tx);
