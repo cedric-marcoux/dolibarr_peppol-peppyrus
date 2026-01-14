@@ -206,6 +206,11 @@ When ready to go live:
 
 # Changelog
 
+## Version 2.2.2
+- Fix: BR-CL-10 - Removed seller PartyIdentification with invalid schemeID (9925 is EAS, not ICD)
+- Fix: PartyIdentification requires ICD codes, VAT scheme codes (99xx) are only valid for EndpointID
+- Note: Seller VAT is already included via PartyTaxScheme/CompanyID element
+
 ## Version 2.2.1
 - Fix: BR-CL-10 - Removed dead code that was overwriting schemeID with null (Luxembourg workaround from 2024-09)
 - Fix: Simplified ElectronicAddress logic - custom Peppol ID (0208 scheme) now takes proper priority over VAT-based scheme (9925)

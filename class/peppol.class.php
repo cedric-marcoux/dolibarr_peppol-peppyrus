@@ -372,7 +372,8 @@ class Peppol
 				$mypeppolidarr = explode(":", $mypeppolid);
 				$sellerIdentifyer = new Identifier(strtoupper($mypeppolidarr[1]), $mypeppolidarr[0]); // Fix BR-CL-10: uppercase for ISO 3166-1
 				$seller->setElectronicAddress($sellerIdentifyer);
-				$seller->addIdentifier($sellerIdentifyerVAT);
+				// Note: Don't use addIdentifier with VAT scheme (9925) - it's not valid for PartyIdentification (BR-CL-10 requires ICD codes)
+				// VAT is already set via setVatNumber() below
 			} else {
 				$seller->setElectronicAddress($sellerIdentifyerVAT);
 			}
