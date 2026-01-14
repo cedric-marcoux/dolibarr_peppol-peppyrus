@@ -238,10 +238,9 @@ class Peppol
 		//id specifique ?
 		dol_syslog("Peppol: fetch thirdparty linked to that invoice");
 		$objFacture->fetch_thirdparty();
-		// Load extrafields (options_peppol_id) - fetch_thirdparty doesn't load them automatically
-		if (!is_array($objFacture->thirdparty->array_options)) {
-			$objFacture->thirdparty->fetch_optionals();
-		}
+		// Force load extrafields - array_options may be empty array even after fetch_thirdparty
+		$objFacture->thirdparty->fetch_optionals();
+		dol_syslog("Peppol: thirdparty array_options after fetch_optionals = " . json_encode($objFacture->thirdparty->array_options));
 		if (!empty($objFacture->thirdparty->array_options['options_peppol_id'])) {
 			dol_syslog("Peppol: specific peppol id " . json_encode($objFacture->thirdparty->array_options['options_peppol_id']));
 			//9938:20225000264
@@ -484,9 +483,14 @@ class Peppol
 		}
 
 		//note peppol 2025-05-23 "Buyer electronic address MUST be provided Test=cbc:EndpointID"
+		// Only set VAT-based address if NO custom buyerIdent exists
 		if (empty($buyerIdent) && !empty($buyerVAT)) {
-			dol_syslog("peppol set ElectronicAddress because buyerIdent is empty");
+			dol_syslog("peppol set ElectronicAddress because buyerIdent is empty, using VAT-based scheme");
 			$buyer->setElectronicAddress(new Identifier($buyerVAT, peppolGetIdentifierSchemeFromVatNumber($buyerVAT)));
+		} elseif (!empty($buyerIdent)) {
+			// Ensure custom buyerIdent is used (may have been overwritten above)
+			dol_syslog("peppol FINAL setElectronicAddress with custom buyerIdent");
+			$buyer->setElectronicAddress($buyerIdent);
 		}
 
 		//BT-24 roumanie

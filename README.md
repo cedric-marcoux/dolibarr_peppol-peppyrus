@@ -206,6 +206,12 @@ When ready to go live:
 
 # Changelog
 
+## Version 2.2.0
+- Fix: BR-CL-10 - Force fetch_optionals() to ensure custom Peppol ID is always loaded
+- Fix: Ensure custom buyerIdent is used as final ElectronicAddress (was being overwritten)
+- Fix: Added debug logging for troubleshooting Peppol ID issues
+- Fix: Customers with enterprise number scheme (0208) instead of VAT scheme (9925) now work correctly
+
 ## Version 2.1.9
 - Fix: BR-CL-10 - Custom Peppol ID (options_peppol_id) was not loaded when generating XML
 - Fix: Added fetch_optionals() call to load extrafields after fetch_thirdparty()
