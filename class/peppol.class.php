@@ -362,7 +362,7 @@ class Peppol
 		$seller = new Party();
 		//
 		$sellerIdentifyer = $sellerIdentifyerVAT = null;
-		$sellerIdentifyerVAT = new Identifier($mysoc->tva_intra, peppolGetIdentifierSchemeFromVatNumber($mysoc->tva_intra));
+		$sellerIdentifyerVAT = new Identifier(strtoupper($mysoc->tva_intra), peppolGetIdentifierSchemeFromVatNumber($mysoc->tva_intra));
 		$mypeppolid = getDolGlobalString('PEPPOL_AP_SENDER_ID');
 		if (!empty($mypeppolid)) {
 			if (strpos($mypeppolid, ":")) {
@@ -376,14 +376,14 @@ class Peppol
 		} else {
 			$seller->setElectronicAddress($sellerIdentifyerVAT);
 		}
-		$sellerIdentifyer = new Identifier($mysoc->tva_intra, peppolGetIdentifierSchemeFromVatNumber($mysoc->tva_intra));
+		$sellerIdentifyer = new Identifier(strtoupper($mysoc->tva_intra), peppolGetIdentifierSchemeFromVatNumber($mysoc->tva_intra));
 		$seller
 			// ->addIdentifier(new Identifier($mysoc->tva_intra, null))
 			// ->setCompanyId(new Identifier($mysoc->tva_intra, peppolGetIdentifierSchemeFromVatNumber($mysoc->tva_intra)))
 			// ->setTaxRegistrationId(new Identifier($mysoc->tva_intra, peppolGetIdentifierSchemeFromVatNumber($mysoc->tva_intra)))
 			->setName($mysoc->name)
 			->setTradingName($mysoc->name)
-			->setVatNumber($mysoc->tva_intra)
+			->setVatNumber(strtoupper($mysoc->tva_intra))
 			->setAddress([$mysoc->address])
 			->setCity($mysoc->town)
 			->setSubdivision($mysoc->country_code . '-' . $mysoc->state_code)
@@ -403,7 +403,7 @@ class Peppol
 		$buyer = new Party();
 		// var_dump($buyer);
 		//note: il ne peut pas avoir un peppol id ET un numéro de tva intraco ? contre ordre mars 2024 luxembourg demande TVA et PEPPOL ...
-		$buyerVAT = $objFacture->thirdparty->tva_intra ?? '';
+		$buyerVAT = strtoupper($objFacture->thirdparty->tva_intra ?? '');
 		if (empty($buyerIdent)) {
 			dol_syslog("Peppol: buyer Ident is empty");
 			if (empty($buyerVAT)) {

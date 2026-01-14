@@ -206,6 +206,10 @@ When ready to go live:
 
 # Changelog
 
+## Version 2.1.4
+- Fix: Force uppercase on VAT identifiers to comply with BR-CO-09 (ISO 3166-1 alpha-2 country prefix)
+- Fix: Seller and Buyer VAT numbers now correctly formatted in XML output
+
 ## Version 2.1.3
 - Refactor: Centralized API response handling with `handleApiResponse()` method
 - Improvement: All HTTP error codes (200, 401, 404, 422) now properly handled in all API methods
