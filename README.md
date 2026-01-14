@@ -206,6 +206,11 @@ When ready to go live:
 
 # Changelog
 
+## Version 2.1.9
+- Fix: BR-CL-10 - Custom Peppol ID (options_peppol_id) was not loaded when generating XML
+- Fix: Added fetch_optionals() call to load extrafields after fetch_thirdparty()
+- Fix: Customers with enterprise number scheme (0208) instead of VAT scheme (9925) now work correctly
+
 ## Version 2.1.8
 - Fix: PeppolFinder now actually saves Peppol ID to customer record (was using update() instead of insertExtraFields())
 - Fix: Both search.php and peppol_search_directory.php now correctly persist the extrafield

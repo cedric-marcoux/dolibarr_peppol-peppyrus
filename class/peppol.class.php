@@ -238,6 +238,10 @@ class Peppol
 		//id specifique ?
 		dol_syslog("Peppol: fetch thirdparty linked to that invoice");
 		$objFacture->fetch_thirdparty();
+		// Load extrafields (options_peppol_id) - fetch_thirdparty doesn't load them automatically
+		if (!is_array($objFacture->thirdparty->array_options)) {
+			$objFacture->thirdparty->fetch_optionals();
+		}
 		if (!empty($objFacture->thirdparty->array_options['options_peppol_id'])) {
 			dol_syslog("Peppol: specific peppol id " . json_encode($objFacture->thirdparty->array_options['options_peppol_id']));
 			//9938:20225000264
