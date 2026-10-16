@@ -81,8 +81,19 @@ class ActionsPeppolpeppyrus
 
 		$error = 0;
 
+		$contextArray = explode(':', $parameters['context'] ?? '');
 		switch ($action) {
 			case "confirm_peppolSendFile":
+				if (!in_array('invoicecard', $contextArray) || !($object instanceof Facture)) {
+					break;
+				}
+				if (!$user->hasRight('peppolpeppyrus', 'write') || !$user->hasRight('facture', 'creer')) {
+					setEventMessages($langs->trans('NotEnoughPermissions'), null, 'errors');
+					break;
+				}
+				if (GETPOST('confirm', 'alpha') != 'yes') {
+					break;
+				}
 				$filename = peppolFindFileToUse($object, $parameters['outputdir']);
 				$object->fetch_optionals();
 				peppolSendToAccessPoint($filename, $object);
@@ -107,7 +118,7 @@ class ActionsPeppolpeppyrus
 		global $conf, $user, $langs, $db;
 
 		$error = 0;
-		dol_syslog(get_class($this) . '::doMassActions peppolpeppyrus' . json_encode($parameters));
+		dol_syslog(get_class($this) . '::doMassActions peppolpeppyrus massaction=' . ($parameters['massaction'] ?? ''));
 
 		$contextArray = explode(':', $parameters['context']);
 		if (in_array('invoicelist', $contextArray)) {
@@ -117,7 +128,7 @@ class ActionsPeppolpeppyrus
 				$destdir = stripslashes($parameters['diroutputmassaction']);
 				if (!is_dir($destdir)) {
 					dol_syslog(get_class($this) . '::doMassActions make directory ' . $destdir);
-					mkdir($destdir, 0700, true);
+					dol_mkdir($destdir);
 				}
 				$zipname = $destdir . '/archive-peppol.zip';
 				$zip = new ZipArchive();
@@ -159,7 +170,7 @@ class ActionsPeppolpeppyrus
 	{
 		global $conf, $user, $langs;
 		$langs->load("peppol@peppolpeppyrus");
-		dol_syslog(get_class($this) . '::addMoreMassActions peppolpeppyrus' . json_encode($parameters));
+		dol_syslog(get_class($this) . '::addMoreMassActions peppolpeppyrus');
 
 		$error = 0;
 		$disabled = 0;
@@ -207,14 +218,15 @@ class ActionsPeppolpeppyrus
 
 		dol_syslog(get_class($this) . '::executeHooks peppolpeppyrus action=' . $action);
 
+		// Nothing to do is not an error: return 0 so the PDF generation (and any surrounding action) goes on
 		if ($parameters['object']->element != "facture") {
 			dol_syslog(get_class($this) . '::executeHooks not a customer invoice but a ' . $parameters['object']->element . ', return');
-			return -10;
+			return 0;
 		}
 
 		if ($parameters['object']->status != Facture::STATUS_VALIDATED) {
 			dol_syslog(get_class($this) . '::executeHooks not a validated invoice, status is ' . $parameters['object']->status . ', return');
-			return -20;
+			return 0;
 		}
 
 		$requestPath = $_SERVER['REQUEST_URI'];
@@ -231,8 +243,12 @@ class ActionsPeppolpeppyrus
 		if (isset($orig_pdf) && dol_is_file($orig_pdf)) {
 			$inv = new Peppol($db, $objFacture);
 			try {
-				$ret = $inv->makePDF($orig_pdf);
-			} catch (\Exception $e) {
+				$res = $inv->makePDF($orig_pdf);
+				if ($res < 0) {
+					// The Peppol file could not be made (the user already got a message): the PDF itself must not fail
+					dol_syslog("Peppolpeppyrus makePDF returned " . $res . ", PDF kept without Peppol file", LOG_WARNING);
+				}
+			} catch (\Throwable $e) {
 				dol_syslog("Peppolpeppyrus exception occurs on makePDF : " . $e->getMessage(), LOG_ERR);
 			}
 		} else {
@@ -259,12 +275,12 @@ class ActionsPeppolpeppyrus
 
 		if ($parameters['object']->element != "facture") {
 			dol_syslog(get_class($this) . '::executeHooks not a customer invoice but a ' . $parameters['object']->element . ', return');
-			return -10;
+			return 0;
 		}
 
 		if ($parameters['object']->status != Facture::STATUS_VALIDATED) {
 			dol_syslog(get_class($this) . '::executeHooks not a validated invoice, status is ' . $parameters['object']->status . ', return');
-			return -20;
+			return 0;
 		}
 
 		$objFacture = $parameters['object'];
@@ -277,14 +293,17 @@ class ActionsPeppolpeppyrus
 			if (dol_is_file($pdf_file)) {
 				$inv = new Peppol($db, $objFacture);
 				try {
-					$ret = $inv->makePDF($orig_file);
-				} catch (Exception $e) {
+					$res = $inv->makePDF($orig_file);
+					if ($res < 0) {
+						dol_syslog("Peppolpeppyrus makePDF returned " . $res . ", document kept without Peppol file", LOG_WARNING);
+					}
+				} catch (\Throwable $e) {
 					dol_syslog("Peppolpeppyrus exception occurs on makePDF : " . $e->getMessage(), LOG_ERR);
 				}
 			} else {
 				dol_syslog(get_class($this) . '::executeHooks pdf file does not exists, peppolpeppyrus NEED a pdf file as input, return');
 				setEventMessage($langs->trans("PeppolErrorNeedPDF"), 'warnings');
-				return -30;
+				return 0;
 			}
 		} else {
 			dol_syslog("Peppolpeppyrus afterODTCreation called with empty file name !", LOG_WARNING);
@@ -368,7 +387,7 @@ class ActionsPeppolpeppyrus
 			$keytoavoidconflict = empty($parameters['trackid']) ? '' : '-' . $parameters['trackid'];
 		}
 
-		if ((GETPOST('action', 'aZ09') == 'presend' && GETPOST('mode') == 'init') || (GETPOST('modelmailselected', 'int') && ! GETPOST('removedfile', 'alpha'))) {
+		if ((GETPOST('action', 'aZ09') == 'presend' && GETPOST('mode', 'aZ09') == 'init') || (GETPOST('modelmailselected', 'int') && ! GETPOST('removedfile', 'alpha'))) {
 			$listofpaths = (! empty($_SESSION["listofpaths" . $keytoavoidconflict])) ? explode(';', $_SESSION["listofpaths" . $keytoavoidconflict]) : array();
 			$listofnames = (! empty($_SESSION["listofnames" . $keytoavoidconflict])) ? explode(';', $_SESSION["listofnames" . $keytoavoidconflict]) : array();
 			$listofmimes = (! empty($_SESSION["listofmimes" . $keytoavoidconflict])) ? explode(';', $_SESSION["listofmimes" . $keytoavoidconflict]) : array();
@@ -429,24 +448,36 @@ class ActionsPeppolpeppyrus
 		dol_syslog("PEPPOLPEPPYRUS HOOK addMoreActionsButtons called - context: " . $parameters['context']);
 
 		if (empty($object->id)) {
-			return -1;
+			return 0;
 		}
 
 		$contextArray = explode(':', $parameters['context']);
 		if (in_array('invoicecard', $contextArray)) {
-			if ($object->status == Facture::STATUS_VALIDATED) {
+			if ($object->status == Facture::STATUS_VALIDATED && $user->hasRight('peppolpeppyrus', 'read')) {
 				$classAction = "butAction";
+				if (!$user->hasRight('peppolpeppyrus', 'write') || !$user->hasRight('facture', 'creer')) {
+					$classAction = "butActionRefused";
+				}
 				if (!empty($object->array_options['options_peppol_id'])) {
 					$classAction = "butActionRefused";
 				}
-				print '<div class="inline-block divButAction"><a class="' . $classAction . ' classfortooltip" title="' . $langs->trans('peppolBtnSendTooltip') . '" href="' . dol_escape_htmltag($_SERVER["PHP_SELF"]) . '?id=' . $object->id . '&action=peppolSendFile"><i class=\"fa fa-paper-plane\"></i>' . $langs->trans('peppolBtnSend') . '</a></div>';
-				print '<div class="inline-block divButAction"><a class="butAction classfortooltip" title="' . $langs->trans('peppolBtnCheckTooltip') . '" href="' . dol_escape_htmltag($_SERVER["PHP_SELF"]) . '?id=' . $object->id . '&action=peppolCheck"><i class=\"fa fa-paper-plane\"></i>' . $langs->trans('peppolBtnCheck') . '</a></div>';
+				print '<div class="inline-block divButAction"><a class="' . $classAction . ' classfortooltip" title="' . $langs->trans('peppolBtnSendTooltip') . '" href="' . dol_escape_htmltag($_SERVER["PHP_SELF"]) . '?id=' . ((int) $object->id) . '&action=peppolSendFile&token=' . newToken() . '"><i class=\"fa fa-paper-plane\"></i>' . $langs->trans('peppolBtnSend') . '</a></div>';
+				print '<div class="inline-block divButAction"><a class="butAction classfortooltip" title="' . $langs->trans('peppolBtnCheckTooltip') . '" href="' . dol_escape_htmltag($_SERVER["PHP_SELF"]) . '?id=' . ((int) $object->id) . '&action=peppolCheck&token=' . newToken() . '"><i class=\"fa fa-paper-plane\"></i>' . $langs->trans('peppolBtnCheck') . '</a></div>';
 			}
 		}
-		if (in_array('thirdpartycard', $contextArray)) {
+		// Third party, customer and supplier card: open the Peppol ID search in the same window, with a way back to this card
+		$backto = '';
+		if (in_array('thirdpartycomm', $contextArray)) {
+			$backto = 'comm';
+		} elseif (in_array('thirdpartysupplier', $contextArray)) {
+			$backto = 'fourn';
+		} elseif (in_array('thirdpartycard', $contextArray)) {
+			$backto = 'card';
+		}
+		if ($backto !== '' && $user->hasRight('peppolpeppyrus', 'read')) {
 			$langs->load("peppol@peppolpeppyrus");
-			$urlto = dol_buildpath("/peppolpeppyrus/search.php", 1) . "?socid=" . $object->id;
-			print '<div class="inline-block divButAction"><a class="butAction classfortooltip" title="' . $langs->trans("peppolFindPeppolIDPopupTitle") . '" href="' . $urlto . '" target="_blank">' . $langs->trans("peppolBtnFindPeppolID") . '</a></div>';
+			$urlto = dol_buildpath("/peppolpeppyrus/search.php", 1) . "?socid=" . ((int) $object->id) . "&backto=" . $backto;
+			print '<div class="inline-block divButAction"><a class="butAction classfortooltip" title="' . dol_escape_htmltag($langs->trans("peppolFindPeppolIDPopupTitle")) . '" href="' . $urlto . '">' . $langs->trans("peppolBtnFindPeppolID") . '</a></div>';
 		}
 
 		if (! $error) {
@@ -462,7 +493,7 @@ class ActionsPeppolpeppyrus
 	 */
 	public function formConfirm($parameters, &$object, &$action, $hookmanager)
 	{
-		global $conf, $langs;
+		global $conf, $langs, $user;
 
 		$ret = 0;
 		$error = 0;
@@ -470,10 +501,15 @@ class ActionsPeppolpeppyrus
 		$formconfirm = '';
 		$form = new Form($this->db);
 
-		if ($action == 'peppolCheck') {
+		$contextArray = explode(':', $parameters['context'] ?? '');
+		if (!in_array('invoicecard', $contextArray)) {
+			return 0;
+		}
+
+		if ($action == 'peppolCheck' && $user->hasRight('peppolpeppyrus', 'read')) {
 			peppolCheckAccessPoint($object);
 		}
-		if ($action == 'peppolSendFile') {
+		if ($action == 'peppolSendFile' && $user->hasRight('peppolpeppyrus', 'write') && $user->hasRight('facture', 'creer')) {
 			$filearray = peppolListOfFilesLinkedTo($object);
 			if (count($filearray) == 0) {
 				dol_syslog("peppolpeppyrus: error there is no file linked to that object", LOG_ERR);

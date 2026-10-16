@@ -59,21 +59,43 @@ if (!$res) {
 	exit('Include of main fails');
 }
 
+
+/**
+ * @var \Conf $conf
+ * @var \DoliDB $db
+ * @var \HookManager $hookmanager
+ * @var \Societe $mysoc
+ * @var \Translate $langs
+ * @var \User $user
+ */
 require_once DOL_DOCUMENT_ROOT . '/core/lib/functions2.lib.php';
 dol_include_once('/peppolpeppyrus/class/peppolimport.class.php');
 dol_include_once('/peppolpeppyrus/lib/peppol.lib.php');
 
+header('Content-Type: application/json');
+
+if (!isModEnabled('peppolpeppyrus')) {
+	http_response_code(404);
+	echo json_encode(['error' => 'Not available']);
+	exit;
+}
+
 // Get raw POST data
 $rawPayload = file_get_contents('php://input');
-$headers = getallheaders();
+// HTTP header names are case-insensitive: normalize to lower case
+$headers = array_change_key_case(function_exists('getallheaders') ? (array) getallheaders() : array(), CASE_LOWER);
 
-dol_syslog('Peppol webhook received - Headers: ' . json_encode($headers), LOG_DEBUG);
 dol_syslog('Peppol webhook received - Payload length: ' . strlen($rawPayload), LOG_DEBUG);
 
-// Verify HMAC signature
+// Verify HMAC signature. Without a configured secret key the webhook refuses every request.
 $secretKey = getDolGlobalString('PEPPOL_AP_WEBHOOK_KEY');
-if (!empty($secretKey)) {
-	$hmacReceived = isset($headers['x-scrada-hmac-sha256']) ? $headers['x-scrada-hmac-sha256'] : '';
+if (empty($secretKey)) {
+	dol_syslog('Peppol webhook refused: no secret key configured (PEPPOL_AP_WEBHOOK_KEY)', LOG_WARNING);
+	http_response_code(403);
+	echo json_encode(['error' => 'Webhook not configured']);
+	exit;
+} else {
+	$hmacReceived = isset($headers['x-scrada-hmac-sha256']) ? (string) $headers['x-scrada-hmac-sha256'] : '';
 
 	if (empty($hmacReceived)) {
 		dol_syslog('Peppol webhook error: No HMAC signature provided', LOG_ERR);
@@ -86,15 +108,12 @@ if (!empty($secretKey)) {
 
 	if (!hash_equals($hmacCalculated, $hmacReceived)) {
 		dol_syslog('Peppol webhook error: HMAC verification failed', LOG_ERR);
-		dol_syslog('Expected: ' . $hmacCalculated . ' Got: ' . $hmacReceived, LOG_DEBUG);
 		http_response_code(403);
 		echo json_encode(['error' => 'Invalid HMAC signature']);
 		exit;
 	}
 
 	dol_syslog('Peppol webhook: HMAC verification successful', LOG_DEBUG);
-} else {
-	dol_syslog('Peppol webhook warning: No secret key configured, skipping HMAC verification', LOG_WARNING);
 }
 
 // Extract webhook metadata from headers
@@ -146,7 +165,7 @@ try {
 } catch (\Exception $e) {
 	dol_syslog('Peppol webhook error: ' . $e->getMessage(), LOG_ERR);
 	http_response_code(500);
-	echo json_encode(['error' => $e->getMessage()]);
+	echo json_encode(['error' => 'Processing failed']);
 }
 
 /**
@@ -182,13 +201,23 @@ function handleInboundDocument($db, $headers, $xml)
 	$documentTypeScheme = $headers['x-scrada-peppol-document-type-scheme'] ?? '';
 	$documentTypeValue = $headers['x-scrada-peppol-document-type-value'] ?? '';
 
-	dol_syslog("Peppol webhook - New inbound document: $documentId from $senderId", LOG_INFO);
+	dol_syslog("Peppol webhook - New inbound document: $documentId", LOG_INFO);
+
+	// Multicompany: the entity comes from the URL, so check the document is addressed to the Peppol ID of this entity
+	if (!peppolWebhookReceiverMatches($receiverId)) {
+		dol_syslog("Peppol webhook - Document $documentId is not addressed to the Peppol ID of entity " . ((int) $conf->entity) . ", refused", LOG_ERR);
+		throw new \Exception("Receiver does not match this entity");
+	}
 
 	// Check if document already exists
 	$pi = new Peppolimport($db);
 
 	// Try to load by peppolid
-	$sql = "SELECT rowid FROM " . MAIN_DB_PREFIX . "peppol_import WHERE peppolid = '" . $db->escape($documentId) . "'";
+	if ($documentId === '') {
+		throw new \Exception("Missing document id");
+	}
+	$sql = "SELECT rowid FROM " . MAIN_DB_PREFIX . $pi->table_element . " WHERE peppolid = '" . $db->escape($documentId) . "'";
+	$sql .= " AND entity IN (" . getEntity($pi->element) . ")";
 	$resql = $db->query($sql);
 	if ($resql) {
 		if ($db->num_rows($resql) > 0) {
@@ -220,14 +249,17 @@ function handleInboundDocument($db, $headers, $xml)
 		'documentTypeValue' => $documentTypeValue,
 	]);
 
+	$db->begin();
+
 	$res = $pi->create($user);
 	if ($res > 0) {
 		$res = $pi->validate($user);
 
 		// Save XML content
-		$resSaveXml = $pi->saveXML($xml);
+		$resSaveXml = ($res > 0) ? $pi->saveXML($xml) : -1;
 
 		if ($resSaveXml > 0) {
+			$db->commit();
 			dol_syslog("Peppol webhook - Document $documentId saved successfully", LOG_INFO);
 
 			// Try to get PDF (optional, may not always be available immediately)
@@ -238,13 +270,44 @@ function handleInboundDocument($db, $headers, $xml)
 			//update pi->fk_supplier and pi->fk_invoice
 
 		} else {
-			dol_syslog("Peppol webhook - Error saving XML for document $documentId", LOG_ERR);
+			$db->rollback();
+			dol_syslog("Peppol webhook - Error validating or saving XML for document $documentId", LOG_ERR);
 			throw new \Exception("Failed to save XML document");
 		}
 	} else {
+		$db->rollback();
 		dol_syslog("Peppol webhook - Error creating Peppolimport for document $documentId", LOG_ERR);
 		throw new \Exception("Failed to create Peppolimport");
 	}
+}
+
+/**
+ * Check that a receiver Peppol ID is the Peppol ID configured for the current entity (PEPPOL_AP_SENDER_ID).
+ * Accepted forms: "0208:0123456789" or "iso6523-actorid-upis::0208:0123456789"; comparison is case-insensitive.
+ * Without Multicompany an unknown own ID or an empty receiver is accepted (only one company can be meant).
+ *
+ * @param	string	$receiverId		Receiver ID from the webhook headers
+ * @return	bool
+ */
+function peppolWebhookReceiverMatches($receiverId)
+{
+	$own = getDolGlobalString('PEPPOL_AP_SENDER_ID');
+	$multicompany = isModEnabled('multicompany');
+	if ($own === '' || $receiverId === '') {
+		return !$multicompany;
+	}
+	$normalize = function ($id) {
+		$id = strtoupper(trim(preg_replace('/^.*::/', '', (string) $id)));
+		$parts = explode(':', $id);
+		$value = array_pop($parts);
+		return array('scheme' => (count($parts) ? end($parts) : ''), 'value' => preg_replace('/[^A-Z0-9]/', '', $value));
+	};
+	$a = $normalize($own);
+	$b = $normalize($receiverId);
+	if ($a['value'] === '' || $a['value'] !== $b['value']) {
+		return false;
+	}
+	return ($a['scheme'] === '' || $b['scheme'] === '' || $a['scheme'] === $b['scheme']);
 }
 
 /**
@@ -275,7 +338,7 @@ function handleOutboundStatusUpdate($db, $headers, $payload)
 	// and update a status field
 
 	if ($status === 'Error' && !empty($errorMessage)) {
-		dol_syslog("Peppol webhook - Outbound error: $errorMessage", LOG_ERR);
+		dol_syslog("Peppol webhook - Outbound error reported for document $documentId", LOG_ERR);
 		// TODO: Create a notification or event for the user
 	}
 }
@@ -296,7 +359,7 @@ function handleSalesInvoiceSendStatus($db, $headers, $payload)
 		throw new \Exception("Invalid payload for sales invoice send status");
 	}
 
-	dol_syslog("Peppol webhook - Sales invoice send status update: " . json_encode($data), LOG_INFO);
+	dol_syslog("Peppol webhook - Sales invoice send status update received", LOG_INFO);
 
 	// TODO: Process sales invoice send status
 }
@@ -317,7 +380,7 @@ function handlePurchaseInvoiceNew($db, $headers, $payload)
 	$totalInclVat = $headers['x-scrada-total-incl-vat'] ?? '';
 	$isCreditNote = ($headers['x-scrada-credit-invoice'] ?? 'false') === 'true';
 
-	dol_syslog("Peppol webhook - New purchase invoice: $invoiceNumber from $supplierName", LOG_INFO);
+	dol_syslog("Peppol webhook - New purchase invoice received", LOG_INFO);
 
 	// This webhook includes all Peppol headers if it came via Peppol
 	// So you can reuse handleInboundDocument logic if needed

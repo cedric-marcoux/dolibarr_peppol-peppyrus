@@ -30,6 +30,7 @@ PeppolAboutPage=Pagina su Peppol
 PeppolMassActionZip=Creare uno ZIP con tutti i file Peppol
 PeppolError=Errore di Peppol:
 BuyerDoesNotHaveVATDetails=Il numero di partita IVA intracomunitaria è necessario per redigere un documento conforme a Peppol.
+BuyerDoesNotHaveEmailOrPeppolID=Il cliente non ha né ID Peppol, né partita IVA, né indirizzo e-mail. Inserire almeno uno di questi dati nel soggetto terzo per creare un documento Peppol.
 PeppolWarning=Nota Peppol:
 BuyerDoesNotHaveVATDetailsForce=In assenza di un numero di partita IVA per questo cliente, il file XML generato utilizza il codice IVA speciale "00000000", ma non è conforme a Peppol.
 PEPPOL_CONFIG=Configurazione generale dei clienti non titolari di partita IVA
@@ -63,3 +64,30 @@ PEPPOL_AP_API_KEY=Chiave API Peppyrus (Produzione)
 PEPPOL_AP_API_KEYTooltip=La tua chiave per connetterti all'API Peppyrus in modalità PRODUZIONE. Questa chiave ti viene fornita da Peppyrus.
 PEPPOL_AP_API_KEY_DEV=Chiave API Peppyrus (Test/DEV)
 PEPPOL_AP_API_KEY_DEVTooltip=La tua chiave per connetterti all'API Peppyrus in modalità TEST. Usa questa chiave per test nell'ambiente di sviluppo.
+PEPPOL_AP_WEBHOOK_KEY=Chiave segreta webhook
+PEPPOL_AP_WEBHOOK_KEYTooltip=Chiave segreta per verificare la firma (HMAC) delle chiamate webhook. Senza questa chiave il webhook rifiuta ogni chiamata.
+PeppolSecretConfigured=Configurata (nascosta)
+PeppolSecretKeepCurrent=Lasciare vuoto per mantenere la chiave attuale
+
+# Peppol directory search
+peppolSearchQueryPlaceholder=Ragione sociale, partita IVA o numero di registro
+peppolSearchedBy=ricerca per %s
+peppolSearchCriterion_vat=partita IVA
+peppolSearchCriterion_profid1=numero di registro
+peppolSearchCriterion_name=nome
+peppolDirectoryNotFound=Nessun partecipante trovato nella directory Peppol. Provare un altro nome, partita IVA o numero di registro.
+peppolBackToThirdparty_card=Torna alla scheda del soggetto terzo
+peppolBackToThirdparty_comm=Torna alla scheda cliente
+peppolBackToThirdparty_fourn=Torna alla scheda fornitore
+SearchQuery=Ricerca
+
+# Peppol directory results
+peppolSameOrganisation=Questi %s identificativi appartengono alla stessa organizzazione. Scegliere preferibilmente quello consigliato.
+peppolLocation=Paese / località
+peppolAcceptsInvoice=Accetta fatture
+peppolMatchThirdparty=Corrispondenza con il soggetto
+peppolRecommended=Consigliato
+peppolRegisteredSince=Su Peppol dal %s
+peppolUnknown=Sconosciuto
+peppolMatchesField=Stesso %s
+peppolNoRecommendation=Nessuno di questi identificativi corrisponde alla partita IVA o a un identificativo professionale del soggetto.

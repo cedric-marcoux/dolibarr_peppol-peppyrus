@@ -58,7 +58,7 @@ class modPeppolpeppyrus extends DolibarrModules
 		$this->editor_url = '';
 
 		// Possible values for version are: 'development', 'experimental', 'dolibarr', 'dolibarr_deprecated' or a version string like 'x.y.z'
-		$this->version = '2.2.3';
+		$this->version = '2.4.2';
 		// Url to the file with your last numberversion of this module
 		$this->url_last_version = '';
 
@@ -108,6 +108,7 @@ class modPeppolpeppyrus extends DolibarrModules
 				'doMassActions',
 				'thirdpartycard',
 				'thirdpartycomm',
+				'thirdpartysupplier',
 				'globalcard',
 				'odtgeneration',
 				//   'data' => array(
@@ -118,6 +119,8 @@ class modPeppolpeppyrus extends DolibarrModules
 			),
 			// Set this to 1 if features of module are opened to external users
 			'moduleforexternal' => 0,
+			// Data directory per entity: DOL_DATA_ROOT/peppol (entity 1) or DOL_DATA_ROOT/<entity>/peppol
+			'dir' => array('output' => 'peppol'),
 		);
 
 		// Data directories to create when module is enabled.
@@ -139,8 +142,8 @@ class modPeppolpeppyrus extends DolibarrModules
 		$this->langfiles = array("peppol@peppolpeppyrus");
 
 		// Prerequisites
-		$this->phpmin = array(7, 1); // Minimum version of PHP required by module
-		$this->need_dolibarr_version = array(10, -3); // Minimum version of Dolibarr required by module
+		$this->phpmin = array(7, 1); // Minimum version of PHP required by module (and by the einvoicing library)
+		$this->need_dolibarr_version = array(18, 0); // Minimum version of Dolibarr required by module (supported: 18.0 up to 24.0.2)
 
 		// Messages at activation
 		$this->warnings_activation = array(); // Warning to show when we activate module. array('always'='text') or array('FR'='textfr','ES'='textes'...)

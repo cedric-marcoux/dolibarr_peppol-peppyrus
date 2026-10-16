@@ -366,7 +366,7 @@ class PeppolVatExemption
 
         // Fallback to configuration
         global $conf;
-        return $conf->global->MAIN_INFO_SOCIETE_COUNTRY ?? 'FR';
+        return getDolGlobalString('MAIN_INFO_SOCIETE_COUNTRY', 'FR');
     }
 
     /**

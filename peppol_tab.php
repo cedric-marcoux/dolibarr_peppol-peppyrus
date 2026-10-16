@@ -61,6 +61,15 @@ if (!$res) {
 	die("Include of main fails");
 }
 
+
+/**
+ * @var Conf $conf
+ * @var DoliDB $db
+ * @var HookManager $hookmanager
+ * @var Societe $mysoc
+ * @var Translate $langs
+ * @var User $user
+ */
 require_once DOL_DOCUMENT_ROOT . '/core/class/html.formcompany.class.php';
 require_once DOL_DOCUMENT_ROOT . '/core/class/html.formfile.class.php';
 require_once DOL_DOCUMENT_ROOT . '/core/class/html.formprojet.class.php';
@@ -89,7 +98,7 @@ $object = new Facture($db);
 $res = 0;
 // Load object
 if ($id > 0 || !empty($ref)) {
-	$res = $object->fetch($id, $ref, '', '', (!empty($conf->global->INVOICE_USE_SITUATION) ? $conf->global->INVOICE_USE_SITUATION : 0));
+	$res = $object->fetch($id, $ref, '', '', getDolGlobalInt('INVOICE_USE_SITUATION'));
 }
 if ($res < 0) {
 	accessforbidden();
@@ -103,9 +112,12 @@ if ($user->socid) {
 }
 $hookmanager->initHooks(array('invoicepeppol'));
 
-$result = restrictedArea($user, 'facture', $id, '');
+if (!isModEnabled('peppolpeppyrus') || !$user->hasRight('peppolpeppyrus', 'read')) {
+	accessforbidden();
+}
+$result = restrictedArea($user, 'facture', $object->id, '');
 
-$usercancreate = $user->hasRight("facture", "lire");
+$usercancreate = $user->hasRight("facture", "creer");
 
 /*
  * Actions
@@ -200,15 +212,16 @@ if ($id > 0 || !empty($ref)) {
 	print "<p>" . $langs->trans("PeppolTrackDocumentInAP") . "</p>";
 
 
-	$sql = "SELECT * FROM " . MAIN_DB_PREFIX . "peppol WHERE fk_object='" . $object->id . "' AND object_typeid=1 ORDER BY tms";
+	$sql = "SELECT status, message, fulldata FROM " . MAIN_DB_PREFIX . "peppol WHERE fk_object = " . ((int) $object->id) . " AND object_typeid = 1";
+	$sql .= " AND entity IN (" . getEntity('invoice') . ") ORDER BY tms";
 	$dupres = $db->query($sql);
 
 	while ($obj = $db->fetch_object($dupres)) {
-		print "<p>Etat : " . $obj->status . "</p>";
-		print "<p>Message : " . $obj->message . "</p>";
+		print "<p>" . $langs->trans("Status") . " : " . dol_escape_htmltag($obj->status) . "</p>";
+		print "<p>" . $langs->trans("Message") . " : " . dol_escape_htmltag($obj->message) . "</p>";
 		$json_pretty = json_encode(json_decode($obj->fulldata), JSON_PRETTY_PRINT);
 
-		print "<p>Détails : <br /><pre>" . $json_pretty . "</pre></p>";
+		print "<p>" . $langs->trans("Details") . " : <br /><pre>" . dol_escape_htmltag($json_pretty) . "</pre></p>";
 
 		// Display delivery report from Access Point if available
 		$object->fetch_optionals();

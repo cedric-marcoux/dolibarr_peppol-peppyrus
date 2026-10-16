@@ -272,7 +272,6 @@ class Peppolimport extends \CommonObject
 			$this->status = self::STATUS_DRAFT;
 		}
 
-		dol_syslog("Peppol::Peppolimport: create object : " . json_encode($this));
 		if (null === $this->peppolid) {
 			return -2;
 		}
@@ -543,9 +542,9 @@ class Peppolimport extends \CommonObject
 			dol_delete_file(str_replace('.xml', '.jpg', $fullfilename));
 		}
 
-		$base = DOL_DATA_ROOT . '/peppol/';
+		$base = $this->getRootDir();
 		$dirpath = dirname($fullfilename);
-		if ($dirpath != $base) {
+		if ($fullfilename !== '' && $dirpath != $base && $dirpath != $base . '/') {
 			dol_delete_dir($dirpath);
 		}
 
@@ -656,8 +655,11 @@ class Peppolimport extends \CommonObject
 			// Rename directory if dir was a temporary ref
 			if (preg_match('/^[\(]?PROV/i', $this->ref)) {
 				// Now we rename also files into index
-				$sql = 'UPDATE ' . MAIN_DB_PREFIX . "ecm_files set filename = CONCAT('" . $this->db->escape($this->newref) . "', SUBSTR(filename, " . (strlen($this->ref) + 1) . ")), filepath = 'peppolimport/" . $this->db->escape($this->newref) . "'";
-				$sql .= " WHERE filename LIKE '" . $this->db->escape($this->ref) . "%' AND filepath = 'peppolimport/" . $this->db->escape($this->ref) . "' and entity = " . $conf->entity;
+				// Path of the files in the index, relative to DOL_DATA_ROOT (as stored by indexFile())
+				$relold = preg_replace('/^' . preg_quote(DOL_DATA_ROOT . '/', '/') . '/', '', $this->getFileDir($this->ref));
+				$relnew = preg_replace('/^' . preg_quote(DOL_DATA_ROOT . '/', '/') . '/', '', $this->getFileDir($num));
+				$sql = 'UPDATE ' . MAIN_DB_PREFIX . "ecm_files set filename = CONCAT('" . $this->db->escape($num) . "', SUBSTR(filename, " . (strlen($this->ref) + 1) . ")), filepath = '" . $this->db->escape($relnew) . "'";
+				$sql .= " WHERE filename LIKE '" . $this->db->escape($this->db->escapeforlike($this->ref)) . "%' AND filepath = '" . $this->db->escape($relold) . "' and entity = " . ((int) $conf->entity);
 				$resql = $this->db->query($sql);
 				if (!$resql) {
 					$error++;
@@ -667,15 +669,15 @@ class Peppolimport extends \CommonObject
 				// We rename directory ($this->ref = old ref, $num = new ref) in order not to lose the attachments
 				$oldref = dol_sanitizeFileName($this->ref);
 				$newref = dol_sanitizeFileName($num);
-				$dirsource = $conf->peppolpeppyrus->dir_output . '/peppolimport/' . $oldref;
-				$dirdest = $conf->peppolpeppyrus->dir_output . '/peppolimport/' . $newref;
+				$dirsource = $this->getFileDir($this->ref);
+				$dirdest = $this->getFileDir($num);
 				if (!$error && file_exists($dirsource)) {
 					dol_syslog(get_class($this) . "::validate() rename dir " . $dirsource . " into " . $dirdest);
 
 					if (@rename($dirsource, $dirdest)) {
 						dol_syslog("Rename ok");
 						// Rename docs starting with $oldref with $newref
-						$listoffiles = dol_dir_list($conf->peppolpeppyrus->dir_output . '/peppolimport/' . $newref, 'files', 1, '^' . preg_quote($oldref, '/'));
+						$listoffiles = dol_dir_list($dirdest, 'files', 1, '^' . preg_quote($oldref, '/'));
 						foreach ($listoffiles as $fileentry) {
 							$dirsource = $fileentry['name'];
 							$dirdest = preg_replace('/^' . preg_quote($oldref, '/') . '/', $newref, $dirsource);
@@ -850,7 +852,7 @@ class Peppolimport extends \CommonObject
 					$pospoint = strpos($filearray[0]['name'], '.');
 
 					$pathtophoto = $class . '/' . $this->ref . '/thumbs/' . substr($filename, 0, $pospoint) . '_mini' . substr($filename, $pospoint);
-					if (empty($conf->global->{strtoupper($module . '_' . $class) . '_FORMATLISTPHOTOSASUSERS'})) {
+					if (!getDolGlobalString(strtoupper($module . '_' . $class) . '_FORMATLISTPHOTOSASUSERS')) {
 						$result .= '<div class="floatleft inline-block valignmiddle divphotoref"><div class="photoref"><img class="photo' . $module . '" alt="No photo" border="0" src="' . DOL_URL_ROOT . '/viewimage.php?modulepart=' . $module . '&entity=' . $conf->entity . '&file=' . urlencode($pathtophoto) . '"></div></div>';
 					} else {
 						$result .= '<div class="floatleft inline-block valignmiddle divphotoref"><img class="photouserphoto userphoto" alt="No photo" border="0" src="' . DOL_URL_ROOT . '/viewimage.php?modulepart=' . $module . '&entity=' . $conf->entity . '&file=' . urlencode($pathtophoto) . '"></div>';
@@ -1041,9 +1043,9 @@ class Peppolimport extends \CommonObject
 		$sql = "SELECT MAX(CAST(SUBSTRING(ref FROM " . $posindice . ") AS SIGNED)) as max";
 		$sql .= " FROM " . MAIN_DB_PREFIX . $this->table_element;
 		$sql .= " WHERE ref LIKE '" . $prefix . "-%'";
-		if ($object->ismultientitymanaged == 1) {
-			$sql .= " AND entity = " . $conf->entity;
-		} elseif ($object->ismultientitymanaged == 2) {
+		if ($this->ismultientitymanaged == 1) {
+			$sql .= " AND entity = " . ((int) $conf->entity);
+		} elseif ($this->ismultientitymanaged == 2) {
 			// TODO
 		}
 
@@ -1164,8 +1166,33 @@ class Peppolimport extends \CommonObject
 	 */
 	public function fileExist()
 	{
+		$fullfilename = $this->fullFilename();
+		return ($fullfilename !== '' && dol_is_file($fullfilename));
+	}
 
-		//TODO
+	/**
+	 * Root directory of the imported Peppol files, per entity.
+	 * Same convention as Dolibarr for module data: DOL_DATA_ROOT/peppol for entity 1,
+	 * DOL_DATA_ROOT/<entity>/peppol for the other entities (see module_parts 'dir').
+	 *
+	 * @return	string	Directory without trailing slash
+	 */
+	public function getRootDir()
+	{
+		global $conf;
+		$entity = (int) (!empty($this->entity) ? $this->entity : $conf->entity);
+		return DOL_DATA_ROOT . ($entity > 1 ? '/' . $entity : '') . '/peppol';
+	}
+
+	/**
+	 * Directory of the files of this import
+	 *
+	 * @param	string	$ref	Ref to use instead of the current ref (used when renaming)
+	 * @return	string			Directory without trailing slash
+	 */
+	public function getFileDir($ref = '')
+	{
+		return $this->getRootDir() . '/' . dol_sanitizeFileName($ref !== '' ? $ref : $this->ref);
 	}
 
 	/**
@@ -1178,7 +1205,7 @@ class Peppolimport extends \CommonObject
 	{
 		$ret = "";
 		if (!empty($this->peppolid)) {
-			$completefilepath = DOL_DATA_ROOT . '/peppol/' . dol_sanitizeFileName($this->ref);
+			$completefilepath = $this->getFileDir();
 			if (empty($this->filename)) {
 				$filename = dol_sanitizeFileName($this->peppolid) . ".xml";
 				$res = dol_mkdir($completefilepath);
@@ -1203,13 +1230,13 @@ class Peppolimport extends \CommonObject
 
 	public function setValue($key, $value)
 	{
-		dol_syslog("PeppolImport set " . $key . ", value=" . $value);
+		dol_syslog("PeppolImport set " . $key);
 		$this->{$key} = $value;
 	}
 
 	public function setValues($array)
 	{
-		dol_syslog("PeppolImport setvalues " . json_encode($array));
+		dol_syslog("PeppolImport setvalues for " . count($array) . " field(s)");
 		foreach ($array as $key => $value) {
 			$this->{$key} = $value;
 		}

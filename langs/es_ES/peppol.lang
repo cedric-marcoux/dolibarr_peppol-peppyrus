@@ -28,6 +28,7 @@ PeppolAboutPage=Página sobre Peppol
 PeppolMassActionZip=Crear un ZIP con todos los archivos Peppol
 PeppolError=Error de Peppol:
 BuyerDoesNotHaveVATDetails=El número de IVA intracomunitario es necesario para elaborar un documento conforme a Peppol
+BuyerDoesNotHaveEmailOrPeppolID=El cliente no tiene identificador Peppol, ni número de IVA, ni dirección de correo electrónico. Indique al menos uno de ellos en el tercero para crear un documento Peppol.
 PeppolWarning=Nota Peppol:
 BuyerDoesNotHaveVATDetailsForce=En ausencia de un número de IVA para este cliente, el archivo XML generado utiliza el código de IVA especial "00000000", pero no es compatible con Peppol.
 PEPPOL_CONFIG=Configuración general de los clientes que no tienen número de IVA
@@ -60,6 +61,33 @@ PEPPOL_AP_API_KEY=Clave API Peppyrus (Producción)
 PEPPOL_AP_API_KEYTooltip=Su clave para conectarse a la API de Peppyrus en modo PRODUCCIÓN. Esta clave le es proporcionada por Peppyrus.
 PEPPOL_AP_API_KEY_DEV=Clave API Peppyrus (Test/DEV)
 PEPPOL_AP_API_KEY_DEVTooltip=Su clave para conectarse a la API de Peppyrus en modo TEST. Utilice esta clave para pruebas en el entorno de desarrollo.
+PEPPOL_AP_WEBHOOK_KEY=Clave secreta del webhook
+PEPPOL_AP_WEBHOOK_KEYTooltip=Clave secreta para verificar la firma (HMAC) de las llamadas al webhook. Sin esta clave, el webhook rechaza todas las llamadas.
+PeppolSecretConfigured=Configurada (oculta)
+PeppolSecretKeepCurrent=Dejar vacío para conservar la clave actual
 PeppolCheckErrorCustomerTown=Su cliente no tiene ciudad asociada
 PeppolCheckErrorCustomerCountry=No se especifica el país de su cliente
 PeppolCheckErrorCustomerVAT=Su cliente no tiene número de IVA
+
+# Peppol directory search
+peppolSearchQueryPlaceholder=Razón social, NIF-IVA o número de registro
+peppolSearchedBy=búsqueda por %s
+peppolSearchCriterion_vat=NIF-IVA
+peppolSearchCriterion_profid1=número de registro
+peppolSearchCriterion_name=nombre
+peppolDirectoryNotFound=No se encontró ningún participante en el directorio Peppol. Pruebe otro nombre, NIF-IVA o número de registro.
+peppolBackToThirdparty_card=Volver a la ficha del tercero
+peppolBackToThirdparty_comm=Volver a la ficha del cliente
+peppolBackToThirdparty_fourn=Volver a la ficha del proveedor
+SearchQuery=Búsqueda
+
+# Peppol directory results
+peppolSameOrganisation=Estos %s identificadores pertenecen a la misma organización. Elija preferentemente el recomendado.
+peppolLocation=País / localidad
+peppolAcceptsInvoice=Acepta facturas
+peppolMatchThirdparty=Coincidencia con el tercero
+peppolRecommended=Recomendado
+peppolRegisteredSince=En Peppol desde %s
+peppolUnknown=Desconocido
+peppolMatchesField=Mismo %s
+peppolNoRecommendation=Ninguno de estos identificadores coincide con el NIF-IVA o un identificador profesional del tercero.

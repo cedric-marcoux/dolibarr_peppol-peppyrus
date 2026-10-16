@@ -28,6 +28,7 @@ PeppolAboutPage=Pagina despre Peppol
 PeppolMassActionZip=Creați un ZIP cu toate fișierele Peppol
 PeppolError=Eroare Peppol:
 BuyerDoesNotHaveVATDetails=Numărul de TVA intracomunitar este necesar pentru întocmirea unui document conform Peppol
+BuyerDoesNotHaveEmailOrPeppolID=Clientul nu are ID Peppol, cod de TVA sau adresă de e-mail. Completați cel puțin unul dintre acestea la terț pentru a crea un document Peppol.
 PeppolWarning=Notă Peppol:
 BuyerDoesNotHaveVATDetailsForce=În absența unui număr de TVA pentru acest client, fișierul XML generat utilizează codul special de TVA "00000000", dar nu este conform cu Peppol.
 PEPPOL_CONFIG=Configurația generală a clienților care nu au un număr de TVA
@@ -63,3 +64,30 @@ PEPPOL_AP_API_KEY=Cheie API Peppyrus (Producție)
 PEPPOL_AP_API_KEYTooltip=Cheia dumneavoastră pentru conectare la API-ul Peppyrus în modul PRODUCȚIE. Această cheie vă este furnizată de Peppyrus.
 PEPPOL_AP_API_KEY_DEV=Cheie API Peppyrus (Test/DEV)
 PEPPOL_AP_API_KEY_DEVTooltip=Cheia dumneavoastră pentru conectare la API-ul Peppyrus în modul TEST. Utilizați această cheie pentru teste în mediul de dezvoltare.
+PEPPOL_AP_WEBHOOK_KEY=Cheie secretă webhook
+PEPPOL_AP_WEBHOOK_KEYTooltip=Cheie secretă pentru verificarea semnăturii (HMAC) apelurilor webhook. Fără această cheie, webhook-ul refuză orice apel.
+PeppolSecretConfigured=Configurată (ascunsă)
+PeppolSecretKeepCurrent=Lăsați gol pentru a păstra cheia actuală
+
+# Peppol directory search
+peppolSearchQueryPlaceholder=Denumire, cod TVA sau număr de înregistrare
+peppolSearchedBy=căutare după %s
+peppolSearchCriterion_vat=cod TVA
+peppolSearchCriterion_profid1=număr de înregistrare
+peppolSearchCriterion_name=denumire
+peppolDirectoryNotFound=Niciun participant găsit în directorul Peppol. Încercați altă denumire, cod TVA sau număr de înregistrare.
+peppolBackToThirdparty_card=Înapoi la fișa terțului
+peppolBackToThirdparty_comm=Înapoi la fișa clientului
+peppolBackToThirdparty_fourn=Înapoi la fișa furnizorului
+SearchQuery=Căutare
+
+# Peppol directory results
+peppolSameOrganisation=Aceste %s identificatoare aparțin aceleiași organizații. Alegeți de preferință identificatorul recomandat.
+peppolLocation=Țară / localitate
+peppolAcceptsInvoice=Acceptă facturi
+peppolMatchThirdparty=Corespondență cu terțul
+peppolRecommended=Recomandat
+peppolRegisteredSince=Pe Peppol din %s
+peppolUnknown=Necunoscut
+peppolMatchesField=Același %s
+peppolNoRecommendation=Niciunul dintre aceste identificatoare nu corespunde codului TVA sau unui identificator profesional al terțului.

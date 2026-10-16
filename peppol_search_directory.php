@@ -38,6 +38,15 @@ if (!$res) {
 	die("Include of main fails");
 }
 
+
+/**
+ * @var Conf $conf
+ * @var DoliDB $db
+ * @var HookManager $hookmanager
+ * @var Societe $mysoc
+ * @var Translate $langs
+ * @var User $user
+ */
 require_once DOL_DOCUMENT_ROOT . '/societe/class/societe.class.php';
 require_once DOL_DOCUMENT_ROOT . '/core/lib/geturl.lib.php';
 
@@ -61,8 +70,11 @@ $result = restrictedArea($user, 'peppolpeppyrus');
 // Load third party if socid is provided
 $thirdparty = null;
 if ($socid > 0) {
+	restrictedArea($user, 'societe', $socid, '&societe', '', 'fk_soc', 'rowid', 0);
 	$thirdparty = new Societe($db);
-	$thirdparty->fetch($socid);
+	if ($thirdparty->fetch($socid) <= 0) {
+		$thirdparty = null;
+	}
 }
 
 /*
@@ -88,7 +100,7 @@ if ($action == 'search') {
 
 		if (!empty($params)) {
 			$searchResults = $ap->searchPeppolDirectory($params);
-			dol_syslog("Peppol directory search result: " . json_encode($searchResults));
+			dol_syslog("Peppol directory search: " . (is_array($searchResults) && isset($searchResults['matches']) && is_array($searchResults['matches']) ? count($searchResults['matches']) . ' result(s)' : 'no usable result'));
 		} else {
 			setEventMessage($langs->trans('peppolSearchErrorNoParams'), 'warnings');
 		}
@@ -98,7 +110,15 @@ if ($action == 'search') {
 }
 
 if ($action == 'select' && $socid > 0) {
-	$participantid = GETPOST('participantid', 'alpha');
+	// Changing the Peppol ID of a third party: needs write access to the module and to that third party, and a valid token
+	if (!peppolCheckToken()) {
+		accessforbidden($langs->trans('ErrorBadValueForParameter', 'token'));
+	}
+	if (empty($thirdparty) || !$user->hasRight('peppolpeppyrus', 'write') || !$user->hasRight('societe', 'creer')) {
+		accessforbidden();
+	}
+	restrictedArea($user, 'societe', $socid, '&societe', '', 'fk_soc', 'rowid', 0);
+	$participantid = GETPOST('participantid', 'alphanohtml');
 	if (!empty($participantid) && $thirdparty) {
 		$thirdparty->array_options['options_peppol_id'] = $participantid;
 		// Save extrafield - update() alone doesn't save extrafields in Dolibarr!

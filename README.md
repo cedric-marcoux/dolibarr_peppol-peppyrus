@@ -82,8 +82,8 @@ This module allows sending electronic invoices via the PEPPOL network using the 
 
 ## Requirements
 
-- Dolibarr 14.0 or higher
-- PHP 7.4 or higher
+- Dolibarr 18.0 up to 24.0.2
+- PHP 7.1 or higher
 - A Peppyrus account (free registration at [peppyrus.be](https://www.peppyrus.be))
 
 ## Installation
@@ -141,7 +141,8 @@ Peppyrus provides a separate test environment for development and testing purpos
 2. The test API key is different from the production key
 3. Configure both keys in the module settings:
    - **PEPPOL_AP_API_KEY**: Production API key
-   - **PEPPOL_AP_API_KEY_DEV**: Test/Development API key
+   - **PEPPOL_AP_DEV_API_KEY**: Test/Development API key (formerly PEPPOL_AP_API_KEY_DEV, still read until saved again)
+   - **PEPPOL_AP_WEBHOOK_KEY**: secret key for the webhook signature; without it the webhook refuses every call
 
 ### Configuration for Testing
 

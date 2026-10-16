@@ -59,6 +59,15 @@ if (!$res) {
 	die("Include of main fails");
 }
 
+
+/**
+ * @var Conf $conf
+ * @var DoliDB $db
+ * @var HookManager $hookmanager
+ * @var Societe $mysoc
+ * @var Translate $langs
+ * @var User $user
+ */
 $permissiontoaccess = $user->rights->peppolpeppyrus->import;
 /*
 Note: vérification des droits associés et nécessaires:
@@ -126,7 +135,7 @@ $id = GETPOST('id', 'int');
 $limit = GETPOST('limit', 'int') ? GETPOST('limit', 'int') : $conf->liste_limit;
 $sortfield = GETPOST('sortfield', 'aZ09comma');
 $sortorder = GETPOST('sortorder', 'aZ09comma');
-$page = GETPOSTISSET('pageplusone') ? (GETPOST('pageplusone') - 1) : GETPOST("page", 'int');
+$page = GETPOSTISSET('pageplusone') ? (GETPOSTINT('pageplusone') - 1) : GETPOST("page", 'int');
 if (empty($page) || $page < 0 || GETPOST('button_search', 'alpha') || GETPOST('button_removefilter', 'alpha')) {
 	// If $page is not defined, or '' or -1 or if we click on clear filters
 	$page = 0;
@@ -240,7 +249,10 @@ if (!GETPOST('confirmmassaction', 'alpha') && $massaction != 'presend' && $massa
 	$massaction = '';
 }
 
-if($action == "refresh") {
+if ($action == "refresh") {
+	if (!$user->hasRight('peppolpeppyrus', 'write') || !peppolCheckToken()) {
+		accessforbidden();
+	}
 	peppolGetSupplierInvoicesList();
 }
 
@@ -304,7 +316,7 @@ if (empty($reshook)) {
 		}
 		$importHtml .= "</tbody>";
 		$importHtml .= "</table></div>";
-		dol_syslog("PeppolImport : Import Now returns " . json_encode($res));
+		dol_syslog("PeppolImport : Import Now done");
 	}
 }
 
@@ -614,7 +626,7 @@ $newcardbutton = '';
 //$newcardbutton .= dolGetButtonTitle($langs->trans('ViewList'), '', 'fa fa-bars imgforviewmode', $_SERVER["PHP_SELF"].'?mode=common'.preg_replace('/(&|\?)*mode=[^&]+/', '', $param), '', ((empty($mode) || $mode == 'common') ? 2 : 1), array('morecss'=>'reposition'));
 //$newcardbutton .= dolGetButtonTitle($langs->trans('ViewKanban'), '', 'fa fa-th-list imgforviewmode', $_SERVER["PHP_SELF"].'?mode=kanban'.preg_replace('/(&|\?)*mode=[^&]+/', '', $param), '', ($mode == 'kanban' ? 2 : 1), array('morecss'=>'reposition'));
 //$newcardbutton .= dolGetButtonTitleSeparator();
-$newcardbutton .= dolGetButtonTitle($langs->trans('Refresh'), '', 'fa fa-repeat fas fa-redo', dol_buildpath('/peppolpeppyrus/peppolimport_list.php?action=refresh', 1), '', $permissiontoadd);
+$newcardbutton .= dolGetButtonTitle($langs->trans('Refresh'), '', 'fa fa-repeat fas fa-redo', dol_buildpath('/peppolpeppyrus/peppolimport_list.php?action=refresh&token='.newToken(), 1), '', $permissiontoadd);
 
 print_barre_liste($title, $page, $_SERVER["PHP_SELF"], $param, $sortfield, $sortorder, $massactionbutton, $num, $nbtotalofrecords, 'object_'.$object->picto, 0, $newcardbutton, '', $limit, 0, 0, 1);
 

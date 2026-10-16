@@ -23,6 +23,15 @@ if (!$res && file_exists("../../main.inc.php")) $res = include "../../main.inc.p
 if (!$res && file_exists("../../../main.inc.php")) $res = include "../../../main.inc.php";
 if (!$res) die("Include of main fails");
 
+
+/**
+ * @var Conf $conf
+ * @var DoliDB $db
+ * @var HookManager $hookmanager
+ * @var Societe $mysoc
+ * @var Translate $langs
+ * @var User $user
+ */
 global $langs, $user, $conf, $db;
 
 // Libraries
@@ -54,18 +63,23 @@ if ($action == 'update' && !empty($user->admin)) {
 		$error++;
 	}
 
-	// Update PEPPOL_AP_API_KEY (Production)
-	// Use 'alphanohtml' to allow alphanumeric characters (API keys contain numbers)
-	$api_key = GETPOST('PEPPOL_AP_API_KEY', 'alphanohtml');
-	if (!dolibarr_set_const($db, 'PEPPOL_AP_API_KEY', $api_key, 'chaine', 0, '', $conf->entity)) {
-		$error++;
-	}
-
-	// Update PEPPOL_AP_API_KEY_DEV (Test/Development)
-	// Use 'alphanohtml' to allow alphanumeric characters (API keys contain numbers)
-	$api_key_dev = GETPOST('PEPPOL_AP_API_KEY_DEV', 'alphanohtml');
-	if (!dolibarr_set_const($db, 'PEPPOL_AP_API_KEY_DEV', $api_key_dev, 'chaine', 0, '', $conf->entity)) {
-		$error++;
+	// Secrets (names end with _KEY so dolibarr_set_const() stores them encrypted).
+	// An empty field means: keep the current value. Secrets are never sent back to the browser.
+	$secretfields = array(
+		'PEPPOL_AP_API_KEY' => 'PEPPOL_AP_API_KEY',
+		'PEPPOL_AP_DEV_API_KEY' => 'PEPPOL_AP_DEV_API_KEY',
+		'PEPPOL_AP_WEBHOOK_KEY' => 'PEPPOL_AP_WEBHOOK_KEY',
+	);
+	foreach ($secretfields as $field => $constname) {
+		$secret = trim(GETPOST($field, 'alphanohtml'));
+		if ($secret !== '') {
+			if (!dolibarr_set_const($db, $constname, $secret, 'chaine', 0, '', $conf->entity)) {
+				$error++;
+			} elseif ($constname == 'PEPPOL_AP_DEV_API_KEY') {
+				// Old name was not encrypted, remove it once the new one is stored
+				dolibarr_del_const($db, 'PEPPOL_AP_API_KEY_DEV', $conf->entity);
+			}
+		}
 	}
 
 	// Update PEPPOL_PROD
@@ -157,21 +171,28 @@ if ($action == 'edit') {
 	print '<tr class="oddeven">';
 	print '<td><label for="PEPPOL_AP_SENDER_ID">' . $langs->trans("PEPPOL_AP_SENDER_ID") . '</label>';
 	print '<br><span class="opacitymedium small">' . $langs->trans("PEPPOL_AP_SENDER_IDTooltip") . '</span></td>';
-	print '<td><input type="text" name="PEPPOL_AP_SENDER_ID" id="PEPPOL_AP_SENDER_ID" class="flat minwidth400" value="' . getDolGlobalString('PEPPOL_AP_SENDER_ID', '') . '" placeholder="0208:0000000097"></td>';
+	print '<td><input type="text" name="PEPPOL_AP_SENDER_ID" id="PEPPOL_AP_SENDER_ID" class="flat minwidth400" value="' . dol_escape_htmltag(getDolGlobalString('PEPPOL_AP_SENDER_ID', '')) . '" placeholder="0208:0000000097"></td>';
 	print '</tr>';
 
 	// PEPPOL_AP_API_KEY (Production)
 	print '<tr class="oddeven">';
 	print '<td><label for="PEPPOL_AP_API_KEY">' . $langs->trans("PEPPOL_AP_API_KEY") . '</label>';
 	print '<br><span class="opacitymedium small">' . $langs->trans("PEPPOL_AP_API_KEYTooltip") . '</span></td>';
-	print '<td><input type="text" name="PEPPOL_AP_API_KEY" id="PEPPOL_AP_API_KEY" class="flat minwidth400" value="' . getDolGlobalString('PEPPOL_AP_API_KEY', '') . '"></td>';
+	print '<td><input type="password" name="PEPPOL_AP_API_KEY" id="PEPPOL_AP_API_KEY" class="flat minwidth400" value="" autocomplete="new-password" placeholder="' . dol_escape_htmltag($langs->trans(peppolGetApiKey('PEPPOL_AP_API_KEY') ? "PeppolSecretKeepCurrent" : "NotConfigured")) . '"></td>';
 	print '</tr>';
 
-	// PEPPOL_AP_API_KEY_DEV (Test/Development)
+	// PEPPOL_AP_DEV_API_KEY (Test/Development)
 	print '<tr class="oddeven">';
-	print '<td><label for="PEPPOL_AP_API_KEY_DEV">' . $langs->trans("PEPPOL_AP_API_KEY_DEV") . '</label>';
+	print '<td><label for="PEPPOL_AP_DEV_API_KEY">' . $langs->trans("PEPPOL_AP_API_KEY_DEV") . '</label>';
 	print '<br><span class="opacitymedium small">' . $langs->trans("PEPPOL_AP_API_KEY_DEVTooltip") . '</span></td>';
-	print '<td><input type="text" name="PEPPOL_AP_API_KEY_DEV" id="PEPPOL_AP_API_KEY_DEV" class="flat minwidth400" value="' . getDolGlobalString('PEPPOL_AP_API_KEY_DEV', '') . '"></td>';
+	print '<td><input type="password" name="PEPPOL_AP_DEV_API_KEY" id="PEPPOL_AP_DEV_API_KEY" class="flat minwidth400" value="" autocomplete="new-password" placeholder="' . dol_escape_htmltag($langs->trans(peppolGetApiKey('PEPPOL_AP_DEV_API_KEY') ? "PeppolSecretKeepCurrent" : "NotConfigured")) . '"></td>';
+	print '</tr>';
+
+	// PEPPOL_AP_WEBHOOK_KEY
+	print '<tr class="oddeven">';
+	print '<td><label for="PEPPOL_AP_WEBHOOK_KEY">' . $langs->trans("PEPPOL_AP_WEBHOOK_KEY") . '</label>';
+	print '<br><span class="opacitymedium small">' . $langs->trans("PEPPOL_AP_WEBHOOK_KEYTooltip") . '</span></td>';
+	print '<td><input type="password" name="PEPPOL_AP_WEBHOOK_KEY" id="PEPPOL_AP_WEBHOOK_KEY" class="flat minwidth400" value="" autocomplete="new-password" placeholder="' . dol_escape_htmltag($langs->trans(getDolGlobalString('PEPPOL_AP_WEBHOOK_KEY') ? "PeppolSecretKeepCurrent" : "NotConfigured")) . '"></td>';
 	print '</tr>';
 
 	// PEPPOL_PROD
@@ -249,34 +270,25 @@ if ($action == 'edit') {
 	print '<tr class="oddeven">';
 	print '<td>' . $langs->trans("PEPPOL_AP_SENDER_ID") . '</td>';
 	$sender_id = getDolGlobalString('PEPPOL_AP_SENDER_ID', '');
-	print '<td>' . ($sender_id ? $sender_id : '<span class="opacitymedium">' . $langs->trans("NotConfigured") . '</span>') . '</td>';
+	print '<td>' . ($sender_id ? dol_escape_htmltag($sender_id) : '<span class="opacitymedium">' . $langs->trans("NotConfigured") . '</span>') . '</td>';
 	print '</tr>';
 
-	// PEPPOL_AP_API_KEY (Production)
-	print '<tr class="oddeven">';
-	print '<td>' . $langs->trans("PEPPOL_AP_API_KEY") . '</td>';
-	$api_key = getDolGlobalString('PEPPOL_AP_API_KEY', '');
-	if ($api_key) {
-		// Mask API key for security
-		$masked = substr($api_key, 0, 4) . str_repeat('*', max(0, strlen($api_key) - 8)) . substr($api_key, -4);
-		print '<td>' . $masked . '</td>';
-	} else {
-		print '<td><span class="opacitymedium">' . $langs->trans("NotConfigured") . '</span></td>';
+	// Secrets: only show whether they are configured, never (part of) the value
+	$secretrows = array(
+		'PEPPOL_AP_API_KEY' => peppolGetApiKey('PEPPOL_AP_API_KEY'),
+		'PEPPOL_AP_API_KEY_DEV' => peppolGetApiKey('PEPPOL_AP_DEV_API_KEY'),
+		'PEPPOL_AP_WEBHOOK_KEY' => getDolGlobalString('PEPPOL_AP_WEBHOOK_KEY'),
+	);
+	foreach ($secretrows as $label => $secretvalue) {
+		print '<tr class="oddeven">';
+		print '<td>' . $langs->trans($label) . '</td>';
+		if ($secretvalue !== '') {
+			print '<td>' . $langs->trans("PeppolSecretConfigured") . '</td>';
+		} else {
+			print '<td><span class="opacitymedium">' . $langs->trans("NotConfigured") . '</span></td>';
+		}
+		print '</tr>';
 	}
-	print '</tr>';
-
-	// PEPPOL_AP_API_KEY_DEV (Test/Development)
-	print '<tr class="oddeven">';
-	print '<td>' . $langs->trans("PEPPOL_AP_API_KEY_DEV") . '</td>';
-	$api_key_dev = getDolGlobalString('PEPPOL_AP_API_KEY_DEV', '');
-	if ($api_key_dev) {
-		// Mask API key for security
-		$masked_dev = substr($api_key_dev, 0, 4) . str_repeat('*', max(0, strlen($api_key_dev) - 8)) . substr($api_key_dev, -4);
-		print '<td>' . $masked_dev . '</td>';
-	} else {
-		print '<td><span class="opacitymedium">' . $langs->trans("NotConfigured") . '</span></td>';
-	}
-	print '</tr>';
 
 	// PEPPOL_PROD
 	print '<tr class="oddeven">';

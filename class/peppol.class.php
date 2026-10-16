@@ -99,12 +99,12 @@ class Peppol
 		$ret = 0;
 		$buyerIdent = null;
 		$objFacture = $this->_invoice; //migrating code from dolibar
-		dol_syslog("peppol:: makePDF for invoice " . json_encode($objFacture));
+		dol_syslog("peppol:: makePDF for invoice id=" . (is_object($objFacture) ? ((int) $objFacture->id) : 0));
 
 		//check module version vs last init version in database
 		if (isset($this->db)) {
 			$tmpmodule = new \modPeppolpeppyrus($this->db);
-			if ($tmpmodule->version != $conf->global->PEPPOL_MODULE_VERSION) {
+			if ($tmpmodule->version != getDolGlobalString('PEPPOL_MODULE_VERSION')) {
 				setEventMessages($langs->trans("ErrorPeppolModuleVersionDatabase"), null, 'errors');
 				// return -100;
 			}
@@ -140,20 +140,27 @@ class Peppol
 			dol_syslog("peppol:: makePDF thirdpart tva_assuj=" . $objFacture->thirdparty->tva_assuj);
 		}
 
-		if ($objFacture->thirdparty->typent_code == 'TE_PRIVATE') {
-			dol_syslog("peppol:: makePDF for a private people : " . $objFacture->thirdparty->typent_code);
+		// Private customers are not on the Peppol network: skip silently (no message), the PDF is made as usual.
+		// A customer counts as private when its third party type is "Private individual" (TE_PRIVATE), or when no
+		// type is set and it has neither a Peppol ID nor a VAT number. A business type without these details keeps the warnings.
+		if (empty($objFacture->thirdparty->array_options) || !array_key_exists('options_peppol_id', $objFacture->thirdparty->array_options)) {
+			$objFacture->thirdparty->fetch_optionals();
+		}
+		$typentcode = (string) ($objFacture->thirdparty->typent_code ?? '');
+		$hasPeppolId = !empty($objFacture->thirdparty->array_options['options_peppol_id']);
+		$hasVatNumber = trim((string) ($objFacture->thirdparty->tva_intra ?? '')) !== '';
+		$isPrivate = ($typentcode == 'TE_PRIVATE') || (in_array($typentcode, array('', 'TE_UNKNOWN')) && !$hasPeppolId && !$hasVatNumber);
+		if ($isPrivate) {
+			dol_syslog("peppol:: makePDF for a private customer, typent_code=" . $typentcode);
 			$enableVatForThatInvoice = false;
 			if (getDolGlobalString('PEPPOL_FORCE_XML_WITH_VATNULL')) {
-				dol_syslog("peppol:: makePDF for a private people but PEPPOL_FORCE_XML_WITH_VATNULL is set, continue");
+				dol_syslog("peppol:: makePDF for a private customer but PEPPOL_FORCE_XML_WITH_VATNULL is set, continue");
 			} else {
-				dol_syslog("peppol:: makePDF for a private people -> no xml output", LOG_INFO);
-				$this->error = $langs->trans("PeppolErrorPrivateCustomer");
-				$this->errors[] = $langs->trans("PeppolErrorPrivateCustomer");
-				setEventMessages($langs->trans("PeppolErrorPrivateCustomer"), null, 'warnings');
-				return -3;
+				dol_syslog("peppol:: makePDF for a private customer -> no xml output, no message", LOG_INFO);
+				return 0;
 			}
 		} else {
-			dol_syslog("peppol:: makePDF for a typent_code=" . $objFacture->thirdparty->typent_code);
+			dol_syslog("peppol:: makePDF for a typent_code=" . $typentcode);
 		}
 
 		$baseErrors = [];
@@ -200,9 +207,9 @@ class Peppol
 				}
 			}
 		} else {
-			dol_syslog("Peppol: getIdShippingContact " . json_encode($shippings));
+			dol_syslog("Peppol: no shipping contact");
 		}
-		dol_syslog("Peppol: shipping is " . json_encode($shipping));
+		dol_syslog("Peppol: shipping contact " . (is_object($shipping) ? "used" : "not used"));
 
 		//billing address could be a linked contact
 		$billings = $objFacture->getIdBillingContact();
@@ -221,9 +228,9 @@ class Peppol
 				}
 			}
 		} else {
-			dol_syslog("Peppol: getIdBillingContact " . json_encode($billings));
+			dol_syslog("Peppol: no billing contact");
 		}
-		dol_syslog("Peppol: billing is " . json_encode($billing));
+		dol_syslog("Peppol: billing contact " . (is_object($billing) ? "used" : "not used"));
 
 		//add more messages
 		foreach ($otherBaseErrorsToCheck as $key => $details) {
@@ -240,16 +247,14 @@ class Peppol
 		$objFacture->fetch_thirdparty();
 		// Force load extrafields - array_options may be empty array even after fetch_thirdparty
 		$objFacture->thirdparty->fetch_optionals();
-		dol_syslog("Peppol: thirdparty array_options after fetch_optionals = " . json_encode($objFacture->thirdparty->array_options));
 		if (!empty($objFacture->thirdparty->array_options['options_peppol_id'])) {
-			dol_syslog("Peppol: specific peppol id " . json_encode($objFacture->thirdparty->array_options['options_peppol_id']));
+			dol_syslog("Peppol: thirdparty has a specific peppol id");
 			//9938:20225000264
 			if (strpos($objFacture->thirdparty->array_options['options_peppol_id'], ':')) {
 				$code = explode(':', $objFacture->thirdparty->array_options['options_peppol_id']);
-				dol_syslog("Peppol: buyer Ident code is " . json_encode($code));
 				if (!empty($code[0]) && !empty($code[1])) {
 					$buyerIdent = new Identifier($code[1], $code[0]);
-					dol_syslog("Peppol: buyer Ident is now " . json_encode($buyerIdent));
+					dol_syslog("Peppol: buyer Ident set from the specific peppol id");
 				} else {
 					if (empty($code[0])) {
 						$baseErrors[] = $langs->trans("PeppolCheckErrorCustomerPeppolIDpartA");
@@ -326,7 +331,6 @@ class Peppol
 				$delivery->setPostalCode($objFacture->thirdparty->zip);
 			}
 		}
-		dol_syslog("Peppol: delivery is " . json_encode($delivery));
 
 		// Create PEPPOL invoice instance
 		$inv = new Invoice(Presets\Peppol::class);
@@ -396,7 +400,6 @@ class Peppol
 			$seller->setPostalCode($mysoc->zip);
 		}
 		$inv->setSeller($seller);
-		dol_syslog("Peppol: seller is " . json_encode($seller));
 
 		// Si Bénéficiaire <=> vendeur ?
 		//$inv->setPayee($seller);
@@ -433,7 +436,13 @@ class Peppol
 				} else {
 					dol_syslog("Buyer does not have a VAT number, but is a private people or non vat aware organisation", LOG_WARNING);
 					$buyerVAT = null;
-					$buyer->setElectronicAddress(new Identifier($objFacture->thirdparty->email, '0007'));
+					$buyerEmail = trim((string) ($objFacture->thirdparty->email ?? ''));
+					if (empty($buyerEmail)) {
+						dol_syslog("Buyer has no Peppol ID, no VAT number and no email address, Peppol export disabled", LOG_WARNING);
+						setEventMessages($langs->trans("PeppolError"), array($langs->trans("BuyerDoesNotHaveEmailOrPeppolID")), 'warnings');
+						return -1;
+					}
+					$buyer->setElectronicAddress(new Identifier($buyerEmail, '0007'));
 				}
 				dol_syslog("peppol Identifier stay empty");
 			}
@@ -530,7 +539,6 @@ class Peppol
 			}
 		}
 		$inv->setBuyer($buyer);
-		dol_syslog("Peppol: buyer is " . json_encode($buyer));
 
 		//Inversion Purchase / Sales - vu juin 2023
 		$buyerReference = "no buyer ref.";
@@ -576,14 +584,13 @@ class Peppol
 
 		//default bank account in global dolibarr settings ?
 		// Payment informations
-		$bankid = (($objFacture->fk_account > 0) ? $objFacture->fk_account : $conf->global->FACTURE_RIB_NUMBER);
+		$bankid = (($objFacture->fk_account > 0) ? $objFacture->fk_account : getDolGlobalInt('FACTURE_RIB_NUMBER'));
 		if (!empty($bankid)) {
 			$payment = new Payment();
 			$transfert = new Transfer();
 			$bank = new \Account($this->db);
 			$bankres = $bank->fetch($bankid);
 			if ($bankres) {
-				dol_syslog("peppol bank : " . json_encode($bank));
 				// mode_reglement
 				if ($objFacture->mode_reglement_code == "VIR" && empty($bank->iban)) {
 					$baseErrors[] = $langs->trans("BankAccountLinkedWithoutIBAN") . "<br />";
@@ -708,7 +715,7 @@ class Peppol
 			//do not add empty lines in XML file (cleaner)
 			//note: it remove subtotal lines from ATM plugin for example
 			if (empty($description) && $subprice == 0) {
-				dol_syslog("Peppol : empty line (" . json_encode($line) . "), next");
+				dol_syslog("Peppol : empty line (id=" . ((int) ($line->id ?? 0)) . "), next");
 				continue;
 			}
 
@@ -1045,13 +1052,14 @@ class Peppol
 
 		$url = $apiUrl . '?' . http_build_query($params);
 
+		// getURLContent() passes these to CURLOPT_HTTPHEADER, which expects "Name: value" lines
 		$headers = [
-			'Accept' => 'application/json',
-			'User-Agent' => 'Dolibarr-PEPPOL-Module'
+			'Accept: application/json',
+			'User-Agent: Dolibarr-PEPPOL-Module'
 		];
 
 		// Use Dolibarr's getURLContent function
-		$result = getURLContent($url, 'GET', '', 1, $headers, array('http', 'https'), 0);
+		$result = getURLContent($url, 'GET', '', 1, $headers, array('https'), 0);
 
 		// Check for errors
 		if (empty($result['content'])) {
