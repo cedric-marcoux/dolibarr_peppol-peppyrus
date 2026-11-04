@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<!--
+	Code standard of this module: the ruleset of DoliCloud/DoliMods (dev/setup/codesniffer/ruleset.xml).
+	The ruleset is not copied into this repository: the workflow (.github/workflows/checks.yml) clones
+	DoliMods into .dolimods/. Locally: git clone https://github.com/DoliCloud/DoliMods .dolimods
+	Run from the root:   phpcs    (check)
+	                     phpcbf   (fix the layout)
+-->
+<ruleset name="peppolpeppyrus">
+	<description>Code standard of the Peppol-Peppyrus module (DoliMods ruleset)</description>
+	<file>.</file>
+	<arg name="extensions" value="php"/>
+	<arg name="tab-width" value="4"/>
+	<!-- Third-party code, backports and tools are not checked -->
+	<exclude-pattern>*/vendor/*</exclude-pattern>
+	<exclude-pattern>/backport/*</exclude-pattern>
+	<exclude-pattern>/dev/*</exclude-pattern>
+	<exclude-pattern>/\.dolimods/*</exclude-pattern>
+	<exclude-pattern>/\.ci/*</exclude-pattern>
+	<exclude-pattern>/\.git/*</exclude-pattern>
+	<rule ref=".dolimods/dev/setup/codesniffer/ruleset.xml"/>
+</ruleset>

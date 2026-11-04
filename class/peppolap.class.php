@@ -24,6 +24,8 @@ abstract class PeppolAP
 
 	/**
 	 * Constructor
+	 *
+	 * @param DoliDB $db Database handler
 	 */
 	public function __construct($db)
 	{

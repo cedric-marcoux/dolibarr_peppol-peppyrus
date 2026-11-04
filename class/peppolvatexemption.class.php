@@ -4,6 +4,9 @@ namespace custom\peppolpeppyrus;
 require_once DOL_DOCUMENT_ROOT.'/compta/facture/class/facture.class.php';
 require_once DOL_DOCUMENT_ROOT.'/societe/class/societe.class.php';
 
+/**
+ * VAT exemption rules for Peppol (not used yet: see the commented call in Peppol::makePDF())
+ */
 class PeppolVatExemption
 {
 	/**

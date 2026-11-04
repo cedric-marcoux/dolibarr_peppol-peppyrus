@@ -125,16 +125,15 @@ $permissiontoadd = $user->hasRight('peppolpeppyrus', 'write');
 $permissiontodelete = $user->hasRight('peppolpeppyrus', 'delete');
 // Security check - Protection if external user
 /*
-Note: vérification des droits associés et nécessaires:
-	- lire les tiers societe->lire;
-	- créer des tiers societe->creer
-	- etendre societe->client->voir
-	- lire les fournisseurs (?) fournisseur->lire
-	- lire les factures fournisseur (recherche doublons) fournisseur->facture->lire
-	- créer facture fournisseur fournisseur->facture->creer
-	- lire les produits (?) produit->lire
-	- lire les services service->lire
-	.../...?
+Note: rights needed to import a supplier document:
+	- read third parties: societe, lire
+	- create third parties: societe, creer
+	- see all third parties: societe, client, voir
+	- read suppliers: fournisseur, lire
+	- read supplier invoices (duplicate check): fournisseur, facture, lire
+	- create supplier invoices: fournisseur, facture, creer
+	- read products: produit, lire
+	- read services: service, lire
 */
 $otherModulesRights = [
 	$user->hasRight('societe', 'lire'),

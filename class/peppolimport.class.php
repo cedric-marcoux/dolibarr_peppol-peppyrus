@@ -633,9 +633,9 @@ class Peppolimport extends \CommonObject
 				$sql .= ", date_validation = '" . $this->db->idate($now) . "'";
 			}
 			if (!empty($this->fields['fk_user_valid'])) {
-				$sql .= ", fk_user_valid = " . $user->id;
+				$sql .= ", fk_user_valid = " . ((int) $user->id);
 			}
-			$sql .= " WHERE rowid = " . $this->id;
+			$sql .= " WHERE rowid = " . ((int) $this->id);
 
 			dol_syslog(get_class($this) . "::validate()", LOG_DEBUG);
 			$resql = $this->db->query($sql);
@@ -1137,6 +1137,12 @@ class Peppolimport extends \CommonObject
 		return $error;
 	}
 
+	/**
+	 * Import a list of documents
+	 *
+	 * @param array $list List of imports
+	 * @return int >0 if OK, <0 on error
+	 */
 	public function importInvoices($list)
 	{
 		global $db, $user;
@@ -1228,18 +1234,33 @@ class Peppolimport extends \CommonObject
 
 	/**
 	 * double check if that import is really a success (ie user did not delete invoice and forget to delete Peppolimport entry )
+	 *
+	 * @return bool|null Not implemented yet
 	 */
 	public function fullImportSuccess()
 	{
 		//TODO
 	}
 
+	/**
+	 * Set one property
+	 *
+	 * @param string $key Property name
+	 * @param mixed $value Value
+	 * @return void
+	 */
 	public function setValue($key, $value)
 	{
 		dol_syslog("PeppolImport set " . $key);
 		$this->{$key} = $value;
 	}
 
+	/**
+	 * Set several properties
+	 *
+	 * @param array $array Property name => value
+	 * @return void
+	 */
 	public function setValues($array)
 	{
 		dol_syslog("PeppolImport setvalues for " . count($array) . " field(s)");
@@ -1248,6 +1269,12 @@ class Peppolimport extends \CommonObject
 		}
 	}
 
+	/**
+	 * Save the UBL XML of this import in its directory and index it
+	 *
+	 * @param string $xml UBL XML document
+	 * @return int >0 if OK, <0 on error
+	 */
 	public function saveXML($xml)
 	{
 		global $user;
@@ -1272,6 +1299,12 @@ class Peppolimport extends \CommonObject
 		return $ret;
 	}
 
+	/**
+	 * Save the PDF of this import next to the XML
+	 *
+	 * @param string $pdf PDF content
+	 * @return int >0 if OK, <0 on error
+	 */
 	public function savePDF($pdf)
 	{
 		global $user;
@@ -1286,6 +1319,12 @@ class Peppolimport extends \CommonObject
 		return $ret;
 	}
 
+	/**
+	 * Extract the embedded PDF from the UBL XML and save it
+	 *
+	 * @param string $xml UBL XML document
+	 * @return int >0 if a PDF was found and saved
+	 */
 	public function extractPDFfromXML($xml)
 	{
 		// Create a DOMDocument and load the XML

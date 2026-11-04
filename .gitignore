@@ -41,3 +41,6 @@ tests/tmp/
 # Debug files
 peppol_debug.log
 debug.log
+# Local checks (phpcs ruleset of DoliMods, PHPStan cache, Dolibarr checkouts)
+/.dolimods
+/.ci/

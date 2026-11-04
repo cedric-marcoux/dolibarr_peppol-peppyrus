@@ -7,6 +7,12 @@
  * @return int
  */
 if (!function_exists('isModEnabled')) {
+	/**
+	 * Backport of isModEnabled() for old Dolibarr versions
+	 *
+	 * @param string $module Module name
+	 * @return bool true if the module is enabled
+	 */
 	function isModEnabled($module)
 	{
 		global $conf;
@@ -14,6 +20,13 @@ if (!function_exists('isModEnabled')) {
 	}
 }
 
+/**
+ * Backport of getDolGlobalString() for old Dolibarr versions
+ *
+ * @param string $key Property name
+ * @param string $default Value when the setting is empty
+ * @return string Value of the setting
+ */
 function peppol_backport_getDolGlobalString($key, $default = '')
 {
 	if (function_exists('getDolGlobalString')) {

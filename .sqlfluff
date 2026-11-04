@@ -1,0 +1,9 @@
+# sqlfluff for the installation scripts in sql/ (dialect mysql, as DoliMods). Every SQL error fails.
+# Only these layout rules are off, because the scripts follow the style of the install scripts of Dolibarr itself:
+#   CP01, CP02  lower-case types and mixed-case column names (internalNumber, senderID, ...)
+#   LT01, LT02  tabs and the alignment of the column list
+#   RF04        column names that are also SQL keywords (status, type, ref)
+[sqlfluff]
+dialect = mysql
+max_line_length = 0
+exclude_rules = CP01, CP02, LT01, LT02, RF04

@@ -137,7 +137,7 @@ if (in_array($action, array('link', 'ignore', 'restore')) && is_array($toselect)
 	if (count($ids)) {
 		$sql = "SELECT c.rowid, c.fk_soc FROM " . MAIN_DB_PREFIX . "peppol_candidate as c";
 		$sql .= " INNER JOIN " . MAIN_DB_PREFIX . "societe as s ON s.rowid = c.fk_soc";
-		$sql .= peppolCandidateVisibleSocJoin($user);
+		$sql .= peppolCandidateVisibleSocJoin($user); // @phan-suppress-current-line SqlInjection -- fixed SQL with only the user id cast to int
 		$sql .= " WHERE c.entity = " . ((int) $conf->entity) . " AND s.entity IN (" . getEntity('societe') . ")";
 		$sql .= " AND c.rowid IN (" . $db->sanitize(implode(',', $ids)) . ")";
 		$sql .= " ORDER BY c.rowid";
@@ -210,7 +210,7 @@ if ($resql && ($obj = $db->fetch_object($resql))) {
 // Candidates
 $sqlfrom = " FROM " . MAIN_DB_PREFIX . "peppol_candidate as c";
 $sqlfrom .= " INNER JOIN " . MAIN_DB_PREFIX . "societe as s ON s.rowid = c.fk_soc";
-$sqlfrom .= peppolCandidateVisibleSocJoin($user);
+$sqlfrom .= peppolCandidateVisibleSocJoin($user); // @phan-suppress-current-line SqlInjection -- fixed SQL with only the user id cast to int
 $sqlfrom .= " LEFT JOIN " . MAIN_DB_PREFIX . "societe_extrafields as se ON se.fk_object = s.rowid";
 $sqlfrom .= " LEFT JOIN " . MAIN_DB_PREFIX . "c_country as co ON co.rowid = s.fk_pays";
 $sqlwhere = " WHERE c.entity = " . ((int) $conf->entity) . " AND s.entity IN (" . getEntity('societe') . ")";

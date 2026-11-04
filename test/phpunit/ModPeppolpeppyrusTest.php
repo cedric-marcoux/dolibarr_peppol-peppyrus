@@ -1,0 +1,82 @@
+<?php
+/**
+ * Tests of core/modules/modPeppolpeppyrus.class.php (no network: the answer of GitHub is stubbed).
+ */
+
+use PHPUnit\Framework\TestCase;
+
+require_once DOL_DOCUMENT_ROOT.'/core/modules/DolibarrModules.class.php';
+require_once dirname(__DIR__, 2).'/core/modules/modPeppolpeppyrus.class.php';
+
+/**
+ * The module with a stubbed answer for the file with the latest version
+ */
+class ModPeppolpeppyrusStub extends modPeppolpeppyrus
+{
+	/** @var array{http_code?:int,content?:string} */
+	public $answer = array();
+
+	/**
+	 * Stubbed answer instead of a request to GitHub
+	 *
+	 * @return array{http_code?:int,content?:string}
+	 */
+	protected function fetchLastVersion()
+	{
+		return $this->answer;
+	}
+}
+
+/**
+ * Tests of the module definition
+ */
+class ModPeppolpeppyrusTest extends TestCase
+{
+	/**
+	 * Only an answer with HTTP 200 and a short version number counts; a newer version gives 1
+	 *
+	 * @return void
+	 */
+	public function testCheckForUpdate()
+	{
+		$mod = new ModPeppolpeppyrusStub(null);
+		$this->assertStringStartsWith('https://', $mod->url_last_version);
+		$current = $mod->version;
+		list($major, $minor) = explode('.', $current);
+
+		$mod->answer = array('http_code' => 200, 'content' => $major.'.'.((int) $minor + 1).".0\n");
+		$this->assertSame(1, $mod->checkForUpdate());
+		$this->assertTrue($mod->needUpdate);
+
+		$mod->answer = array('http_code' => 200, 'content' => $current."\n");
+		$this->assertSame(0, $mod->checkForUpdate());
+		$this->assertFalse($mod->needUpdate);
+
+		$mod->answer = array('http_code' => 404, 'content' => '404: Not Found');
+		$this->assertSame(-1, $mod->checkForUpdate());
+
+		$mod->answer = array('http_code' => 200, 'content' => '<html>'.str_repeat('x', 40));
+		$this->assertSame(-1, $mod->checkForUpdate());
+
+		// Remote content: only the characters of a version number are kept
+		$mod->answer = array('http_code' => 200, 'content' => '9.9.9<b>');
+		$this->assertSame(1, $mod->checkForUpdate());
+		$this->assertSame('9.9.9b', $mod->lastVersion);
+	}
+
+	/**
+	 * Permission ids are <numero><nn>: changing them would remove every granted permission
+	 *
+	 * @return void
+	 */
+	public function testPermissionIds()
+	{
+		$mod = new modPeppolpeppyrus(null);
+		$ids = array_map(function ($r) {
+			return $r[0];
+		}, $mod->rights);
+		$this->assertSame(array(43618101, 43618102, 43618103, 43618104), $ids);
+		$this->assertSame('peppolpeppyrus', $mod->rights_class);
+		$this->assertSame(trim((string) file_get_contents(dirname(__DIR__, 2).'/VERSION')), $mod->version);
+	}
+}
