@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.6.3
+
+Standard of the repository `dolibarr-module`, part 2:
+
+- Translations as in DoliMods: `langs/en_US` is the source, the other languages are synchronised with Transifex (`.tx/config`, `dev/translation/txpush.sh` and `txpull.sh`, adapted from DoliMods). The existing translations stay as the starting point.
+- Update check: the module list shows when a newer version exists. `checkForUpdate()` reads `VERSION` from the public repository over HTTPS, without redirects, and only accepts HTTP status 200 (the built-in check of Dolibarr would also take a short error page as version number). `editor_url` points to the repository.
+- README: sections *Translations*, *Update check* and *Standard and deliberate deviations* (oldest Dolibarr 18, languages via Transifex, module number 436181 kept, CHANGELOG in English, own repository).
+- `.gitattributes`: `.tx/` and `dev/` are left out of the installation package.
+
+**After updating:** replace the module files and flush memcached; deactivating and reactivating is not needed.
+
 ## 2.6.2
 
 Brought in line with the standard of the repository `dolibarr-module` (STANDAARD.md), part 1 (no change in behaviour for the user):
