@@ -304,6 +304,29 @@ peppolInboxFetchNoAccessPoint = Het accesspoint kon niet worden geladen.
 peppolInboxLastFetch = Laatst opgehaald bij het accesspoint: %s
 peppolInboxNeverFetched = Nog niet opgehaald bij het accesspoint.
 
-# Book an incoming document as supplier invoice (PDF OCR Inkoop)
+# Button "Book"
 peppolBookInvoice = Inboeken
-peppolBookInvoiceHelp = Inboeken als inkoopfactuur met PDF OCR Inkoop: de e-factuur wordt daar geladen; opslaan maakt de factuur aan en valideert hem.
+
+# Book an incoming document as supplier invoice
+peppolBookInvoiceHelp = Inboeken als inkoopfactuur: leverancier, regels en bedragen uit de e-factuur; gevalideerd als het totaal klopt; PDF en XML bijgevoegd.
+peppolBookNoRight = U heeft geen recht om Peppol-documenten in te boeken (Peppol-documenten importeren en inkoopfacturen aanmaken).
+peppolBookAlreadyBooked = Dit document is al ingeboekt.
+peppolBookNoFile = Het bestand van dit document ontbreekt. Haal de documenten opnieuw op.
+peppolBookNotAnInvoice = Dit document is geen leesbare e-factuur (UBL, Peppol BIS Billing 3.0).
+peppolBookCreditNote = Dit is een creditnota. Boek die met de hand in als creditnota bij de inkoopfactuur.
+peppolBookOtherCurrency = De factuur is in %s, niet in de valuta van het bedrijf. Boek hem met de hand in.
+peppolBookIncomplete = De e-factuur heeft geen factuurnummer, geen factuurdatum of geen regels. Boek hem met de hand in.
+peppolBookSeveralSuppliers = Meerdere relaties hebben dit Peppol-ID, btw-nummer of KvK-nummer. Voeg ze samen of boek de factuur met de hand in.
+peppolBookSupplierUnknown = De leverancier is onbekend en u heeft geen recht om relaties aan te maken.
+peppolBookNoSupplierName = In de e-factuur staat geen naam van de leverancier.
+peppolBookNotASupplier = De relatie is geen leverancier en u heeft geen recht om relaties te wijzigen.
+peppolBookLinkedExisting = Deze inkoopfactuur bestond al (zelfde leverancier en factuurnummer); het document is eraan gekoppeld.
+peppolBookNote = Ingeboekt vanuit Peppol-document %s.
+peppolBookTotalDiffers = Als concept bewaard: het totaal van de factuur (%s) wijkt af van het totaal in de e-factuur (%s). Controleer de regels en valideer.
+peppolBookNoValidateRight = Als concept bewaard: u heeft geen recht om inkoopfacturen te valideren.
+peppolBookValidateFailed = Als concept bewaard: valideren is mislukt (%s).
+peppolBookFilesNotAttached = De PDF of XML kon niet bij de factuur worden gezet.
+peppolBookDoneValidated = Ingeboekt en gevalideerd.
+peppolBookDoneDraft = Ingeboekt als concept.
+peppolBookSupplierCreated = De leverancier is aangemaakt uit de e-factuur.
+peppolBookOpenInvoice = Naar de inkoopfactuur

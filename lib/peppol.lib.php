@@ -742,25 +742,24 @@ function peppolAddLog($ap_name, $fk_object, $object_typeid, $status, $message, $
 }
 
 /**
- * Link to book an incoming document as supplier invoice with the module PDF OCR Inkoop, when that module is
- * installed: it opens with the XML of the document loaded (PDF and exact data), and after saving the invoice
- * is linked to the document. Empty when the module is not there, the document is already booked, its file is
- * missing or the user lacks a right (import Peppol documents, create supplier invoices, PDF OCR Inkoop).
+ * Link of the button "Book": books the incoming document as supplier invoice (class/peppolbooking.class.php).
+ * Empty when the document is already booked, its file is missing or the user lacks a right (import Peppol
+ * documents, create supplier invoices).
  *
  * @param	object	$object	Peppolimport
  * @param	User	$user	User
- * @return	string			URL, or ''
+ * @return	string			URL with token, or ''
  */
 function peppolBookingUrl($object, $user)
 {
-	if (!isModEnabled('pdfocrinkoop') || !is_object($object) || empty($object->id) || !empty($object->fk_invoice)) {
+	if (!isModEnabled('peppolpeppyrus') || !is_object($object) || empty($object->id) || !empty($object->fk_invoice)) {
 		return '';
 	}
-	if (!$user->hasRight('peppolpeppyrus', 'import') || !$user->hasRight('fournisseur', 'facture', 'creer') || !$user->hasRight('pdfocrinkoop', 'creer')) {
+	if (!$user->hasRight('peppolpeppyrus', 'import') || !$user->hasRight('fournisseur', 'facture', 'creer')) {
 		return '';
 	}
-	if (!method_exists($object, 'fileExist') || !$object->fileExist() || !is_file(dol_buildpath('/pdfocr_inkoop/page/upload.php', 0))) {
+	if (!method_exists($object, 'fileExist') || !$object->fileExist()) {
 		return '';
 	}
-	return dol_buildpath('/pdfocr_inkoop/page/upload.php', 1) . '?peppolimport=' . ((int) $object->id);
+	return dol_buildpath('/peppolpeppyrus/peppolimport_card.php', 1) . '?id=' . ((int) $object->id) . '&action=book&token=' . newToken();
 }
