@@ -79,4 +79,27 @@ class ModPeppolpeppyrusTest extends TestCase
 		$this->assertSame('peppolpeppyrus', $mod->rights_class);
 		$this->assertSame(trim((string) file_get_contents(dirname(__DIR__, 2).'/VERSION')), $mod->version);
 	}
+
+	/**
+	 * One menu "Peppol" in Billing with the pages under it, no other menu entries
+	 *
+	 * @return void
+	 */
+	public function testOneMenuWithSubPages()
+	{
+		$mod = new modPeppolpeppyrus(null);
+		$this->assertCount(4, $mod->menu);
+		$parent = $mod->menu[0];
+		$this->assertSame('fk_mainmenu=billing', $parent['fk_menu']);
+		$this->assertSame('peppol', $parent['leftmenu']);
+		$this->assertSame('/peppolpeppyrus/index.php', $parent['url']);
+		$urls = array();
+		foreach (array_slice($mod->menu, 1) as $entry) {
+			$this->assertSame('fk_mainmenu=billing,fk_leftmenu=peppol', $entry['fk_menu']);
+			$this->assertSame('billing', $entry['mainmenu']);
+			$this->assertSame(0, $entry['user']);
+			$urls[] = $entry['url'];
+		}
+		$this->assertSame(array('/peppolpeppyrus/peppolimport_list.php', '/peppolpeppyrus/peppol_candidates.php', '/peppolpeppyrus/peppol_list.php'), $urls);
+	}
 }

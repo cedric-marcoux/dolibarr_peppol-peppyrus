@@ -58,7 +58,7 @@ class modPeppolpeppyrus extends DolibarrModules
 		$this->editor_url = 'https://github.com/RealRidrick/dolibarr_peppol-peppyrus';
 
 		// Possible values for version are: 'development', 'experimental', 'dolibarr', 'dolibarr_deprecated' or a version string like 'x.y.z'
-		$this->version = '2.6.4';
+		$this->version = '2.6.5';
 		// File with the latest version number (VERSION in the public repository), read by checkForUpdate()
 		$this->url_last_version = 'https://raw.githubusercontent.com/RealRidrick/dolibarr_peppol-peppyrus/main/VERSION';
 
@@ -282,45 +282,46 @@ class modPeppolpeppyrus extends DolibarrModules
 		$r++;
 		/* END MODULEBUILDER PERMISSIONS */
 
-		// Main menu entries to add
+		// Main menu entries to add: one entry "Peppol" in the left menu of Billing, with the pages under it
 		$this->menu = array();
 		$r = 0;
 		$this->menu[$r++] = [
-			'fk_menu' => 'fk_mainmenu=billing,fk_leftmenu=suppliers_bills', // '' if this is a top menu. For left menu, use 'fk_mainmenu=xxx' or 'fk_mainmenu=xxx,fk_leftmenu=yyy' where xxx is mainmenucode and yyy is a leftmenucode
-			'type' => 'left', // This is a Top menu entry
-			'titre' => 'ModulePeppolImportListing',
+			'fk_menu' => 'fk_mainmenu=billing',
+			'type' => 'left',
+			'titre' => 'PeppolMenu',
+			'prefix' => 'fa-paper-plane',
 			'mainmenu' => 'billing',
-			'leftmenu' => 'supplier_bills_peppol',
+			'leftmenu' => 'peppol',
+			'url' => '/peppolpeppyrus/index.php',
+			'langs' => 'peppol@peppolpeppyrus',
+			'position' => 1000 + $r,
+			'enabled' => 'isModEnabled("peppolpeppyrus")',
+			'perms' => '$user->hasRight("peppolpeppyrus", "read") || $user->hasRight("peppolpeppyrus", "import")',
+			'target' => '',
+			'user' => 0, // internal users only
+		];
+		// Documents received from the access point (supplier invoices)
+		$this->menu[$r++] = [
+			'fk_menu' => 'fk_mainmenu=billing,fk_leftmenu=peppol',
+			'type' => 'left',
+			'titre' => 'peppolMenuDocuments',
+			'mainmenu' => 'billing',
+			'leftmenu' => 'peppol_documents',
 			'url' => '/peppolpeppyrus/peppolimport_list.php',
-			'langs' => 'peppol@peppolpeppyrus', // Lang file to use (without .lang) by module. File must be in langs/code_CODE/ directory.
+			'langs' => 'peppol@peppolpeppyrus',
 			'position' => 1000 + $r,
 			'enabled' => 'isModEnabled("peppolpeppyrus")',
-			'perms' => '$user->hasRight("peppolpeppyrus", "import")', // if you want your menu with a permission rules
+			'perms' => '$user->hasRight("peppolpeppyrus", "import")',
 			'target' => '',
-			'user' => 2, // 0=Menu for internal users, 1=external users, 2=both
+			'user' => 0,
 		];
+		// Customers and suppliers found on Peppol (weekly check)
 		$this->menu[$r++] = [
-			'fk_menu' => 'fk_mainmenu=tools', // '' if this is a top menu. For left menu, use 'fk_mainmenu=xxx' or 'fk_mainmenu=xxx,fk_leftmenu=yyy' where xxx is mainmenucode and yyy is a leftmenucode
-			'type' => 'left', // This is a Top menu entry
-			'titre' => 'ModulePeppolList',
-			'prefix' => 'fa-globe',
-			'mainmenu' => 'tools',
-			'leftmenu' => 'peppol_list',
-			'url' => '/peppolpeppyrus/peppol_list.php',
-			'langs' => 'peppol@peppolpeppyrus', // Lang file to use (without .lang) by module. File must be in langs/code_CODE/ directory.
-			'position' => 1000 + $r,
-			'enabled' => 'isModEnabled("peppolpeppyrus")',
-			'perms' => '$user->hasRight("peppolpeppyrus", "import")', // if you want your menu with a permission rules
-			'target' => '',
-			'user' => 2, // 0=Menu for internal users, 1=external users, 2=both
-		];
-
-		$this->menu[$r++] = [
-			'fk_menu' => 'fk_mainmenu=billing,fk_leftmenu=suppliers_bills',
+			'fk_menu' => 'fk_mainmenu=billing,fk_leftmenu=peppol',
 			'type' => 'left',
 			'titre' => 'peppolCandidatesMenu',
 			'mainmenu' => 'billing',
-			'leftmenu' => 'supplier_bills_peppol_candidates',
+			'leftmenu' => 'peppol_candidates',
 			'url' => '/peppolpeppyrus/peppol_candidates.php',
 			'langs' => 'peppol@peppolpeppyrus',
 			'position' => 1000 + $r,
@@ -329,18 +330,18 @@ class modPeppolpeppyrus extends DolibarrModules
 			'target' => '',
 			'user' => 0,
 		];
+		// Log of the exchanges with the access point
 		$this->menu[$r++] = [
-			'fk_menu' => 'fk_mainmenu=companies',
+			'fk_menu' => 'fk_mainmenu=billing,fk_leftmenu=peppol',
 			'type' => 'left',
-			'titre' => 'peppolCandidatesMenu',
-			'prefix' => 'fa-network-wired',
-			'mainmenu' => 'companies',
-			'leftmenu' => 'peppol_candidates',
-			'url' => '/peppolpeppyrus/peppol_candidates.php',
+			'titre' => 'PeppolList',
+			'mainmenu' => 'billing',
+			'leftmenu' => 'peppol_log',
+			'url' => '/peppolpeppyrus/peppol_list.php',
 			'langs' => 'peppol@peppolpeppyrus',
 			'position' => 1000 + $r,
 			'enabled' => 'isModEnabled("peppolpeppyrus")',
-			'perms' => '$user->hasRight("peppolpeppyrus", "read") && $user->hasRight("societe", "lire")',
+			'perms' => '$user->hasRight("peppolpeppyrus", "import")',
 			'target' => '',
 			'user' => 0,
 		];
