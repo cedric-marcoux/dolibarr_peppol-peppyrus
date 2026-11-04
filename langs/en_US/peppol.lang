@@ -290,6 +290,7 @@ PeppolVatCategoryO = Not subject to VAT (category O, old behaviour)
 
 # Peppol candidates (weekly check)
 peppolCandidatesMenu = Peppol candidates
+peppolCandidatesNewCount = %s new
 peppolCandidatesTitle = Customers and suppliers found on Peppol
 peppolCandidatesIntro = Customers and suppliers without a Peppol ID that were found in the Peppol directory by their VAT number or registration number (KvK). Check the data, select the right ID and click "Link". The check runs every week; "Check now" checks a small batch at once.
 peppolCandidateLastCheck = Last check: %s (%s third parties checked in total).

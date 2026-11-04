@@ -283,6 +283,7 @@ PeppolVatCategoryO = Hors champ de la TVA (catégorie O, ancien comportement)
 
 # Peppol candidates (weekly check)
 peppolCandidatesMenu = Candidats Peppol
+peppolCandidatesNewCount = %s nouveau(x)
 peppolCandidatesTitle = Clients et fournisseurs trouvés sur Peppol
 peppolCandidatesIntro = Clients et fournisseurs sans identifiant Peppol trouvés dans l'annuaire Peppol par leur numéro de TVA ou d'immatriculation. Vérifiez, cochez le bon identifiant et cliquez sur "Lier". La vérification a lieu chaque semaine ; "Vérifier maintenant" vérifie un petit lot tout de suite.
 peppolCandidateLastCheck = Dernière vérification : %s (%s tiers vérifiés au total).

@@ -94,6 +94,7 @@ peppolNoRecommendation=Ninguno de estos identificadores coincide con el NIF-IVA 
 
 # Peppol candidates (weekly check)
 peppolCandidatesMenu=Candidatos Peppol
+peppolCandidatesNewCount=%s nuevo(s)
 peppolCandidatesTitle=Clientes y proveedores encontrados en Peppol
 peppolCandidatesIntro=Customers and suppliers without a Peppol ID that were found in the Peppol directory by their VAT number or registration number (KvK). Check the data, select the right ID and click "Link". The check runs every week; "Check now" checks a small batch at once.
 peppolCandidateLastCheck=Last check: %s (%s third parties checked in total).

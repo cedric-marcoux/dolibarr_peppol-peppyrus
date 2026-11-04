@@ -118,11 +118,7 @@ if (in_array($action, array('link', 'ignore', 'restore', 'checknow'))) {
 if ($action == 'checknow') {
 	// A small batch, so the page answers within the time limit of the web server
 	$stats = $check->checkBatch(getDolGlobalInt('PEPPOL_CANDIDATE_BATCH_WEB', 25));
-	if ($stats['errors'] > 0) {
-		setEventMessages($langs->trans('peppolCandidateCheckResult', $stats['checked'], $stats['found'], $stats['new']) . ' ' . $langs->trans('peppolCandidateCheckErrors', $stats['errors']), null, 'warnings');
-	} else {
-		setEventMessages($langs->trans('peppolCandidateCheckResult', $stats['checked'], $stats['found'], $stats['new']), null, 'mesgs');
-	}
+	setEventMessages($check->resultMessage($stats), null, ($stats['errors'] > 0 ? 'warnings' : 'mesgs'));
 	header('Location: ' . $_SERVER['PHP_SELF'] . '?' . ltrim($param, '&'));
 	exit;
 }

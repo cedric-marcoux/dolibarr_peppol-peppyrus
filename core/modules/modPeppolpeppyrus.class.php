@@ -58,7 +58,7 @@ class modPeppolpeppyrus extends DolibarrModules
 		$this->editor_url = '';
 
 		// Possible values for version are: 'development', 'experimental', 'dolibarr', 'dolibarr_deprecated' or a version string like 'x.y.z'
-		$this->version = '2.6.0';
+		$this->version = '2.6.1';
 		// Url to the file with your last numberversion of this module
 		$this->url_last_version = '';
 
@@ -315,6 +315,20 @@ class modPeppolpeppyrus extends DolibarrModules
 			'user' => 2, // 0=Menu for internal users, 1=external users, 2=both
 		];
 
+		$this->menu[$r++] = [
+			'fk_menu' => 'fk_mainmenu=billing,fk_leftmenu=suppliers_bills',
+			'type' => 'left',
+			'titre' => 'peppolCandidatesMenu',
+			'mainmenu' => 'billing',
+			'leftmenu' => 'supplier_bills_peppol_candidates',
+			'url' => '/peppolpeppyrus/peppol_candidates.php',
+			'langs' => 'peppol@peppolpeppyrus',
+			'position' => 1000 + $r,
+			'enabled' => 'isModEnabled("peppolpeppyrus")',
+			'perms' => '$user->hasRight("peppolpeppyrus", "read") && $user->hasRight("societe", "lire")',
+			'target' => '',
+			'user' => 0,
+		];
 		$this->menu[$r++] = [
 			'fk_menu' => 'fk_mainmenu=companies',
 			'type' => 'left',

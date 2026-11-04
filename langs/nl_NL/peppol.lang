@@ -333,6 +333,7 @@ PeppolVatCategoryO = Niet onderworpen aan btw (categorie O, oude werking)
 
 # Peppol candidates (weekly check)
 peppolCandidatesMenu = Peppol-kandidaten
+peppolCandidatesNewCount = %s nieuw
 peppolCandidatesTitle = Klanten en leveranciers gevonden op Peppol
 peppolCandidatesIntro = Klanten en leveranciers zonder Peppol-ID die in de Peppol-directory zijn gevonden op hun btw-nummer of KvK-nummer. Controleer de gegevens, vink het juiste ID aan en klik op "Koppelen". De controle loopt elke week; "Nu controleren" controleert direct een kleine groep.
 peppolCandidateLastCheck = Laatste controle: %s (in totaal %s relaties gecontroleerd).
