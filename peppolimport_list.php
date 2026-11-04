@@ -68,7 +68,7 @@ if (!$res) {
  * @var Translate $langs
  * @var User $user
  */
-$permissiontoaccess = $user->rights->peppolpeppyrus->import;
+$permissiontoaccess = $user->hasRight('peppolpeppyrus', 'import');
 /*
 Note: vérification des droits associés et nécessaires:
 	- lire les tiers societe->lire;
@@ -82,14 +82,14 @@ Note: vérification des droits associés et nécessaires:
 	.../...?
 */
 $otherModulesRights = [
-	$user->rights->societe->lire,
-	$user->rights->societe->creer,
-	$user->rights->societe->client->voir,
-	$user->rights->fournisseur->lire,
-	$user->rights->fournisseur->facture->lire,
-	$user->rights->fournisseur->facture->creer,
-	$user->rights->produit->lire,
-	$user->rights->service->lire
+	$user->hasRight('societe', 'lire'),
+	$user->hasRight('societe', 'creer'),
+	$user->hasRight('societe', 'client', 'voir'),
+	$user->hasRight('fournisseur', 'lire'),
+	$user->hasRight('fournisseur', 'facture', 'lire'),
+	$user->hasRight('fournisseur', 'facture', 'creer'),
+	$user->hasRight('produit', 'lire'),
+	$user->hasRight('service', 'lire')
 ];
 // Security check - Protection if external user
 if ($user->socid > 0) {
@@ -195,9 +195,9 @@ foreach ($object->fields as $key => $val) {
 	}
 }
 
-$permissiontoaccess = $user->rights->peppolpeppyrus->read;
-$permissiontoadd = $user->rights->peppolpeppyrus->write;
-$permissiontodelete = $user->rights->peppolpeppyrus->delete;
+$permissiontoaccess = $user->hasRight('peppolpeppyrus', 'read');
+$permissiontoadd = $user->hasRight('peppolpeppyrus', 'write');
+$permissiontodelete = $user->hasRight('peppolpeppyrus', 'delete');
 
 // Security check
 if (empty($conf->peppolpeppyrus->enabled)) {
@@ -253,7 +253,10 @@ if ($action == "refresh") {
 	if (!$user->hasRight('peppolpeppyrus', 'write') || !peppolCheckToken()) {
 		accessforbidden();
 	}
+	// Fetches every new document from the access point: release the session meanwhile (STANDAARD.md 4.22)
+	peppol_sessie_los();
 	peppolGetSupplierInvoicesList();
+	peppol_sessie_terug();
 }
 
 $parameters = array();

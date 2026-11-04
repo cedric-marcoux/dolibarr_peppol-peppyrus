@@ -58,7 +58,7 @@ class modPeppolpeppyrus extends DolibarrModules
 		$this->editor_url = '';
 
 		// Possible values for version are: 'development', 'experimental', 'dolibarr', 'dolibarr_deprecated' or a version string like 'x.y.z'
-		$this->version = '2.6.1';
+		$this->version = '2.6.2';
 		// Url to the file with your last numberversion of this module
 		$this->url_last_version = '';
 
@@ -174,8 +174,8 @@ class modPeppolpeppyrus extends DolibarrModules
 		$this->tabs[] = array('data' => 'invoice:+tabPeppol:PeppolTab:peppol@peppolpeppyrus:1:/peppolpeppyrus/peppol_tab.php?objectType=invoice&id=__ID__');
 
 		// Example:
-		// $this->tabs[] = array('data'=>'objecttype:+tabname1:Title1:mylangfile@peppol:$user->rights->peppol->read:/peppol/mynewtab1.php?id=__ID__');  					// To add a new tab identified by code tabname1
-		// $this->tabs[] = array('data'=>'objecttype:+tabname2:SUBSTITUTION_Title2:mylangfile@peppol:$user->rights->othermodule->read:/peppol/mynewtab2.php?id=__ID__',  	// To add another new tab identified by code tabname2. Label will be result of calling all substitution functions on 'Title2' key.
+		// $this->tabs[] = array('data'=>'objecttype:+tabname1:Title1:mylangfile@peppol:$user->hasRight('peppol', 'read'):/peppol/mynewtab1.php?id=__ID__');  					// To add a new tab identified by code tabname1
+		// $this->tabs[] = array('data'=>'objecttype:+tabname2:SUBSTITUTION_Title2:mylangfile@peppol:$user->hasRight('othermodule', 'read'):/peppol/mynewtab2.php?id=__ID__',  	// To add another new tab identified by code tabname2. Label will be result of calling all substitution functions on 'Title2' key.
 		// $this->tabs[] = array('data'=>'objecttype:-tabname:NU:conditiontoremove');                                                     										// To remove an existing tab identified by code tabname
 		//
 		// Where objecttype can be
@@ -264,21 +264,21 @@ class modPeppolpeppyrus extends DolibarrModules
 		$r = 0;
 		// Add here entries to declare new permissions
 		/* BEGIN MODULEBUILDER PERMISSIONS */
-		$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1); // Permission id (must not be already used)
+		$this->rights[$r][0] = (int) ($this->numero . '01'); // Permission id: <numero><nn>, never change (granted rights are stored by number)
 		$this->rights[$r][1] = 'Read Peppol objects'; // Permission label
-		$this->rights[$r][4] = 'read'; // In php code, permission will be checked by test if ($user->rights->peppolpeppyrus->level1->level2)
+		$this->rights[$r][4] = 'read'; // In php code: $user->hasRight('peppolpeppyrus', '<level1>')
 		$r++;
-		$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1); // Permission id (must not be already used)
+		$this->rights[$r][0] = (int) ($this->numero . '02'); // Permission id: <numero><nn>, never change (granted rights are stored by number)
 		$this->rights[$r][1] = 'Create/Update Peppol objects'; // Permission label
-		$this->rights[$r][4] = 'write'; // In php code, permission will be checked by test if ($user->rights->peppolpeppyrus->level1->level2)
+		$this->rights[$r][4] = 'write'; // In php code: $user->hasRight('peppolpeppyrus', '<level1>')
 		$r++;
-		$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1); // Permission id (must not be already used)
+		$this->rights[$r][0] = (int) ($this->numero . '03'); // Permission id: <numero><nn>, never change (granted rights are stored by number)
 		$this->rights[$r][1] = 'Delete Peppol objects'; // Permission label
-		$this->rights[$r][4] = 'delete'; // In php code, permission will be checked by test if ($user->rights->peppolpeppyrus->level1->level2)
+		$this->rights[$r][4] = 'delete'; // In php code: $user->hasRight('peppolpeppyrus', '<level1>')
 		$r++;
-		$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1); // Permission id (must not be already used)
+		$this->rights[$r][0] = (int) ($this->numero . '04'); // Permission id: <numero><nn>, never change (granted rights are stored by number)
 		$this->rights[$r][1] = 'Import Peppol invoices (supplier)'; // Permission label
-		$this->rights[$r][4] = 'import'; // In php code, permission will be checked by test if ($user->rights->peppolpeppyrus->level1->level2)
+		$this->rights[$r][4] = 'import'; // In php code: $user->hasRight('peppolpeppyrus', '<level1>')
 		$r++;
 		/* END MODULEBUILDER PERMISSIONS */
 
@@ -295,7 +295,7 @@ class modPeppolpeppyrus extends DolibarrModules
 			'langs' => 'peppol@peppolpeppyrus', // Lang file to use (without .lang) by module. File must be in langs/code_CODE/ directory.
 			'position' => 1000 + $r,
 			'enabled' => '$conf->peppolpeppyrus->enabled', // Define condition to show or hide menu entry. Use '$conf->Peppol->enabled' if entry must be visible if module is enabled.
-			'perms' => '$user->rights->peppolpeppyrus->import', // if you want your menu with a permission rules
+			'perms' => '$user->hasRight("peppolpeppyrus", "import")', // if you want your menu with a permission rules
 			'target' => '',
 			'user' => 2, // 0=Menu for internal users, 1=external users, 2=both
 		];
@@ -310,7 +310,7 @@ class modPeppolpeppyrus extends DolibarrModules
 			'langs' => 'peppol@peppolpeppyrus', // Lang file to use (without .lang) by module. File must be in langs/code_CODE/ directory.
 			'position' => 1000 + $r,
 			'enabled' => '$conf->peppolpeppyrus->enabled', // Define condition to show or hide menu entry. Use '$conf->Peppol->enabled' if entry must be visible if module is enabled.
-			'perms' => '$user->rights->peppolpeppyrus->import', // if you want your menu with a permission rules
+			'perms' => '$user->hasRight("peppolpeppyrus", "import")', // if you want your menu with a permission rules
 			'target' => '',
 			'user' => 2, // 0=Menu for internal users, 1=external users, 2=both
 		];

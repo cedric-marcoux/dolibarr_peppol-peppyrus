@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.6.2
+
+Brought in line with the standard of the repository `dolibarr-module` (STANDAARD.md), part 1 (no change in behaviour for the user):
+
+- Rights: every check uses `$user->hasRight()` instead of `$user->rights->...`, also the menu entries and the import pages (4.2). Permission ids are written out as `<numero>01` to `<numero>04`: the same numbers as before, granted rights stay.
+- SQL: every value is cast or escaped at the place in the query itself (4.7). `Peppolimport::fetchAll()` only accepts a plain column name (`t.<column>`), `AND` or `OR` as filter mode, and casts `t.rowid`.
+- Webhook (`public/hook.php`): the two deliberate exceptions are recorded in the code with their reason (4.8, 4.5). `NOCSRFCHECK` because the access point calls without a Dolibarr session; instead every request is checked with the secret key and the HMAC-SHA256 signature of the body (hash_equals), the module must be enabled and the receiver must be the Peppol ID of the entity; without a secret key every request is refused (since 2.3.0). `$_GET`/`$_POST` for the entity before `main.inc.php` is loaded, used only as an integer.
+- Long actions (4.22): "Check now", the Peppol ID search and "Refresh" of the Peppyrus documents release the session while they wait for the Peppol directory or the access point (`peppol_sessie_los()` / `peppol_sessie_terug()`), so other pages of the user do not wait. "Check now" checks 10 third parties per click (`PEPPOL_CANDIDATE_BATCH_WEB`).
+- Language files: the texts that were only in `nl_NL` are now also in `en_US` (the source); module name, description and permissions (`Module436181Name`, `Module436181Desc`, `Permission43618101` to `04`) in `en_US` and `nl_NL`.
+- Code style: tabs instead of spaces, PSR-12 (`phpcs` with the ruleset of `dolibarr-module`); three private methods renamed to camelCase.
+- New file `VERSION`.
+
+**After updating:** replace the module files and flush memcached; deactivating and reactivating is not needed.
+
 ## 2.6.1
 
 - Peppol candidates are also in the menu Billing > Supplier invoices, next to "Documents available at Peppyrus", and as a button with the number of new candidates in the title bar of that list and of the Peppol log.

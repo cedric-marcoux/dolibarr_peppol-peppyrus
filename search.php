@@ -99,6 +99,10 @@ if ($socid > 0) {
 // Note: never log names, VAT numbers, registration numbers or Peppol IDs, only the criterion and the number of results
 $searchResults = null;
 $searchCriterion = '';
+if (($action == 'autosearch' && $thirdparty) || ($action == 'search' && $search_query !== '')) {
+	// Up to three requests to the Peppol directory: release the session meanwhile (STANDAARD.md 4.22)
+	peppol_sessie_los();
+}
 if ($action == 'autosearch' && $thirdparty) {
 	// Many participants (e.g. Dutch companies, scheme 0106 KvK) are registered with their registration number,
 	// not with their VAT number: try VAT number, then registration number (professional ID 1), then name.
@@ -118,6 +122,7 @@ if ($action == 'autosearch' && $thirdparty) {
 	$nb = (is_array($searchResults) && isset($searchResults['matches']) && is_array($searchResults['matches'])) ? count($searchResults['matches']) : 0;
 	dol_syslog("Peppol directory search by manual query: " . (isset($searchResults['error']) ? 'error' : $nb . ' result(s)'));
 }
+peppol_sessie_terug();
 
 // Auto-detect PEPPOL ID by VAT using Access Point API (Peppyrus bestMatch)
 $autoDetectedId = null;

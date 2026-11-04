@@ -226,7 +226,7 @@ class Peppolimport extends \CommonObject
 		}
 
 		// Example to show how to set values of fields definition dynamically
-		/*if ($user->rights->peppolpeppyrus->read) {
+		/*if ($user->hasRight('peppolpeppyrus', 'read')) {
 			$this->fields['myfield']['visible'] = 1;
 			$this->fields['myfield']['noteditable'] = 0;
 		}*/
@@ -458,10 +458,15 @@ class Peppolimport extends \CommonObject
 		}
 		// Manage filter
 		$sqlwhere = array();
+		$filtermode = (strtoupper((string) $filtermode) === 'OR') ? 'OR' : 'AND';
 		if (count($filter) > 0) {
 			foreach ($filter as $key => $value) {
+				// Only a plain column name (t.<column>) or the internal customsql filter of this module
+				if ($key !== 'customsql' && !preg_match('/^t\.[a-z0-9_]+$/i', (string) $key)) {
+					continue;
+				}
 				if ($key == 't.rowid') {
-					$sqlwhere[] = $key . '=' . $value;
+					$sqlwhere[] = $key . ' = ' . ((int) $value);
 				} elseif (isset($this->fields[$key]['type']) && in_array($this->fields[$key]['type'], array('date', 'datetime', 'timestamp'))) {
 					$sqlwhere[] = $key . ' = \'' . $this->db->idate($value) . '\'';
 				} elseif ($key == 'customsql') {
@@ -474,14 +479,15 @@ class Peppolimport extends \CommonObject
 			}
 		}
 		if (count($sqlwhere) > 0) {
-			$sql .= ' AND (' . implode(' ' . $filtermode . ' ', $sqlwhere) . ')';
+			// beveiliging-uitzondering: sql-escape elk deel van $sqlwhere is hierboven al op de plek zelf gecast of ge-escaped; customsql komt alleen uit de module zelf
+			$sql .= ' AND (' . implode(' ' . $filtermode . ' ', $sqlwhere) . ')'; // @phan-suppress-current-line SqlInjection -- delen hierboven veilig opgebouwd
 		}
 
 		if (!empty($sortfield)) {
 			$sql .= $this->db->order($sortfield, $sortorder);
 		}
 		if (!empty($limit)) {
-			$sql .= ' ' . $this->db->plimit($limit, $offset);
+			$sql .= $this->db->plimit((int) $limit, (int) $offset);
 		}
 
 		$resql = $this->db->query($sql);
@@ -598,8 +604,8 @@ class Peppolimport extends \CommonObject
 			$this->status = self::STATUS_DRAFT;
 		}
 
-		/*if (! ((empty(getDolGlobalString('MAIN_USE_ADVANCED_PERMS')) && ! empty($user->rights->peppolpeppyrus->write))
-		 || (! empty(getDolGlobalString('MAIN_USE_ADVANCED_PERMS')) && ! empty($user->rights->peppolpeppyrus->peppolimport_advance->validate))))
+		/*if (! ((empty(getDolGlobalString('MAIN_USE_ADVANCED_PERMS')) && ! empty($user->hasRight('peppolpeppyrus', 'write')))
+		 || (! empty(getDolGlobalString('MAIN_USE_ADVANCED_PERMS')) && ! empty($user->hasRight('peppolpeppyrus', 'peppolimport_advance', 'validate')))))
 		 {
 		 $this->error='NotEnoughPermissions';
 		 dol_syslog(get_class($this)."::valid ".$this->error, LOG_ERR);
@@ -720,8 +726,8 @@ class Peppolimport extends \CommonObject
 			return 0;
 		}
 
-		/*if (! ((empty(getDolGlobalString('MAIN_USE_ADVANCED_PERMS')) && ! empty($user->rights->peppolpeppyrus->write))
-		 || (! empty(getDolGlobalString('MAIN_USE_ADVANCED_PERMS')) && ! empty($user->rights->peppolpeppyrus->peppol_advance->validate))))
+		/*if (! ((empty(getDolGlobalString('MAIN_USE_ADVANCED_PERMS')) && ! empty($user->hasRight('peppolpeppyrus', 'write')))
+		 || (! empty(getDolGlobalString('MAIN_USE_ADVANCED_PERMS')) && ! empty($user->hasRight('peppolpeppyrus', 'peppol_advance', 'validate')))))
 		 {
 		 $this->error='Permission denied';
 		 return -1;
@@ -744,8 +750,8 @@ class Peppolimport extends \CommonObject
 			return 0;
 		}
 
-		/*if (! ((empty(getDolGlobalString('MAIN_USE_ADVANCED_PERMS')) && ! empty($user->rights->peppolpeppyrus->write))
-		 || (! empty(getDolGlobalString('MAIN_USE_ADVANCED_PERMS')) && ! empty($user->rights->peppolpeppyrus->peppol_advance->validate))))
+		/*if (! ((empty(getDolGlobalString('MAIN_USE_ADVANCED_PERMS')) && ! empty($user->hasRight('peppolpeppyrus', 'write')))
+		 || (! empty(getDolGlobalString('MAIN_USE_ADVANCED_PERMS')) && ! empty($user->hasRight('peppolpeppyrus', 'peppol_advance', 'validate')))))
 		 {
 		 $this->error='Permission denied';
 		 return -1;
@@ -768,8 +774,8 @@ class Peppolimport extends \CommonObject
 			return 0;
 		}
 
-		/*if (! ((empty(getDolGlobalString('MAIN_USE_ADVANCED_PERMS')) && ! empty($user->rights->peppolpeppyrus->write))
-		 || (! empty(getDolGlobalString('MAIN_USE_ADVANCED_PERMS')) && ! empty($user->rights->peppolpeppyrus->peppol_advance->validate))))
+		/*if (! ((empty(getDolGlobalString('MAIN_USE_ADVANCED_PERMS')) && ! empty($user->hasRight('peppolpeppyrus', 'write')))
+		 || (! empty(getDolGlobalString('MAIN_USE_ADVANCED_PERMS')) && ! empty($user->hasRight('peppolpeppyrus', 'peppol_advance', 'validate')))))
 		 {
 		 $this->error='Permission denied';
 		 return -1;
@@ -947,7 +953,7 @@ class Peppolimport extends \CommonObject
 		$sql = 'SELECT rowid, date_creation as datec, tms as datem,';
 		$sql .= ' fk_user_creat, fk_user_modif';
 		$sql .= ' FROM ' . MAIN_DB_PREFIX . $this->table_element . ' as t';
-		$sql .= ' WHERE t.rowid = ' . $id;
+		$sql .= ' WHERE t.rowid = ' . ((int) $id);
 		$result = $this->db->query($sql);
 		if ($result) {
 			if ($this->db->num_rows($result)) {
@@ -997,7 +1003,7 @@ class Peppolimport extends \CommonObject
 		$this->lines = array();
 
 		$objectline = new PeppolimportLine($this->db);
-		$result = $objectline->fetchAll('ASC', 'position', 0, 0, array('customsql' => 'fk_peppolimport = ' . $this->id));
+		$result = $objectline->fetchAll('ASC', 'position', 0, 0, array('customsql' => 'fk_peppolimport = ' . ((int) $this->id)));
 
 		if (is_numeric($result)) {
 			$this->error = $this->error;
@@ -1040,9 +1046,9 @@ class Peppolimport extends \CommonObject
 
 		$prefix = "PIM";
 		$posindice = strlen($prefix) + 2;
-		$sql = "SELECT MAX(CAST(SUBSTRING(ref FROM " . $posindice . ") AS SIGNED)) as max";
+		$sql = "SELECT MAX(CAST(SUBSTRING(ref FROM " . ((int) $posindice) . ") AS SIGNED)) as max";
 		$sql .= " FROM " . MAIN_DB_PREFIX . $this->table_element;
-		$sql .= " WHERE ref LIKE '" . $prefix . "-%'";
+		$sql .= " WHERE ref LIKE '" . $this->db->escape($this->db->escapeforlike($prefix)) . "-%'";
 		if ($this->ismultientitymanaged == 1) {
 			$sql .= " AND entity = " . ((int) $conf->entity);
 		} elseif ($this->ismultientitymanaged == 2) {
@@ -1142,7 +1148,7 @@ class Peppolimport extends \CommonObject
 	/**
 	 * force to import now a file even if it's in "later" queue
 	 *
-	 * @param   [int]   $fourID            to force supplier (fournisseur)
+	 * @param   int     $fournID           to force supplier (fournisseur)
 	 * @return  [type]  [return description]
 	 */
 	public function importNow($fournID = -1)

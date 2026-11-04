@@ -12,6 +12,10 @@ if (!defined('NOLOGIN')) {
 	define('NOLOGIN', 1);
 }
 if (!defined('NOCSRFCHECK')) {
+	// Machine-to-machine call from the access point, without a Dolibarr session or token. Instead every request is
+	// checked further down: module enabled, secret key configured, HMAC-SHA256 signature of the body (hash_equals),
+	// receiver = Peppol ID of the entity. Without a secret key every request is refused. See CHANGELOG 2.3.0 / 2.6.2.
+	// beveiliging-uitzondering: nocsrf webhook zonder sessie; elke aanroep wordt gecontroleerd met een HMAC-handtekening (strenger dan een token)
 	define('NOCSRFCHECK', 1);
 }
 if (!defined('NOIPCHECK')) {
@@ -21,7 +25,9 @@ if (!defined('NOBROWSERNOTIF')) {
 	define('NOBROWSERNOTIF', '1');
 }
 
-// For MultiCompany module
+// For MultiCompany module: the entity must be known before main.inc.php is loaded, so GETPOST() is not available yet.
+// Only an integer is used (cast), and the webhook checks later that the document is addressed to this entity.
+// beveiliging-uitzondering: superglobal entity vóór main.inc.php, alleen als geheel getal gebruikt
 $entity = (!empty($_GET['entity']) ? (int) $_GET['entity'] : (!empty($_POST['entity']) ? (int) $_POST['entity'] : 1));
 if (is_numeric($entity)) {
 	define('DOLENTITY', $entity);
@@ -121,7 +127,7 @@ $topic = isset($headers['x-scrada-topic']) ? $headers['x-scrada-topic'] : '';
 $eventId = isset($headers['x-scrada-event-id']) ? $headers['x-scrada-event-id'] : '';
 $companyId = isset($headers['x-scrada-company-id']) ? $headers['x-scrada-company-id'] : '';
 $triggeredAt = isset($headers['x-scrada-triggered-at']) ? $headers['x-scrada-triggered-at'] : '';
-$attempt = isset($headers['x-scrada-attempt']) ? (int)$headers['x-scrada-attempt'] : 1;
+$attempt = isset($headers['x-scrada-attempt']) ? (int) $headers['x-scrada-attempt'] : 1;
 $apiVersion = isset($headers['x-scrada-api-version']) ? $headers['x-scrada-api-version'] : '';
 
 dol_syslog("Peppol webhook - Topic: $topic, Event ID: $eventId, Attempt: $attempt", LOG_INFO);
@@ -268,7 +274,6 @@ function handleInboundDocument($db, $headers, $xml)
 			//TODO create supplier invoice, import XML data, add PDF file
 			//add extrafield value $object->array_options['options_peppol_id'] = $uuid;
 			//update pi->fk_supplier and pi->fk_invoice
-
 		} else {
 			$db->rollback();
 			dol_syslog("Peppol webhook - Error validating or saving XML for document $documentId", LOG_ERR);

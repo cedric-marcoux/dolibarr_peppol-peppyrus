@@ -116,8 +116,10 @@ if (in_array($action, array('link', 'ignore', 'restore', 'checknow'))) {
 }
 
 if ($action == 'checknow') {
-	// A small batch, so the page answers within the time limit of the web server
-	$stats = $check->checkBatch(getDolGlobalInt('PEPPOL_CANDIDATE_BATCH_WEB', 25));
+	// A small batch, so the page answers within the time limit of the web server; the session is released meanwhile
+	peppol_sessie_los();
+	$stats = $check->checkBatch(getDolGlobalInt('PEPPOL_CANDIDATE_BATCH_WEB', 10));
+	peppol_sessie_terug();
 	setEventMessages($check->resultMessage($stats), null, ($stats['errors'] > 0 ? 'warnings' : 'mesgs'));
 	header('Location: ' . $_SERVER['PHP_SELF'] . '?' . ltrim($param, '&'));
 	exit;

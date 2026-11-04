@@ -952,7 +952,7 @@ class Peppol
 	 *
 	 * @return [type]  [return description]
 	 */
-	private function IEC_6523_code()
+	private function iec6523Code()
 	{
 		global $mysoc;
 		$retour = "";
@@ -986,7 +986,7 @@ class Peppol
 			default:
 				$retour = $mysoc->idprof2;
 		}
-		return $this->remove_spaces($retour);
+		return $this->removeSpaces($retour);
 	}
 
 
@@ -995,7 +995,7 @@ class Peppol
 	 *
 	 * @param  object $line       line we work on
 	 * @param  string $element    line object element (for special case like shipping)
-	 * @param  string $searchName module name we look for
+	 * @param  string $modName module name we look for
 	 * @return boolean                        true if the line is a special one and was created by the module we ask for
 	 ************************************************/
 	private function isLineFromExternalModule($line, $element, $searchName)
@@ -1005,7 +1005,7 @@ class Peppol
 			$line            = new \OrderLine($this->db);
 			$line->fetch($fk_origin_line);
 		}
-		if ($line->product_type == 9 && $line->special_code == $this->get_mod_number($searchName)) {
+		if ($line->product_type == 9 && $line->special_code == $this->getModNumber($searchName)) {
 			return true;
 		} else {
 			return false;
@@ -1015,10 +1015,10 @@ class Peppol
 	/************************************************
 	 *    Find module number
 	 *
-	 * @param  string $searchName module name we look for
+	 * @param  string $modName module name we look for
 	 * @return integer                        -1 if KO, 0 not found or module number if Ok
 	 ************************************************/
-	private function get_mod_number($modName)
+	private function getModNumber($modName)
 	{
 		if (class_exists($modName)) {
 			$objMod    = new $modName($this->db);
@@ -1027,7 +1027,7 @@ class Peppol
 		return 0;
 	}
 
-	private function remove_spaces($str)
+	private function removeSpaces($str)
 	{
 		return preg_replace('/\s+/', '', $str);
 	}
