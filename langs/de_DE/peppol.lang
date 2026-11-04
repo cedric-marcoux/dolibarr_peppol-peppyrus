@@ -204,6 +204,7 @@ peppolNoRecommendation = Keine dieser IDs stimmt mit der USt-IdNr. oder einer Re
 
 # Peppol candidates (weekly check)
 peppolCandidatesMenu = Peppol-Kandidaten
+peppolCandidatesNewCount = %s neu
 peppolCandidatesTitle = Auf Peppol gefundene Kunden und Lieferanten
 peppolCandidatesIntro = Customers and suppliers without a Peppol ID that were found in the Peppol directory by their VAT number or registration number (KvK). Check the data, select the right ID and click "Link". The check runs every week; "Check now" checks a small batch at once.
 peppolCandidateLastCheck = Last check: %s (%s third parties checked in total).

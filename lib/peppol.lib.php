@@ -270,20 +270,71 @@ function peppolDirectorySearch($query)
 {
 	$url = 'https://directory.peppol.eu/search/1.0/json?' . http_build_query(array('q' => (string) $query));
 	$result = peppolApiRequest($url, 'GET', '', array('Accept: application/json'));
-	if ($result['content'] === '') {
-		if ($result['curl_error_no']) {
-			return array('error' => 'Connection error: ' . $result['curl_error_msg']);
-		}
-		return array('error' => 'Empty response from PEPPOL Directory');
+	// On error also return the technical reason (HTTP code, curl error number): no search term in it
+	$fail = array('http_code' => (int) $result['http_code'], 'curl_error_no' => (int) $result['curl_error_no']);
+	if ($result['curl_error_no']) {
+		return array('error' => 'Connection error: ' . $result['curl_error_msg'], 'reason' => 'curl error ' . $result['curl_error_no']) + $fail;
 	}
 	if ($result['http_code'] != 200) {
-		return array('error' => 'HTTP error: ' . $result['http_code']);
+		return array('error' => 'HTTP error: ' . $result['http_code'], 'reason' => 'HTTP ' . $result['http_code']) + $fail;
+	}
+	if ($result['content'] === '') {
+		return array('error' => 'Empty response from PEPPOL Directory', 'reason' => 'empty response') + $fail;
 	}
 	$data = json_decode($result['content'], true);
 	if (!is_array($data)) {
-		return array('error' => 'JSON decode error: ' . json_last_error_msg());
+		return array('error' => 'JSON decode error: ' . json_last_error_msg(), 'reason' => 'invalid JSON') + $fail;
 	}
 	return $data;
+}
+
+/**
+ * Number of new Peppol candidates (third parties without a Peppol ID found in the directory) that the user may see
+ *
+ * @param	User	$user	User
+ * @return	int				Number, -1 when unknown (for example the tables do not exist yet)
+ */
+function peppolCountNewCandidates($user)
+{
+	global $db, $conf;
+
+	$sql = "SELECT COUNT(DISTINCT c.fk_soc) as nb FROM " . MAIN_DB_PREFIX . "peppol_candidate as c";
+	$sql .= " INNER JOIN " . MAIN_DB_PREFIX . "societe as s ON s.rowid = c.fk_soc";
+	if (!$user->hasRight('societe', 'client', 'voir')) {
+		$sql .= " INNER JOIN " . MAIN_DB_PREFIX . "societe_commerciaux as sc ON sc.fk_soc = s.rowid AND sc.fk_user = " . ((int) $user->id);
+	}
+	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "societe_extrafields as se ON se.fk_object = s.rowid";
+	$sql .= " WHERE c.entity = " . ((int) $conf->entity) . " AND s.entity IN (" . getEntity('societe') . ")";
+	$sql .= " AND c.status = 0 AND (se.peppol_id IS NULL OR se.peppol_id = '')";
+	$resql = $db->query($sql);
+	if (!$resql) {
+		return -1;
+	}
+	$obj = $db->fetch_object($resql);
+	$db->free($resql);
+	return $obj ? (int) $obj->nb : 0;
+}
+
+/**
+ * Button to the Peppol candidates page, with the number of new candidates, for the title bar of a list
+ *
+ * @param	User	$user	User
+ * @return	string			HTML, '' when the user may not see the page
+ */
+function peppolCandidatesButton($user)
+{
+	global $langs;
+
+	if (!$user->hasRight('peppolpeppyrus', 'read') || !$user->hasRight('societe', 'lire') || !empty($user->socid)) {
+		return '';
+	}
+	$langs->load("peppol@peppolpeppyrus");
+	$nb = peppolCountNewCandidates($user);
+	$label = $langs->trans('peppolCandidatesMenu');
+	if ($nb > 0) {
+		$label .= ' <span class="badge badge-status4">' . $langs->trans('peppolCandidatesNewCount', $nb) . '</span>';
+	}
+	return '<a class="butAction" href="' . dol_buildpath('/peppolpeppyrus/peppol_candidates.php', 1) . '">' . $label . '</a>';
 }
 
 /**

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.6.1
+
+- Peppol candidates are also in the menu Billing > Supplier invoices, next to "Documents available at Peppyrus", and as a button with the number of new candidates in the title bar of that list and of the Peppol log.
+- Weekly check: 1.1 s between two requests to the Peppol directory (was 0.3 s; the directory limits requests per second), one retry after HTTP 429. The technical reason of a directory error (HTTP code or curl error number, never a search term) is shown in the job output and the log.
+- The job output stays readable when the translation is not available (for example a stale language cache in memcached after an update).
+
+**After updating:** deactivate and reactivate the module once (menu entries). If texts show as keys such as `peppolCandidateCheckResult`, flush memcached.
+
 ## 2.6.0
 
 New page **Third parties > Peppol candidates** (`peppol_candidates.php`): customers and suppliers without a Peppol ID that were found in the Peppol directory.

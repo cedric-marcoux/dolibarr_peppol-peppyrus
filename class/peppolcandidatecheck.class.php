@@ -34,8 +34,14 @@ class PeppolCandidateCheck
 	/** @var string[] */
 	public $errors = array();
 
-	/** @var int Pause between two requests to the directory, in microseconds */
-	public $pause = 300000;
+	/** @var int Pause between two requests to the directory, in microseconds (the directory limits requests per second) */
+	public $pause = 1100000;
+
+	/** @var int Wait before the one retry after HTTP 429 (too many requests), in seconds */
+	public $retryWait = 10;
+
+	/** @var string Technical reason of the last directory error (HTTP code, curl error), no search term */
+	public $lastErrorReason = '';
 
 	/** @var callable Directory search function (replaceable in tests) */
 	public $searchFunction = 'peppolDirectorySearch';
@@ -67,13 +73,36 @@ class PeppolCandidateCheck
 		$langs->load("peppol@peppolpeppyrus");
 
 		$stats = $this->checkBatch(getDolGlobalInt('PEPPOL_CANDIDATE_BATCH', 500));
-		$this->output = $langs->trans('peppolCandidateCheckResult', $stats['checked'], $stats['found'], $stats['new']);
+		$this->output = $this->resultMessage($stats);
 		if ($stats['errors'] > 0) {
-			$this->output .= ' ' . $langs->trans('peppolCandidateCheckErrors', $stats['errors']);
 			$this->error = $this->output;
 			return 1;
 		}
 		return 0;
+	}
+
+	/**
+	 * Readable result of a check, also when the translation is not available (for example a stale language cache)
+	 *
+	 * @param	array	$stats	Result of checkBatch()
+	 * @return	string
+	 */
+	public function resultMessage($stats)
+	{
+		global $langs;
+
+		$msg = $langs->trans('peppolCandidateCheckResult', $stats['checked'], $stats['found'], $stats['new']);
+		if (strpos($msg, 'peppolCandidateCheckResult') === 0) {
+			$msg = $stats['checked'] . ' third parties checked, ' . $stats['found'] . ' ID(s) found, ' . $stats['new'] . ' new.';
+		}
+		if ($stats['errors'] > 0) {
+			$err = $langs->trans('peppolCandidateCheckErrors', $stats['errors']);
+			if (strpos($err, 'peppolCandidateCheckErrors') === 0) {
+				$err = 'The Peppol directory could not be reached; the remaining third parties are checked next time.';
+			}
+			$msg .= ' ' . $err . ($this->lastErrorReason !== '' ? ' (' . $this->lastErrorReason . ')' : '');
+		}
+		return $msg;
 	}
 
 	/**
@@ -89,6 +118,7 @@ class PeppolCandidateCheck
 		global $conf;
 
 		$stats = array('checked' => 0, 'found' => 0, 'new' => 0, 'errors' => 0);
+		$this->lastErrorReason = '';
 		$limit = max(1, (int) $limit);
 		$now = dol_now();
 
@@ -138,7 +168,7 @@ class PeppolCandidateCheck
 			$stats['new'] += $res['new'];
 		}
 
-		dol_syslog(__METHOD__ . ' checked=' . $stats['checked'] . ' found=' . $stats['found'] . ' new=' . $stats['new'] . ' errors=' . $stats['errors']);
+		dol_syslog(__METHOD__ . ' checked=' . $stats['checked'] . ' found=' . $stats['found'] . ' new=' . $stats['new'] . ' errors=' . $stats['errors'] . ($this->lastErrorReason !== '' ? ' reason=' . $this->lastErrorReason : ''), $stats['errors'] ? LOG_WARNING : LOG_INFO);
 		return $stats;
 	}
 
@@ -162,7 +192,13 @@ class PeppolCandidateCheck
 			}
 			$nopause = false;
 			$res = call_user_func($this->searchFunction, $term);
+			if (isset($res['error']) && (int) ($res['http_code'] ?? 0) == 429 && $this->retryWait > 0) {
+				// Too many requests: wait and try once more
+				sleep($this->retryWait);
+				$res = call_user_func($this->searchFunction, $term);
+			}
 			if (isset($res['error'])) {
+				$this->lastErrorReason = (string) ($res['reason'] ?? 'error');
 				$out['error'] = true;
 				return $out;
 			}

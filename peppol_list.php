@@ -51,6 +51,7 @@ if (!$res) {
  * @var User $user
  */
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.formfile.class.php';
+dol_include_once('/peppolpeppyrus/lib/peppol.lib.php');
 
 // Load translation files required by the page
 $langs->loadLangs(array("peppol@peppolpeppyrus"));
@@ -133,7 +134,7 @@ if ($resql) {
     print '<input type="hidden" name="sortorder" value="'.$sortorder.'">';
     print '<input type="hidden" name="page" value="'.$page.'">';
 
-    print_barre_liste($title, 0, $_SERVER["PHP_SELF"], $param, '', '', '', $num, 0, 'title_generic.png', 0, '', '', 0);
+    print_barre_liste($title, 0, $_SERVER["PHP_SELF"], $param, '', '', '', $num, 0, 'title_generic.png', 0, peppolCandidatesButton($user), '', 0);
 
     print '<div class="div-table-responsive">';
     print '<table class="tagtable nobottomiftotal liste">'."\n";
