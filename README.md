@@ -88,9 +88,15 @@ Billing > Peppol > Peppol candidates lists customers and suppliers without a Pep
 
 A daily scheduled job ("Peppol: daily fetch of incoming documents from the access point") fetches the new documents from the access point into Billing > Peppol > Incoming documents and confirms them at the access point, as the button "Refresh" on that page does. It does not create, validate or pay supplier invoices. A document whose download or confirmation failed stays unconfirmed at the access point and is tried again the next day. The user of the scheduled job needs the right "Peppol: write". The time of the last fetch is shown on the page. The job result and the log hold counts only. Requires the module "Scheduled jobs" and the Dolibarr cron script on the server.
 
-## Book incoming documents (with PDF OCR Inkoop)
+## Book incoming documents
 
-With the module PDF OCR Inkoop installed, Billing > Peppol > Incoming documents has a button "Book" for every document that is not booked yet. It opens PDF OCR Inkoop with the e-invoice (XML) of the document loaded; saving there creates and validates the supplier invoice and links it to the document. Without that module the button is not shown.
+Billing > Peppol > Incoming documents has a button "Book" for every document that is not booked yet (also on the card of the document). One click books the e-invoice (UBL, Peppol BIS Billing 3.0) as supplier invoice, without other modules:
+
+- The supplier is found by Peppol ID, VAT number or registration number (KvK); when it is not known it is created from the e-invoice (with the right to create third parties).
+- The invoice gets the invoice number, dates, lines (quantity, price, VAT rate) and the allowances and charges of the e-invoice, and a note with the IBAN.
+- It is validated when its total equals the total in the e-invoice and the user may validate supplier invoices; otherwise it stays a draft with the reason.
+- The PDF from the e-invoice and the XML are attached to the invoice; the document is linked to the invoice.
+- Not booked automatically: credit notes, invoices in another currency, and documents without number, date or lines. An invoice with the same supplier and number is linked instead of booked twice.
 
 ## Requirements
 

@@ -214,6 +214,27 @@ if (empty($reshook)) {
 	// include DOL_DOCUMENT_ROOT.'/core/actions_sendmails.inc.php';
 
 
+	// Book as supplier invoice: supplier, lines, check of the total, validation, PDF and XML attached
+	if ($action == 'book' && $object->id > 0) {
+		if (!peppolCheckToken()) {
+			accessforbidden($langs->trans('ErrorBadValueForParameter', 'token'));
+		}
+		dol_include_once('/peppolpeppyrus/class/peppolbooking.class.php');
+		$booking = new PeppolBooking($db);
+		$res = $booking->book($object, $user);
+		if ($booking->invoiceId > 0) {
+			$invoiceUrl = DOL_URL_ROOT . '/fourn/facture/card.php?id=' . ((int) $booking->invoiceId);
+			$msg = $langs->trans($res > 0 ? ($booking->validated ? 'peppolBookDoneValidated' : 'peppolBookDoneDraft') : 'peppolBookAlreadyBooked');
+			$msg .= ($booking->supplierCreated ? ' ' . $langs->trans('peppolBookSupplierCreated') : '');
+			$msg .= ' <a href="' . dol_escape_htmltag($invoiceUrl) . '">' . $langs->trans('peppolBookOpenInvoice') . '</a>';
+			setEventMessages($msg, $booking->warnings, ($res > 0 && $booking->validated && !count($booking->warnings)) ? 'mesgs' : 'warnings');
+		} else {
+			setEventMessages(dol_escape_htmltag($booking->error), null, 'errors');
+		}
+		$object->fetch($object->id);
+		$action = '';
+	}
+
 	if ($action == 'analyze' && $permissiontoadd) {
 		if (!peppolCheckToken()) {
 			accessforbidden($langs->trans('ErrorBadValueForParameter', 'token'));
@@ -519,7 +540,7 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 			// 	print dolGetButtonAction($langs->trans('AnalyzeNow'), '', 'default', $_SERVER["PHP_SELF"] . '?id=' . $object->id . '&action=analyze&mode=now');
 			// }
 
-			// Book as supplier invoice with PDF OCR Inkoop (when installed): the XML is loaded there, saving validates the invoice
+			// Book as supplier invoice in one click (class/peppolbooking.class.php)
 			$bookingUrl = peppolBookingUrl($object, $user);
 			if ($bookingUrl !== '') {
 				print dolGetButtonAction($langs->trans('peppolBookInvoiceHelp'), $langs->trans('peppolBookInvoice'), 'default', $bookingUrl);

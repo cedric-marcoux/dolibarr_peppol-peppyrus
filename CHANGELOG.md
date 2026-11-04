@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.9.0
+
+Book incoming documents as supplier invoice in the module itself, without another module:
+
+- The button **Book** (Billing > Peppol > Incoming documents, column Invoice, and on the card of a document) now books the e-invoice directly (`class/peppolbooking.class.php`). Version 2.8.0 needed the module PDF OCR Inkoop for this.
+- Supplier: found by Peppol ID, VAT number or registration number (KvK), only when exactly one third party matches. Not found: created from the e-invoice (name, address, VAT number, registration number, country, Peppol ID) with the right to create third parties. A found third party gets its Peppol ID when it had none, and becomes a supplier when it was not one.
+- Invoice: supplier invoice number, invoice date, due date, the lines (quantity, net price, VAT rate) and the allowances and charges on the whole invoice; a note with the document and the IBAN.
+- Validated when the total equals the total in the e-invoice (rounding difference up to 0.02) and the user may validate supplier invoices; otherwise it stays a draft and the message says why.
+- The PDF from the e-invoice and the XML are attached to the invoice; the document is linked to the invoice and gets the status "Success".
+- Not booked automatically, with a message: credit notes, another currency, no invoice number, date or lines, several matching third parties. An existing invoice with the same supplier and number is linked instead of booked twice.
+- Only when a user clicks; never by the scheduled job. The log holds ids and counts only.
+- Rights: import Peppol documents and create supplier invoices; validating follows the rights of Dolibarr.
+- Tests of reading the e-invoice (`PeppolBookingTest`, made-up invoice).
+
+**After updating:** replace the module files and flush memcached; deactivating and reactivating is not needed. Try the button first with one document and check the invoice.
+
 ## 2.8.0
 
 Book an incoming document as supplier invoice in one click:

@@ -325,6 +325,29 @@ peppolInboxFetchNoAccessPoint = Le point d'accès n'a pas pu être chargé.
 peppolInboxLastFetch = Dernière récupération auprès du point d'accès : %s
 peppolInboxNeverFetched = Pas encore récupéré auprès du point d'accès.
 
-# Book an incoming document as supplier invoice (PDF OCR Inkoop)
+# Button "Book"
 peppolBookInvoice = Comptabiliser
-peppolBookInvoiceHelp = Comptabiliser comme facture fournisseur avec PDF OCR Inkoop : la facture électronique y est chargée ; l'enregistrement crée et valide la facture.
+
+# Book an incoming document as supplier invoice
+peppolBookInvoiceHelp = Comptabiliser comme facture fournisseur : fournisseur, lignes et montants de la facture électronique ; validée si le total correspond ; PDF et XML joints.
+peppolBookNoRight = Vous n'avez pas le droit de comptabiliser les documents Peppol (importer les documents Peppol et créer des factures fournisseurs).
+peppolBookAlreadyBooked = Ce document a déjà été comptabilisé.
+peppolBookNoFile = Le fichier de ce document est absent. Récupérez à nouveau les documents.
+peppolBookNotAnInvoice = Ce document n'est pas une facture électronique lisible (UBL, Peppol BIS Billing 3.0).
+peppolBookCreditNote = Ceci est un avoir. Saisissez-le à la main comme avoir de la facture fournisseur.
+peppolBookOtherCurrency = La facture est en %s, pas dans la devise de la société. Saisissez-la à la main.
+peppolBookIncomplete = La facture électronique n'a pas de numéro, de date ou de lignes. Saisissez-la à la main.
+peppolBookSeveralSuppliers = Plusieurs tiers ont cet identifiant Peppol, ce numéro de TVA ou ce numéro d'entreprise. Fusionnez-les ou saisissez la facture à la main.
+peppolBookSupplierUnknown = Le fournisseur est inconnu et vous n'avez pas le droit de créer des tiers.
+peppolBookNoSupplierName = La facture électronique ne contient pas le nom du fournisseur.
+peppolBookNotASupplier = Le tiers n'est pas fournisseur et vous n'avez pas le droit de modifier les tiers.
+peppolBookLinkedExisting = Cette facture fournisseur existait déjà (même fournisseur et même numéro) ; le document y est lié.
+peppolBookNote = Comptabilisée depuis le document Peppol %s.
+peppolBookTotalDiffers = Gardée en brouillon : le total de la facture (%s) diffère du total de la facture électronique (%s). Vérifiez les lignes et validez.
+peppolBookNoValidateRight = Gardée en brouillon : vous n'avez pas le droit de valider les factures fournisseurs.
+peppolBookValidateFailed = Gardée en brouillon : la validation a échoué (%s).
+peppolBookFilesNotAttached = Le PDF ou le XML n'a pas pu être joint à la facture.
+peppolBookDoneValidated = Comptabilisée et validée.
+peppolBookDoneDraft = Comptabilisée en brouillon.
+peppolBookSupplierCreated = Le fournisseur a été créé depuis la facture électronique.
+peppolBookOpenInvoice = Ouvrir la facture fournisseur
