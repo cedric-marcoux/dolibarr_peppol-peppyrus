@@ -291,6 +291,15 @@ peppolCandidateCheckErrors = De Peppol-directory was niet bereikbaar (%s keer); 
 PeppolMenu = Peppol
 peppolMenuDocuments = Inkomende documenten
 peppolMenuPage = Pagina
-peppolMenuDocumentsDesc = Documenten (inkoopfacturen) die via het Peppol-netwerk zijn ontvangen en klaarstaan om te importeren.
+peppolMenuDocumentsDesc = Documenten (inkoopfacturen) die via het Peppol-netwerk zijn ontvangen en klaarstaan om te importeren. Nieuwe documenten worden elke dag opgehaald door een geplande taak.
 peppolMenuCandidatesDesc = Klanten en leveranciers zonder Peppol-ID die de wekelijkse controle op Peppol heeft gevonden; hier koppelt u ze.
 peppolMenuLogDesc = Logboek van de documenten die naar het accesspoint zijn verstuurd en ervan zijn ontvangen.
+
+# Daily fetch of incoming documents
+peppolInboxFetchResult = %s nieuw(e) document(en) opgehaald bij het accesspoint.
+peppolInboxFetchSomeFailed = %s document(en) konden niet worden opgehaald; die worden de volgende keer opnieuw geprobeerd.
+peppolInboxFetchFailed = Het accesspoint was niet bereikbaar; de documenten worden de volgende keer opgehaald.
+peppolInboxFetchNoRight = De gebruiker van de geplande taak heeft geen recht om Peppol-documenten op te halen (Peppol: schrijven).
+peppolInboxFetchNoAccessPoint = Het accesspoint kon niet worden geladen.
+peppolInboxLastFetch = Laatst opgehaald bij het accesspoint: %s
+peppolInboxNeverFetched = Nog niet opgehaald bij het accesspoint.

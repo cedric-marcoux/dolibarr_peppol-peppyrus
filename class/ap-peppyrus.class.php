@@ -21,6 +21,9 @@ class Peppyrus extends PeppolAP
 	public $operatorurl = "https://www.peppyrus.be/";
 	public $status = 8;
 	public $supplierInvoicesList;
+
+	/** @var array{listed:int,new:int,retried:int,failed:int} Counts of the last getSupplierInvoicesList() (no names or ids) */
+	public $fetchStats = array('listed' => 0, 'new' => 0, 'retried' => 0, 'failed' => 0);
 	public $setupNeeds = ['PEPPOL_AP_SENDER_ID', 'PEPPOL_AP_API_KEY', 'PEPPOL_PROD'];
 
 	/**
@@ -533,6 +536,7 @@ class Peppyrus extends PeppolAP
 		global $langs, $conf, $user, $db;
 
 		$ret = 0;
+		$this->fetchStats = array('listed' => 0, 'new' => 0, 'retried' => 0, 'failed' => 0);
 
 		if ($this->validateConfiguration() < 0) {
 			setEventMessages("Error", $this->errors, 'errors');
@@ -561,12 +565,17 @@ class Peppyrus extends PeppolAP
 
 		$json = $response['data'];
 
+		// The access point answered: remember when (shown on the list of incoming documents)
+		require_once DOL_DOCUMENT_ROOT . '/core/lib/admin.lib.php';
+		dolibarr_set_const($db, 'PEPPOL_INBOX_LAST_FETCH', (string) dol_now(), 'chaine', 0, '', $conf->entity);
+
 		if (!isset($json->items) || !is_array($json->items)) {
 			setEventMessage($langs->trans('peppolNoInvoicesFound'), 'warnings');
 			return 0;
 		}
 
 		$messageCount = count($json->items);
+		$this->fetchStats['listed'] = $messageCount;
 
 		$message = $langs->trans('peppolInvoicesListSuccess') . ' - ' . $messageCount . ' message(s) found';
 
@@ -578,10 +587,21 @@ class Peppyrus extends PeppolAP
 
 		// Process each message
 		foreach ($json->items as $entry) {
+			if (!is_object($entry) || empty($entry->id) || !is_scalar($entry->id)) {
+				$this->fetchStats['failed']++;
+				continue;
+			}
 			$pi = new Peppolimport($db);
-			$res = $pi->fetch(0, null, $entry->id);
+			$res = $pi->fetch(0, null, (string) $entry->id);
 			if ($res > 0) {
-				dol_syslog("Invoice already imported, next");
+				// Known, but still unconfirmed at the access point: the earlier download or confirmation failed, try again
+				dol_syslog("Peppyrus::getSupplierInvoicesList document known but not confirmed, retry download");
+				$resXml = $this->getSupplierInvoice($pi);
+				if ($resXml > 0 && $this->confirmSupplierInvoice($pi) > 0) {
+					$this->fetchStats['retried']++;
+				} else {
+					$this->fetchStats['failed']++;
+				}
 				continue;
 			}
 
@@ -598,14 +618,21 @@ class Peppyrus extends PeppolAP
 				$resPdf = $this->getSupplierInvoicePdf($pi);
 
 				// Confirm to AP in case of no errors
+				$resConfirm = 0;
 				if ($resXml > 0 && $resPdf > 0) {
 					$resConfirm = $this->confirmSupplierInvoice($pi);
 					if ($resConfirm <= 0) {
 						dol_syslog("Peppyrus::getSupplierInvoicesList Error confirming invoice: " . $resConfirm, LOG_WARNING);
 					}
 				}
+				if ($resConfirm > 0) {
+					$this->fetchStats['new']++;
+				} else {
+					$this->fetchStats['failed']++;
+				}
 			} else {
 				dol_syslog("Peppolimport Error : " . ((int) $res));
+				$this->fetchStats['failed']++;
 			}
 		}
 
@@ -639,7 +666,7 @@ class Peppyrus extends PeppolAP
 		}
 
 		// Get message details including content
-		$url = $this->getApiUrl() . "message/" . $pi->peppolid;
+		$url = $this->getApiUrl() . "message/" . rawurlencode((string) $pi->peppolid);
 
 		$headers = [];
 		$headers[] = 'X-Api-Key: ' . $apiKey;
@@ -679,10 +706,10 @@ class Peppyrus extends PeppolAP
 
 		// Add message details
 		if (isset($json->sender)) {
-			$message .= ' - Sender: ' . $json->sender;
+			$message .= ' - Sender: ' . dol_escape_htmltag((string) $json->sender);
 		}
 		if (isset($json->created)) {
-			$message .= ' - Date: ' . $json->created;
+			$message .= ' - Date: ' . dol_escape_htmltag((string) $json->created);
 		}
 
 		setEventMessages($message, null, 'mesgs');
@@ -738,7 +765,7 @@ class Peppyrus extends PeppolAP
 		}
 
 		// Confirm message reception
-		$url = $this->getApiUrl() . "message/" . $pi->peppolid . "/confirm";
+		$url = $this->getApiUrl() . "message/" . rawurlencode((string) $pi->peppolid) . "/confirm";
 
 		$headers = [];
 		$headers[] = 'X-Api-Key: ' . $apiKey;

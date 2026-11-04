@@ -354,6 +354,15 @@ Permission43618104 = Import Peppol invoices (supplier)
 PeppolMenu = Peppol
 peppolMenuDocuments = Incoming documents
 peppolMenuPage = Page
-peppolMenuDocumentsDesc = Documents (supplier invoices) received through the Peppol network and waiting to be imported.
+peppolMenuDocumentsDesc = Documents (supplier invoices) received through the Peppol network and waiting to be imported. New documents are fetched every day by a scheduled job.
 peppolMenuCandidatesDesc = Customers and suppliers without a Peppol ID that were found on Peppol by the weekly check; link them here.
 peppolMenuLogDesc = Log of the documents sent to and received from the access point.
+
+# Daily fetch of incoming documents
+peppolInboxFetchResult = %s new document(s) fetched from the access point.
+peppolInboxFetchSomeFailed = %s document(s) could not be fetched; they are tried again next time.
+peppolInboxFetchFailed = The access point could not be reached; the documents are fetched next time.
+peppolInboxFetchNoRight = The user of the scheduled job has no right to fetch Peppol documents (Peppol: write).
+peppolInboxFetchNoAccessPoint = The access point could not be loaded.
+peppolInboxLastFetch = Last fetched from the access point: %s
+peppolInboxNeverFetched = Not yet fetched from the access point.

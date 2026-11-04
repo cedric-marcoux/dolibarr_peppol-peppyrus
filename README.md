@@ -82,7 +82,11 @@ This module allows sending electronic invoices via the PEPPOL network using the 
 
 ## Peppol candidates
 
-Third parties > Peppol candidates lists customers and suppliers without a Peppol ID that a weekly scheduled job found in the Peppol directory by VAT number or registration number (never by name). Select the right ID and link it to the third party. Requires the module "Scheduled jobs" and the Dolibarr cron script on the server.
+Billing > Peppol > Peppol candidates lists customers and suppliers without a Peppol ID that a weekly scheduled job found in the Peppol directory by VAT number or registration number (never by name). Select the right ID and link it to the third party. Requires the module "Scheduled jobs" and the Dolibarr cron script on the server.
+
+## Daily fetch of incoming documents
+
+A daily scheduled job ("Peppol: daily fetch of incoming documents from the access point") fetches the new documents from the access point into Billing > Peppol > Incoming documents and confirms them at the access point, as the button "Refresh" on that page does. It does not create, validate or pay supplier invoices. A document whose download or confirmation failed stays unconfirmed at the access point and is tried again the next day. The user of the scheduled job needs the right "Peppol: write". The time of the last fetch is shown on the page. The job result and the log hold counts only. Requires the module "Scheduled jobs" and the Dolibarr cron script on the server.
 
 ## Requirements
 

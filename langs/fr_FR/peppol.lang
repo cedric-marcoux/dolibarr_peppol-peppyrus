@@ -312,6 +312,15 @@ peppolCandidateCheckErrors = L'annuaire Peppol n'était pas joignable (%s fois) 
 PeppolMenu = Peppol
 peppolMenuDocuments = Documents entrants
 peppolMenuPage = Page
-peppolMenuDocumentsDesc = Documents (factures fournisseurs) reçus par le réseau Peppol et en attente d'import.
+peppolMenuDocumentsDesc = Documents (factures fournisseurs) reçus par le réseau Peppol et en attente d'import. Les nouveaux documents sont récupérés chaque jour par une tâche planifiée.
 peppolMenuCandidatesDesc = Clients et fournisseurs sans identifiant Peppol trouvés sur Peppol par la vérification hebdomadaire ; liez-les ici.
 peppolMenuLogDesc = Journal des documents envoyés au point d'accès et reçus de celui-ci.
+
+# Daily fetch of incoming documents
+peppolInboxFetchResult = %s nouveau(x) document(s) récupéré(s) auprès du point d'accès.
+peppolInboxFetchSomeFailed = %s document(s) n'ont pas pu être récupérés ; nouvel essai la prochaine fois.
+peppolInboxFetchFailed = Le point d'accès n'a pas pu être joint ; les documents seront récupérés la prochaine fois.
+peppolInboxFetchNoRight = L'utilisateur de la tâche planifiée n'a pas le droit de récupérer les documents Peppol (Peppol : écriture).
+peppolInboxFetchNoAccessPoint = Le point d'accès n'a pas pu être chargé.
+peppolInboxLastFetch = Dernière récupération auprès du point d'accès : %s
+peppolInboxNeverFetched = Pas encore récupéré auprès du point d'accès.
