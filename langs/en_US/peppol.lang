@@ -349,3 +349,11 @@ Permission43618101 = Read Peppol objects
 Permission43618102 = Create/Update Peppol objects
 Permission43618103 = Delete Peppol objects
 Permission43618104 = Import Peppol invoices (supplier)
+
+# Menu Billing > Peppol
+PeppolMenu = Peppol
+peppolMenuDocuments = Incoming documents
+peppolMenuPage = Page
+peppolMenuDocumentsDesc = Documents (supplier invoices) received through the Peppol network and waiting to be imported.
+peppolMenuCandidatesDesc = Customers and suppliers without a Peppol ID that were found on Peppol by the weekly check; link them here.
+peppolMenuLogDesc = Log of the documents sent to and received from the access point.

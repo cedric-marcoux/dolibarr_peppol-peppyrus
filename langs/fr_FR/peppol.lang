@@ -307,3 +307,11 @@ peppolCandidateActionSkipped = %s ignoré(s) (le tiers a déjà un identifiant o
 peppolCandidateActionError = Erreur, rien n'a été modifié.
 peppolCandidateCheckResult = %s tiers vérifiés, %s identifiant(s) trouvé(s), dont %s nouveau(x).
 peppolCandidateCheckErrors = L'annuaire Peppol n'était pas joignable (%s fois) ; les autres tiers seront vérifiés la prochaine fois.
+
+# Menu Billing > Peppol
+PeppolMenu = Peppol
+peppolMenuDocuments = Documents entrants
+peppolMenuPage = Page
+peppolMenuDocumentsDesc = Documents (factures fournisseurs) reçus par le réseau Peppol et en attente d'import.
+peppolMenuCandidatesDesc = Clients et fournisseurs sans identifiant Peppol trouvés sur Peppol par la vérification hebdomadaire ; liez-les ici.
+peppolMenuLogDesc = Journal des documents envoyés au point d'accès et reçus de celui-ci.

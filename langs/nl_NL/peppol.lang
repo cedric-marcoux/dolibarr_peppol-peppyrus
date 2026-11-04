@@ -365,3 +365,11 @@ Permission43618101 = Peppol-gegevens lezen
 Permission43618102 = Peppol-gegevens aanmaken en wijzigen
 Permission43618103 = Peppol-gegevens verwijderen
 Permission43618104 = Peppol-inkoopfacturen importeren
+
+# Menu Billing > Peppol
+PeppolMenu = Peppol
+peppolMenuDocuments = Inkomende documenten
+peppolMenuPage = Pagina
+peppolMenuDocumentsDesc = Documenten (inkoopfacturen) die via het Peppol-netwerk zijn ontvangen en klaarstaan om te importeren.
+peppolMenuCandidatesDesc = Klanten en leveranciers zonder Peppol-ID die de wekelijkse controle op Peppol heeft gevonden; hier koppelt u ze.
+peppolMenuLogDesc = Logboek van de documenten die naar het accesspoint zijn verstuurd en ervan zijn ontvangen.

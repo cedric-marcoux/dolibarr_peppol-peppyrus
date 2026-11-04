@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.6.5
+
+One menu "Peppol" in the left menu of Billing, with the pages of the module under it, instead of separate entries in several menus:
+
+- **Peppol** (overview page `index.php`: the pages of the module with a short description; the number of new candidates is shown next to "Peppol candidates").
+  - **Incoming documents** (`peppolimport_list.php`, right "import").
+  - **Peppol candidates** (`peppol_candidates.php`, right "read" and the right to read third parties).
+  - **Peppol log** (`peppol_list.php`, right "import").
+- The old entries under Supplier invoices, Third parties and Tools are removed. The menu entry under Tools used a language key that did not exist.
+- New language keys for the menu and the overview page in en_US, nl_NL, nl_BE and fr_FR.
+
+**After updating:** replace the module files, then deactivate and reactivate the module once so the menu entries are replaced (settings and data are kept); flush memcached.
+
 ## 2.6.4
 
 Automatic checks on GitHub (`.github/workflows/checks.yml`) on every push and pull request, as in DoliMods and `dolibarr-module`:
