@@ -71,7 +71,7 @@ $backto = GETPOST('backto', 'aZ09');
 if (!in_array($backto, array('card', 'comm', 'fourn'))) {
 	$backto = 'card';
 }
-$backurl = peppolThirdpartyBackUrl($socid, $backto);
+$backurl = peppolThirdpartyBackUrl((int) $socid, $backto);
 
 // Security check
 $result = restrictedArea($user, 'peppolpeppyrus');
@@ -109,7 +109,7 @@ if ($action == 'autosearch' && $thirdparty) {
 	foreach (peppolDirectorySearchCandidates($thirdparty) as $criterion => $query) {
 		$res = Peppol::searchPeppolDirectory($query);
 		$searchResults = $res;
-		$search_query = $query;
+		$search_query = $query; // @phan-suppress-current-line SqlInjection -- search term for the Peppol directory (HTTPS request), not SQL
 		$searchCriterion = $criterion;
 		$nb = (is_array($res) && isset($res['matches']) && is_array($res['matches'])) ? count($res['matches']) : 0;
 		dol_syslog("Peppol directory search by " . $criterion . ": " . (isset($res['error']) ? 'error' : $nb . ' result(s)'));

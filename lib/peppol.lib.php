@@ -72,10 +72,11 @@ function peppolSchemeLabel($icd)
 /**
  * Turn one match of the Peppol directory into the data shown to the user, and compare it with the third party.
  *
- * @param	array		$match		One element of the "matches" list of the directory JSON
- * @param	Societe|null	$thirdparty	Third party the search was started from, or null
- * @return	array					participantId, scheme, icd, value, name, country, location, regDate,
- *									additionalInfo, acceptsInvoice (true/false/null when unknown), matchedField ('' when no match)
+ * @param	array<string,mixed>|mixed	$match		One element of the "matches" list of the directory JSON
+ * @param	Societe|\stdClass|null	$thirdparty	Third party the search was started from, or null
+ * @return	array{participantId:string,scheme:string,icd:string,value:string,name:string,country:string,location:string,regDate:string,additionalInfo:string,acceptsInvoice:bool|null,matchedField:string}
+ *			participantId, scheme, icd, value, name, country, location, regDate, additionalInfo,
+ *			acceptsInvoice (true/false/null when unknown), matchedField ('' when no match)
  */
 function peppolDirectoryMatchInfo($match, $thirdparty = null)
 {
@@ -249,10 +250,8 @@ function peppolApiRequest($url, $method, $body, $headers)
 	$result['curl_error_no'] = (int) curl_errno($ch);
 	$result['curl_error_msg'] = (string) curl_error($ch);
 	$result['content'] = is_string($response) ? $response : '';
-	if (PHP_VERSION_ID < 80000) {
-		curl_close($ch);
-	}
-	unset($options, $headers);
+	// The handle is not closed explicitly: closing does nothing since PHP 8.0 and is deprecated in PHP 8.5; unset() frees it in every version
+	unset($ch, $options, $headers);
 
 	dol_syslog('peppolApiRequest '.$method.' '.$host.' HTTP '.$result['http_code'].($result['curl_error_no'] ? ' curl error '.$result['curl_error_no'] : ''));
 
@@ -264,7 +263,7 @@ function peppolApiRequest($url, $method, $body, $headers)
  * Goes through peppolApiRequest(), so the search term (a name, VAT or registration number) does not end up in the log.
  *
  * @param	string	$query	Search term
- * @return	array			Decoded JSON of the directory ('matches' => [...]), or array('error' => message)
+ * @return	array<string,mixed>	Decoded JSON of the directory ('matches' => [...]), or array('error' => message, 'reason' => ..., 'http_code' => ...)
  */
 function peppolDirectorySearch($query)
 {
@@ -370,6 +369,35 @@ function peppol_sessie_terug()
 	foreach ($meldingen as $soort => $lijst) {
 		$_SESSION['dol_events'][$soort] = array_merge((array) ($_SESSION['dol_events'][$soort] ?? array()), (array) $lijst);
 	}
+}
+
+/**
+ * Check that a receiver Peppol ID is the Peppol ID configured for the current entity (PEPPOL_AP_SENDER_ID).
+ * Accepted forms: "0208:0123456789" or "iso6523-actorid-upis::0208:0123456789"; comparison is case-insensitive.
+ * Without Multicompany an unknown own ID or an empty receiver is accepted (only one company can be meant).
+ *
+ * @param	string	$receiverId		Receiver ID from the webhook headers
+ * @return	bool
+ */
+function peppolWebhookReceiverMatches($receiverId)
+{
+	$own = getDolGlobalString('PEPPOL_AP_SENDER_ID');
+	$multicompany = isModEnabled('multicompany');
+	if ($own === '' || $receiverId === '') {
+		return !$multicompany;
+	}
+	$normalize = function ($id) {
+		$id = strtoupper(trim(preg_replace('/^.*::/', '', (string) $id)));
+		$parts = explode(':', $id);
+		$value = array_pop($parts);
+		return array('scheme' => (count($parts) ? end($parts) : ''), 'value' => preg_replace('/[^A-Z0-9]/', '', $value));
+	};
+	$a = $normalize($own);
+	$b = $normalize($receiverId);
+	if ($a['value'] === '' || $a['value'] !== $b['value']) {
+		return false;
+	}
+	return ($a['scheme'] === '' || $b['scheme'] === '' || $a['scheme'] === $b['scheme']);
 }
 
 /**
@@ -488,6 +516,11 @@ function dolibarrToPeppolMeansCode($search)
 	return $res;
 }
 
+/**
+ * Next line reference of the Peppol document
+ *
+ * @return int Next line reference
+ */
 function peppolNextRefLine()
 {
 	global $peppolLineRef;
@@ -643,6 +676,12 @@ function peppolCheckAccessPoint($invoice)
 	}
 }
 
+/**
+ * Join messages into one text
+ *
+ * @param array $arr Messages
+ * @return string Messages as one text
+ */
 function peppolConcatMessages($arr)
 {
 	$message = "";
@@ -655,6 +694,11 @@ function peppolConcatMessages($arr)
 	return $message;
 }
 
+/**
+ * Fetch the list of new supplier documents from the access point
+ *
+ * @return void
+ */
 function peppolGetSupplierInvoicesList()
 {
 	global $langs, $conf, $user, $db;
@@ -666,6 +710,17 @@ function peppolGetSupplierInvoicesList()
 	}
 }
 
+/**
+ * Write a line in the Peppol log (llx_peppol)
+ *
+ * @param string $ap_name Access point name
+ * @param int $fk_object Object id
+ * @param int $object_typeid 1 customer invoice, 2 supplier invoice
+ * @param string $status Status
+ * @param string $message Message
+ * @param string $fulldata Full answer (JSON)
+ * @return int 1 if OK, -1 on error
+ */
 function peppolAddLog($ap_name, $fk_object, $object_typeid, $status, $message, $fulldata)
 {
 	global $db, $user, $conf;

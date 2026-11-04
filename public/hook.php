@@ -177,8 +177,8 @@ try {
 /**
  * Handle new inbound Peppol document
  *
- * @param   DoliDB  $db         Database handler
- * @param   array   $headers    HTTP headers
+ * @param   \DoliDB  $db         Database handler
+ * @param   array<string,string>   $headers    HTTP headers (names in lower case)
  * @param   string  $xml    	Raw data (XML document)
  * @return  void
  */
@@ -287,39 +287,10 @@ function handleInboundDocument($db, $headers, $xml)
 }
 
 /**
- * Check that a receiver Peppol ID is the Peppol ID configured for the current entity (PEPPOL_AP_SENDER_ID).
- * Accepted forms: "0208:0123456789" or "iso6523-actorid-upis::0208:0123456789"; comparison is case-insensitive.
- * Without Multicompany an unknown own ID or an empty receiver is accepted (only one company can be meant).
- *
- * @param	string	$receiverId		Receiver ID from the webhook headers
- * @return	bool
- */
-function peppolWebhookReceiverMatches($receiverId)
-{
-	$own = getDolGlobalString('PEPPOL_AP_SENDER_ID');
-	$multicompany = isModEnabled('multicompany');
-	if ($own === '' || $receiverId === '') {
-		return !$multicompany;
-	}
-	$normalize = function ($id) {
-		$id = strtoupper(trim(preg_replace('/^.*::/', '', (string) $id)));
-		$parts = explode(':', $id);
-		$value = array_pop($parts);
-		return array('scheme' => (count($parts) ? end($parts) : ''), 'value' => preg_replace('/[^A-Z0-9]/', '', $value));
-	};
-	$a = $normalize($own);
-	$b = $normalize($receiverId);
-	if ($a['value'] === '' || $a['value'] !== $b['value']) {
-		return false;
-	}
-	return ($a['scheme'] === '' || $b['scheme'] === '' || $a['scheme'] === $b['scheme']);
-}
-
-/**
  * Handle outbound document status update
  *
- * @param   DoliDB  $db         Database handler
- * @param   array   $headers    HTTP headers
+ * @param   \DoliDB  $db         Database handler
+ * @param   array<string,string>   $headers    HTTP headers (names in lower case)
  * @param   string  $payload    JSON payload
  * @return  void
  */
@@ -351,8 +322,8 @@ function handleOutboundStatusUpdate($db, $headers, $payload)
 /**
  * Handle sales invoice send status update
  *
- * @param   DoliDB  $db         Database handler
- * @param   array   $headers    HTTP headers
+ * @param   \DoliDB  $db         Database handler
+ * @param   array<string,string>   $headers    HTTP headers (names in lower case)
  * @param   string  $payload    JSON payload
  * @return  void
  */
@@ -372,8 +343,8 @@ function handleSalesInvoiceSendStatus($db, $headers, $payload)
 /**
  * Handle new purchase invoice (full subscription only)
  *
- * @param   DoliDB  $db         Database handler
- * @param   array   $headers    HTTP headers
+ * @param   \DoliDB  $db         Database handler
+ * @param   array<string,string>   $headers    HTTP headers (names in lower case)
  * @param   string  $payload    Document payload (XML or PDF)
  * @return  void
  */

@@ -1,5 +1,30 @@
 # Changelog
 
+## 2.6.4
+
+Automatic checks on GitHub (`.github/workflows/checks.yml`) on every push and pull request, as in DoliMods and `dolibarr-module`:
+
+- PHP syntax on PHP 7.1, 7.4, 8.1, 8.2, 8.3 and 8.4 (the module and the einvoicing library).
+- Code standard: `phpcs` with the ruleset of DoliCloud/DoliMods (cloned during the check, not copied); no `var_dump`/`print_r`; no functions deprecated in PHP 8.5.
+- PHPStan against Dolibarr 18.0 and 24.0.2, with the settings of Dolibarr itself (level 10) and a baseline for the existing code (`dev/phpstan/baseline.php`, merged from both versions with `dev/phpstan/merge-baselines.php`).
+- Phan with the SQL injection plugin of Dolibarr 24.0.2 (`dev/phan/config.php`).
+- PHPUnit against Dolibarr 18.0 and 24.0.2 (`test/phpunit`): directory search terms and matching, scheme labels, webhook receiver check, way back after the search, allowed hosts of `peppolApiRequest()`, the weekly candidate check (exact matches only, no duplicates, nothing stored when the directory is down, retry after HTTP 429), the update check and the permission ids.
+- Versions (`dev/tools/check-versions.php`), gitleaks, actionlint, sqlfluff (`.sqlfluff`) and ShellCheck.
+- The security and language checks of `dolibarr-module`, only when the secret `DOLIBARR_MODULE_TOKEN` is set.
+
+Code changes found by these checks:
+
+- Comment blocks of every hook and function completed (`@param`, `@return`); French comments in English. One comment named the wrong parameter (since 2.6.2).
+- `\DoliDB` in the comments of namespaced code (it pointed at a class that does not exist).
+- SQL: two ids cast in `Peppolimport::validate()`, entity cast and names escaped in the module init, the column name of a date filter checked; `accepts_invoice` written at the place itself.
+- The weekly check returns the technical reason of an error with its result; one retry after HTTP 429 also when no wait time is set.
+- `peppolWebhookReceiverMatches()` moved from `public/hook.php` to `lib/peppol.lib.php` (testable); `checkForUpdate()` reads the version through `fetchLastVersion()`.
+- No `curl_close()` any more (deprecated in PHP 8.5, no effect since 8.0).
+- Two menu entries use `isModEnabled("peppolpeppyrus")`.
+- SQL files: explicit table aliases, final newline.
+
+**After updating:** replace the module files and flush memcached; deactivating and reactivating is not needed.
+
 ## 2.6.3
 
 Standard of the repository `dolibarr-module`, part 2:

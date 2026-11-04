@@ -121,6 +121,22 @@ The Transifex organisation and project in `.tx/config` must exist; the scripts n
 
 The module list of Dolibarr shows when a newer version exists: `checkForUpdate()` reads `VERSION` from this repository (public, so no key) over HTTPS and only accepts an answer with HTTP status 200.
 
+## Checks
+
+Every push and pull request runs `.github/workflows/checks.yml`: PHP syntax (7.1 to 8.4), `phpcs` with the DoliMods ruleset, PHPStan and PHPUnit against Dolibarr 18.0 and 24.0.2, Phan (SQL injection), versions, gitleaks, actionlint, sqlfluff and ShellCheck. Locally, from the root:
+
+```
+git clone --depth 1 https://github.com/DoliCloud/DoliMods .dolimods     # once, for phpcs
+phpcs
+php dev/tools/check-versions.php
+DOLIBARR_HTDOCS=/path/to/dolibarr/htdocs phpunit
+DOLIBARR_HTDOCS=/path/to/dolibarr/htdocs phpstan analyse
+DOLIBARR_HTDOCS=/path/to/dolibarr-24/htdocs php phan.phar --config-file dev/phan/config.php
+sqlfluff lint sql/
+```
+
+The security and language checks of the private repository `RealRidrick/dolibarr-module` run too when the secret `DOLIBARR_MODULE_TOKEN` is set in this repository (Settings > Secrets and variables > Actions): a fine-grained token with read access to the contents of that repository only. Without it they are skipped with a notice.
+
 ## Standard and deliberate deviations
 
 The module follows the standard of the repository `RealRidrick/dolibarr-module` (`STANDAARD.md`), which combines an internal security guideline with the rules of DoliMods. Checked with its tools: `dev/tools/beveiliging.php` (no errors, three recorded exceptions in `public/hook.php` and `class/peppolimport.class.php`) and `phpcs` (no errors).

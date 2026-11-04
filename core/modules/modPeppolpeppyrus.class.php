@@ -58,7 +58,7 @@ class modPeppolpeppyrus extends DolibarrModules
 		$this->editor_url = 'https://github.com/RealRidrick/dolibarr_peppol-peppyrus';
 
 		// Possible values for version are: 'development', 'experimental', 'dolibarr', 'dolibarr_deprecated' or a version string like 'x.y.z'
-		$this->version = '2.6.3';
+		$this->version = '2.6.4';
 		// File with the latest version number (VERSION in the public repository), read by checkForUpdate()
 		$this->url_last_version = 'https://raw.githubusercontent.com/RealRidrick/dolibarr_peppol-peppyrus/main/VERSION';
 
@@ -294,7 +294,7 @@ class modPeppolpeppyrus extends DolibarrModules
 			'url' => '/peppolpeppyrus/peppolimport_list.php',
 			'langs' => 'peppol@peppolpeppyrus', // Lang file to use (without .lang) by module. File must be in langs/code_CODE/ directory.
 			'position' => 1000 + $r,
-			'enabled' => '$conf->peppolpeppyrus->enabled', // Define condition to show or hide menu entry. Use '$conf->Peppol->enabled' if entry must be visible if module is enabled.
+			'enabled' => 'isModEnabled("peppolpeppyrus")',
 			'perms' => '$user->hasRight("peppolpeppyrus", "import")', // if you want your menu with a permission rules
 			'target' => '',
 			'user' => 2, // 0=Menu for internal users, 1=external users, 2=both
@@ -309,7 +309,7 @@ class modPeppolpeppyrus extends DolibarrModules
 			'url' => '/peppolpeppyrus/peppol_list.php',
 			'langs' => 'peppol@peppolpeppyrus', // Lang file to use (without .lang) by module. File must be in langs/code_CODE/ directory.
 			'position' => 1000 + $r,
-			'enabled' => '$conf->peppolpeppyrus->enabled', // Define condition to show or hide menu entry. Use '$conf->Peppol->enabled' if entry must be visible if module is enabled.
+			'enabled' => 'isModEnabled("peppolpeppyrus")',
 			'perms' => '$user->hasRight("peppolpeppyrus", "import")', // if you want your menu with a permission rules
 			'target' => '',
 			'user' => 2, // 0=Menu for internal users, 1=external users, 2=both
@@ -412,10 +412,10 @@ class modPeppolpeppyrus extends DolibarrModules
 				}
 
 				$sql = array_merge($sql, array(
-					"DELETE FROM " . MAIN_DB_PREFIX . "document_model WHERE nom = 'standard_" . strtolower($myTmpObjectKey) . "' AND type = '" . strtolower($myTmpObjectKey) . "' AND entity = " . $conf->entity,
-					"INSERT INTO " . MAIN_DB_PREFIX . "document_model (nom, type, entity) VALUES('standard_" . strtolower($myTmpObjectKey) . "','" . strtolower($myTmpObjectKey) . "'," . $conf->entity . ")",
-					"DELETE FROM " . MAIN_DB_PREFIX . "document_model WHERE nom = 'generic_" . strtolower($myTmpObjectKey) . "_odt' AND type = '" . strtolower($myTmpObjectKey) . "' AND entity = " . $conf->entity,
-					"INSERT INTO " . MAIN_DB_PREFIX . "document_model (nom, type, entity) VALUES('generic_" . strtolower($myTmpObjectKey) . "_odt', '" . strtolower($myTmpObjectKey) . "', " . $conf->entity . ")"
+					"DELETE FROM " . MAIN_DB_PREFIX . "document_model WHERE nom = 'standard_" . $this->db->escape(strtolower($myTmpObjectKey)) . "' AND type = '" . $this->db->escape(strtolower($myTmpObjectKey)) . "' AND entity = " . ((int) $conf->entity),
+					"INSERT INTO " . MAIN_DB_PREFIX . "document_model (nom, type, entity) VALUES('standard_" . $this->db->escape(strtolower($myTmpObjectKey)) . "','" . $this->db->escape(strtolower($myTmpObjectKey)) . "'," . ((int) $conf->entity) . ")",
+					"DELETE FROM " . MAIN_DB_PREFIX . "document_model WHERE nom = 'generic_" . $this->db->escape(strtolower($myTmpObjectKey)) . "_odt' AND type = '" . $this->db->escape(strtolower($myTmpObjectKey)) . "' AND entity = " . ((int) $conf->entity),
+					"INSERT INTO " . MAIN_DB_PREFIX . "document_model (nom, type, entity) VALUES('generic_" . $this->db->escape(strtolower($myTmpObjectKey)) . "_odt', '" . $this->db->escape(strtolower($myTmpObjectKey)) . "', " . ((int) $conf->entity) . ")"
 				));
 			}
 		}
@@ -454,7 +454,7 @@ class modPeppolpeppyrus extends DolibarrModules
 		if (empty($this->url_last_version)) {
 			return 0;
 		}
-		$result = getURLContent($this->url_last_version, 'GET', '', 0, array(), array('https'), 0);
+		$result = $this->fetchLastVersion();
 		$content = isset($result['content']) ? trim((string) $result['content']) : '';
 		if ((int) ($result['http_code'] ?? 0) !== 200 || $content === '' || strlen($content) >= 30) {
 			return -1;
@@ -463,5 +463,15 @@ class modPeppolpeppyrus extends DolibarrModules
 		$this->lastVersion = preg_replace('/[^a-zA-Z0-9_\.\-]+/', '', $content);
 		$this->needUpdate = (version_compare($this->lastVersion, $this->version) > 0);
 		return $this->needUpdate ? 1 : 0;
+	}
+
+	/**
+	 * Read the file with the latest version number: HTTPS only, no redirects
+	 *
+	 * @return array{http_code?:int,content?:string}	Result of getURLContent()
+	 */
+	protected function fetchLastVersion()
+	{
+		return getURLContent($this->url_last_version, 'GET', '', 0, array(), array('https'), 0);
 	}
 }

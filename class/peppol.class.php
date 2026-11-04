@@ -69,6 +69,9 @@ class Peppol
 
 	/**
 	 * Constructor
+	 *
+	 * @param \DoliDB $db Database handler
+	 * @param Facture $invoice Customer invoice
 	 */
 	public function __construct($db, \Facture $invoice)
 	{
@@ -716,7 +719,7 @@ class Peppol
 				$subprice = round($unitPrice * $qty, 2);
 			}
 
-			// print "<p>Ajout d'une ligne : $qty, $subprice</p>";
+			// print "<p>Add a line: $qty, $subprice</p>";
 			$tva_tx = $line->tva_tx ? $line->tva_tx : 0;
 			$description = strip_tags(trim($line->desc ? $line->desc : ""));
 			$lineref = trim($line->ref ? $line->ref : peppolNextRefLine());
@@ -780,7 +783,7 @@ class Peppol
 					$peppolLine->setDescription($description);
 				}
 			}
-			// print "<p>Ajout d'une ligne : qty=$qty, price=$subprice, tx_tva=$tva_tx</p>";
+			// print "<p>Add a line: qty=$qty, price=$subprice, vat_rate=$tva_tx</p>";
 
 			if (!empty($productAccountingNumber)) {
 				$peppolLine->setBuyerAccountingReference($productAccountingNumber);
@@ -847,7 +850,7 @@ class Peppol
 				//VAT normale
 			}
 
-			//Si on est déjà sur une ligne de remise on ne regarde pas le % de remise
+			// On a discount line the discount percentage is not used
 			if (!$remiseLigne) {
 				if (!empty($line->remise_percent)) {
 					// Fix PEPPOL-EN16931-R120: ensure allowance makes LineExtensionAmount = total_ht exactly
@@ -971,6 +974,11 @@ class Peppol
 		return $retour;
 	}
 
+	/**
+	 * Professional ID of the own company used as Peppol identifier
+	 *
+	 * @return string Professional ID of the company
+	 */
 	private function idprof()
 	{
 		global $mysoc;
@@ -995,7 +1003,7 @@ class Peppol
 	 *
 	 * @param  object $line       line we work on
 	 * @param  string $element    line object element (for special case like shipping)
-	 * @param  string $modName module name we look for
+	 * @param  string $searchName module name we look for
 	 * @return boolean                        true if the line is a special one and was created by the module we ask for
 	 ************************************************/
 	private function isLineFromExternalModule($line, $element, $searchName)
@@ -1027,6 +1035,12 @@ class Peppol
 		return 0;
 	}
 
+	/**
+	 * Remove the spaces from a text
+	 *
+	 * @param string $str Text
+	 * @return string Text without spaces
+	 */
 	private function removeSpaces($str)
 	{
 		return preg_replace('/\s+/', '', $str);
@@ -1035,6 +1049,9 @@ class Peppol
 	/**
 	 * do base checks againts object
 	 *
+	 * @param array $checklist Fields to check, updated in place
+	 * @param object $obj Object to check (third party or contact)
+	 * @return void
 	 */
 	private function _checkBaseErrors(&$checklist, $obj)
 	{

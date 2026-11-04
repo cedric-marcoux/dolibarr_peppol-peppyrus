@@ -70,16 +70,15 @@ if (!$res) {
  */
 $permissiontoaccess = $user->hasRight('peppolpeppyrus', 'import');
 /*
-Note: vérification des droits associés et nécessaires:
-	- lire les tiers societe->lire;
-	- créer des tiers societe->creer
-	- etendre societe->client->voir
-	- lire les fournisseurs (?) fournisseur->lire
-	- lire les factures fournisseur (recherche doublons) fournisseur->facture->lire
-	- créer facture fournisseur fournisseur->facture->creer
-	- lire les produits (?) produit->lire
-	- lire les services service->lire
-	.../...?
+Note: rights needed to import a supplier document:
+	- read third parties: societe, lire
+	- create third parties: societe, creer
+	- see all third parties: societe, client, voir
+	- read suppliers: fournisseur, lire
+	- read supplier invoices (duplicate check): fournisseur, facture, lire
+	- create supplier invoices: fournisseur, facture, creer
+	- read products: produit, lire
+	- read services: service, lire
 */
 $otherModulesRights = [
 	$user->hasRight('societe', 'lire'),
@@ -211,6 +210,11 @@ if ($user->socid > 0) {	// Protection if external user
 //$result = restrictedArea($user, 'peppolpeppyrus', $id, '');
 //if (!$permissiontoread) accessforbidden();
 
+/**
+ * Header row of the import table
+ *
+ * @return string HTML of the header row
+ */
 function createTableHeader()
 {
 	global $langs;
@@ -224,6 +228,16 @@ function createTableHeader()
 	return $h;
 }
 
+/**
+ * One row of the import table
+ *
+ * @param int $nb Row number
+ * @param string $filename File name
+ * @param string $fourn Supplier (HTML)
+ * @param string $fact Invoice (HTML)
+ * @param string $justif Document (HTML)
+ * @return string HTML of the row
+ */
 function createTableRow($nb, $filename, $fourn, $fact, $justif)
 {
 	$h = "<tr>";
@@ -381,12 +395,13 @@ foreach ($search as $key => $val) {
 	} else {
 		if (preg_match('/(_dtstart|_dtend)$/', $key) && $search[$key] != '') {
 			$columnName = preg_replace('/(_dtstart|_dtend)$/', '', $key);
-			if (preg_match('/^(date|timestamp|datetime)/', $object->fields[$columnName]['type'])) {
+			// A column name cannot be quoted: only a defined field with a plain name (letters, digits, underscore)
+			if (isset($object->fields[$columnName]) && preg_match('/^[a-z0-9_]+$/i', $columnName) && preg_match('/^(date|timestamp|datetime)/', $object->fields[$columnName]['type'])) {
 				if (preg_match('/_dtstart$/', $key)) {
-					$sql .= " AND t.".$db->escape($columnName)." >= '".$db->idate($search[$key])."'";
+					$sql .= " AND t.".$db->escape($columnName)." >= '".$db->idate($search[$key])."'"; // @phan-suppress-current-line SqlInjectionUnquotedEscape -- column name of a defined field, checked above
 				}
 				if (preg_match('/_dtend$/', $key)) {
-					$sql .= " AND t.".$db->escape($columnName)." <= '".$db->idate($search[$key])."'";
+					$sql .= " AND t.".$db->escape($columnName)." <= '".$db->idate($search[$key])."'"; // @phan-suppress-current-line SqlInjectionUnquotedEscape -- column name of a defined field, checked above
 				}
 			}
 		}

@@ -928,7 +928,7 @@ class Peppyrus extends PeppolAP
 
 		foreach ($allowedParams as $param) {
 			if (!empty($params[$param])) {
-				$queryParams[] = $param . '=' . urlencode($params[$param]);
+				$queryParams[] = $param . '=' . urlencode($params[$param]); // @phan-suppress-current-line SqlInjection -- URL query of the access point, not SQL (names from a fixed list, values urlencoded)
 			}
 		}
 

@@ -84,7 +84,7 @@ class PeppolCandidateCheck
 	/**
 	 * Readable result of a check, also when the translation is not available (for example a stale language cache)
 	 *
-	 * @param	array	$stats	Result of checkBatch()
+	 * @param	array{checked:int,found:int,new:int,errors:int}	$stats	Result of checkBatch()
 	 * @return	string
 	 */
 	public function resultMessage($stats)
@@ -111,7 +111,7 @@ class PeppolCandidateCheck
 	 * not checked in the last 6 days. The oldest checks come first.
 	 *
 	 * @param	int		$limit	Maximum number of third parties
-	 * @return	array			checked, found (IDs found), new (new candidates), errors
+	 * @return	array{checked:int,found:int,new:int,errors:int}	checked, found (IDs found), new (new candidates), errors
 	 */
 	public function checkBatch($limit)
 	{
@@ -151,6 +151,7 @@ class PeppolCandidateCheck
 		$this->db->free($resql);
 
 		$first = true;
+		$reason = '';
 		foreach ($ids as $socid) {
 			$soc = new Societe($this->db);
 			if ($soc->fetch($socid) <= 0) {
@@ -161,6 +162,7 @@ class PeppolCandidateCheck
 			if ($res['error']) {
 				// Directory not reachable: stop, the remaining third parties stay unchecked for the next run
 				$stats['errors']++;
+				$reason = $res['reason'];
 				break;
 			}
 			$stats['checked']++;
@@ -168,7 +170,7 @@ class PeppolCandidateCheck
 			$stats['new'] += $res['new'];
 		}
 
-		dol_syslog(__METHOD__ . ' checked=' . $stats['checked'] . ' found=' . $stats['found'] . ' new=' . $stats['new'] . ' errors=' . $stats['errors'] . ($this->lastErrorReason !== '' ? ' reason=' . $this->lastErrorReason : ''), $stats['errors'] ? LOG_WARNING : LOG_INFO);
+		dol_syslog(__METHOD__ . ' checked=' . $stats['checked'] . ' found=' . $stats['found'] . ' new=' . $stats['new'] . ' errors=' . $stats['errors'] . ($stats['errors'] > 0 && $reason !== '' ? ' reason=' . $reason : ''), $stats['errors'] ? LOG_WARNING : LOG_INFO);
 		return $stats;
 	}
 
@@ -177,11 +179,11 @@ class PeppolCandidateCheck
 	 *
 	 * @param	Societe	$soc		Third party
 	 * @param	bool	$nopause	true to skip the pause before the first request
-	 * @return	array				found, new, error (bool)
+	 * @return	array{found:int,new:int,error:bool,reason:string}	found, new, error, reason (technical, no search term)
 	 */
 	public function checkThirdparty($soc, $nopause = false)
 	{
-		$out = array('found' => 0, 'new' => 0, 'error' => false);
+		$out = array('found' => 0, 'new' => 0, 'error' => false, 'reason' => '');
 		$terms = peppolDirectorySearchCandidates($soc);
 		unset($terms['name']); // numbers only: a name gives too many wrong candidates
 
@@ -192,14 +194,17 @@ class PeppolCandidateCheck
 			}
 			$nopause = false;
 			$res = call_user_func($this->searchFunction, $term);
-			if (isset($res['error']) && (int) ($res['http_code'] ?? 0) == 429 && $this->retryWait > 0) {
+			if (isset($res['error']) && (int) ($res['http_code'] ?? 0) == 429) {
 				// Too many requests: wait and try once more
-				sleep($this->retryWait);
+				if ($this->retryWait > 0) {
+					sleep($this->retryWait);
+				}
 				$res = call_user_func($this->searchFunction, $term);
 			}
 			if (isset($res['error'])) {
 				$this->lastErrorReason = (string) ($res['reason'] ?? 'error');
 				$out['error'] = true;
+				$out['reason'] = $this->lastErrorReason;
 				return $out;
 			}
 			if (empty($res['matches']) || !is_array($res['matches'])) {
@@ -216,7 +221,9 @@ class PeppolCandidateCheck
 		foreach ($found as $info) {
 			$r = $this->saveCandidate($soc->id, $info);
 			if ($r < 0) {
+				$this->lastErrorReason = 'database error';
 				$out['error'] = true;
+				$out['reason'] = $this->lastErrorReason;
 				return $out;
 			}
 			$out['found']++;
@@ -232,14 +239,13 @@ class PeppolCandidateCheck
 	 * Insert or update a candidate
 	 *
 	 * @param	int		$socid	Third party id
-	 * @param	array	$info	Result of peppolDirectoryMatchInfo()
+	 * @param	array{participantId:string,scheme:string,icd:string,value:string,name:string,country:string,location:string,regDate:string,additionalInfo:string,acceptsInvoice:bool|null,matchedField:string}	$info	Result of peppolDirectoryMatchInfo()
 	 * @return	int				2 inserted, 1 updated, <0 error
 	 */
 	protected function saveCandidate($socid, $info)
 	{
 		global $conf;
 
-		$accepts = ($info['acceptsInvoice'] === null) ? 'NULL' : ($info['acceptsInvoice'] ? '1' : '0');
 
 		$sql = "SELECT rowid FROM " . MAIN_DB_PREFIX . "peppol_candidate";
 		$sql .= " WHERE entity = " . ((int) $conf->entity) . " AND fk_soc = " . ((int) $socid);
@@ -255,7 +261,7 @@ class PeppolCandidateCheck
 			$sql = "UPDATE " . MAIN_DB_PREFIX . "peppol_candidate SET";
 			$sql .= " dir_name = '" . $this->db->escape(dol_trunc($info['name'], 255, 'right', 'UTF-8', 1)) . "',";
 			$sql .= " matched_field = '" . $this->db->escape($info['matchedField']) . "',";
-			$sql .= " accepts_invoice = " . $accepts . ",";
+			$sql .= " accepts_invoice = " . ($info['acceptsInvoice'] === null ? 'NULL' : ($info['acceptsInvoice'] ? '1' : '0')) . ",";
 			$sql .= " reg_date = '" . $this->db->escape(dol_trunc($info['regDate'], 32, 'right', 'UTF-8', 1)) . "',";
 			$sql .= " date_checked = '" . $this->db->idate(dol_now()) . "'";
 			$sql .= " WHERE rowid = " . ((int) $obj->rowid);
@@ -269,7 +275,7 @@ class PeppolCandidateCheck
 		$sql .= " '" . $this->db->escape(dol_trunc($info['scheme'], 64, 'right', 'UTF-8', 1)) . "',";
 		$sql .= " '" . $this->db->escape(dol_trunc($info['name'], 255, 'right', 'UTF-8', 1)) . "',";
 		$sql .= " '" . $this->db->escape($info['matchedField']) . "',";
-		$sql .= " " . $accepts . ",";
+		$sql .= " " . ($info['acceptsInvoice'] === null ? 'NULL' : ($info['acceptsInvoice'] ? '1' : '0')) . ",";
 		$sql .= " '" . $this->db->escape(dol_trunc($info['regDate'], 32, 'right', 'UTF-8', 1)) . "',";
 		$sql .= " " . self::STATUS_NEW . ", '" . $this->db->idate(dol_now()) . "', '" . $this->db->idate(dol_now()) . "')";
 		return $this->db->query($sql) ? 2 : -1;
