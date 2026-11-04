@@ -239,7 +239,6 @@ class PeppolCandidateCheck
 	{
 		global $conf;
 
-		$now = $this->db->idate(dol_now());
 		$accepts = ($info['acceptsInvoice'] === null) ? 'NULL' : ($info['acceptsInvoice'] ? '1' : '0');
 
 		$sql = "SELECT rowid FROM " . MAIN_DB_PREFIX . "peppol_candidate";
@@ -258,7 +257,7 @@ class PeppolCandidateCheck
 			$sql .= " matched_field = '" . $this->db->escape($info['matchedField']) . "',";
 			$sql .= " accepts_invoice = " . $accepts . ",";
 			$sql .= " reg_date = '" . $this->db->escape(dol_trunc($info['regDate'], 32, 'right', 'UTF-8', 1)) . "',";
-			$sql .= " date_checked = '" . $now . "'";
+			$sql .= " date_checked = '" . $this->db->idate(dol_now()) . "'";
 			$sql .= " WHERE rowid = " . ((int) $obj->rowid);
 			return $this->db->query($sql) ? 1 : -1;
 		}
@@ -272,7 +271,7 @@ class PeppolCandidateCheck
 		$sql .= " '" . $this->db->escape($info['matchedField']) . "',";
 		$sql .= " " . $accepts . ",";
 		$sql .= " '" . $this->db->escape(dol_trunc($info['regDate'], 32, 'right', 'UTF-8', 1)) . "',";
-		$sql .= " " . self::STATUS_NEW . ", '" . $now . "', '" . $now . "')";
+		$sql .= " " . self::STATUS_NEW . ", '" . $this->db->idate(dol_now()) . "', '" . $this->db->idate(dol_now()) . "')";
 		return $this->db->query($sql) ? 2 : -1;
 	}
 
@@ -287,7 +286,6 @@ class PeppolCandidateCheck
 	{
 		global $conf;
 
-		$now = $this->db->idate(dol_now());
 		$sql = "SELECT rowid FROM " . MAIN_DB_PREFIX . "peppol_lookup";
 		$sql .= " WHERE entity = " . ((int) $conf->entity) . " AND fk_soc = " . ((int) $socid);
 		$resql = $this->db->query($sql);
@@ -297,11 +295,11 @@ class PeppolCandidateCheck
 		$obj = $this->db->fetch_object($resql);
 		$this->db->free($resql);
 		if ($obj) {
-			$sql = "UPDATE " . MAIN_DB_PREFIX . "peppol_lookup SET date_checked = '" . $now . "', nb_found = " . ((int) $nbfound);
+			$sql = "UPDATE " . MAIN_DB_PREFIX . "peppol_lookup SET date_checked = '" . $this->db->idate(dol_now()) . "', nb_found = " . ((int) $nbfound);
 			$sql .= " WHERE rowid = " . ((int) $obj->rowid);
 		} else {
 			$sql = "INSERT INTO " . MAIN_DB_PREFIX . "peppol_lookup (entity, fk_soc, date_checked, nb_found)";
-			$sql .= " VALUES (" . ((int) $conf->entity) . ", " . ((int) $socid) . ", '" . $now . "', " . ((int) $nbfound) . ")";
+			$sql .= " VALUES (" . ((int) $conf->entity) . ", " . ((int) $socid) . ", '" . $this->db->idate(dol_now()) . "', " . ((int) $nbfound) . ")";
 		}
 		return $this->db->query($sql) ? 1 : -1;
 	}

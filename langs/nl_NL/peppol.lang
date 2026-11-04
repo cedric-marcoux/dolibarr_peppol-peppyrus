@@ -357,3 +357,11 @@ peppolCandidateActionSkipped = %s overgeslagen (de relatie heeft al een Peppol-I
 peppolCandidateActionError = Fout, er is niets gewijzigd.
 peppolCandidateCheckResult = %s relaties gecontroleerd, %s ID('s) gevonden, waarvan %s nieuw.
 peppolCandidateCheckErrors = De Peppol-directory was niet bereikbaar (%s keer); de overige relaties worden de volgende keer gecontroleerd.
+
+# Module name, description and permissions as Dolibarr shows them (module list, user permissions)
+Module436181Name = Peppol - Peppyrus
+Module436181Desc = E-facturen versturen via het Peppol-netwerk met het Peppyrus-accesspoint
+Permission43618101 = Peppol-gegevens lezen
+Permission43618102 = Peppol-gegevens aanmaken en wijzigen
+Permission43618103 = Peppol-gegevens verwijderen
+Permission43618104 = Peppol-inkoopfacturen importeren

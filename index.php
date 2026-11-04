@@ -75,7 +75,7 @@ print '<div class="fichecenter"><div class="fichethirdleft">';
 
 /* BEGIN MODULEBUILDER DRAFT MYOBJECT
 // Draft MyObject
-if (! empty($conf->peppolpeppyrus->enabled) && $user->rights->peppolpeppyrus->read)
+if (! empty($conf->peppolpeppyrus->enabled) && $user->hasRight('peppolpeppyrus', 'read'))
 {
 	$langs->load("orders");
 
@@ -83,11 +83,11 @@ if (! empty($conf->peppolpeppyrus->enabled) && $user->rights->peppolpeppyrus->re
 	$sql.= ", s.code_client";
 	$sql.= " FROM ".MAIN_DB_PREFIX."commande as c";
 	$sql.= ", ".MAIN_DB_PREFIX."societe as s";
-	if (! $user->rights->societe->client->voir && ! $socid) $sql.= ", ".MAIN_DB_PREFIX."societe_commerciaux as sc";
+	if (! $user->hasRight('societe', 'client', 'voir') && ! $socid) $sql.= ", ".MAIN_DB_PREFIX."societe_commerciaux as sc";
 	$sql.= " WHERE c.fk_soc = s.rowid";
 	$sql.= " AND c.fk_statut = 0";
 	$sql.= " AND c.entity IN (".getEntity('commande').")";
-	if (! $user->rights->societe->client->voir && ! $socid) $sql.= " AND s.rowid = sc.fk_soc AND sc.fk_user = " .$user->id;
+	if (! $user->hasRight('societe', 'client', 'voir') && ! $socid) $sql.= " AND s.rowid = sc.fk_soc AND sc.fk_user = " .$user->id;
 	if ($socid)	$sql.= " AND c.fk_soc = ".$socid;
 
 	$resql = $db->query($sql);
@@ -156,13 +156,13 @@ $max = getDolGlobalInt('MAIN_SIZE_SHORTLIST_LIMIT');
 
 /* BEGIN MODULEBUILDER LASTMODIFIED MYOBJECT
 // Last modified myobject
-if (! empty($conf->peppolpeppyrus->enabled) && $user->rights->peppolpeppyrus->read)
+if (! empty($conf->peppolpeppyrus->enabled) && $user->hasRight('peppolpeppyrus', 'read'))
 {
 	$sql = "SELECT s.rowid, s.ref, s.label, s.date_creation, s.tms";
 	$sql.= " FROM ".MAIN_DB_PREFIX."peppol_myobject as s";
-	//if (! $user->rights->societe->client->voir && ! $socid) $sql.= ", ".MAIN_DB_PREFIX."societe_commerciaux as sc";
+	//if (! $user->hasRight('societe', 'client', 'voir') && ! $socid) $sql.= ", ".MAIN_DB_PREFIX."societe_commerciaux as sc";
 	$sql.= " WHERE s.entity IN (".getEntity($myobjectstatic->element).")";
-	//if (! $user->rights->societe->client->voir && ! $socid) $sql.= " AND s.rowid = sc.fk_soc AND sc.fk_user = " .$user->id;
+	//if (! $user->hasRight('societe', 'client', 'voir') && ! $socid) $sql.= " AND s.rowid = sc.fk_soc AND sc.fk_user = " .$user->id;
 	//if ($socid)	$sql.= " AND s.rowid = $socid";
 	$sql .= " ORDER BY s.tms DESC";
 	$sql .= $db->plimit($max, 0);

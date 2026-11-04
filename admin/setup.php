@@ -275,7 +275,6 @@ if ($action == 'edit') {
 	print '</div>';
 
 	print '</form>';
-
 } else {
 	// View mode
 	print '<table class="noborder centpercent">';

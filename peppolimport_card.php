@@ -137,14 +137,14 @@ Note: vérification des droits associés et nécessaires:
 	.../...?
 */
 $otherModulesRights = [
-	$user->rights->societe->lire,
-	$user->rights->societe->creer,
-	$user->rights->societe->client->voir,
-	$user->rights->fournisseur->lire,
-	$user->rights->fournisseur->facture->lire,
-	$user->rights->fournisseur->facture->creer,
-	$user->rights->produit->lire,
-	$user->rights->service->lire
+	$user->hasRight('societe', 'lire'),
+	$user->hasRight('societe', 'creer'),
+	$user->hasRight('societe', 'client', 'voir'),
+	$user->hasRight('fournisseur', 'lire'),
+	$user->hasRight('fournisseur', 'facture', 'lire'),
+	$user->hasRight('fournisseur', 'facture', 'creer'),
+	$user->hasRight('produit', 'lire'),
+	$user->hasRight('service', 'lire')
 ];
 // Security check - Protection if external user
 if ($user->socid > 0) {

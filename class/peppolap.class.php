@@ -57,8 +57,8 @@ abstract class PeppolAP
 	/**
 	 * send document (invoice or credit note) to peppol access point
 	 *
- 	 * @param   string  $filename  path to the XML file
- 	 * @param   object  $object    object (Facture)
+	 * @param   string  $filename  path to the XML file
+	 * @param   object  $object    object (Facture)
 	 *
 	 * @return  int <= 0 in case of error, > 0 on success
 	 */
@@ -117,6 +117,4 @@ abstract class PeppolAP
 	 * @return  int <= 0 in case of error, > 0 on success
 	 */
 	abstract public function rejectSupplierInvoice(Peppolimport $pi, $reason);
-
-
 }

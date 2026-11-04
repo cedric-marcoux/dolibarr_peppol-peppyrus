@@ -338,6 +338,41 @@ function peppolCandidatesButton($user)
 }
 
 /**
+ * Release the session before a long action (an external service, a loop over many third parties), so the other
+ * pages of this user do not wait (STANDAARD.md 4.22). Call it after the checks of rights and token.
+ *
+ * @return void
+ */
+function peppol_sessie_los()
+{
+	ignore_user_abort(true);
+	if (session_status() === PHP_SESSION_ACTIVE) {
+		session_write_close();
+		// Remember that this function closed the session: only then peppol_sessie_terug() opens it again
+		$GLOBALS['peppol_sessie_gesloten'] = true;
+	}
+}
+
+/**
+ * Open the session again after peppol_sessie_los(), keeping the messages set in the meantime
+ * (they are only in memory and would be lost when the session is opened again).
+ *
+ * @return void
+ */
+function peppol_sessie_terug()
+{
+	if (empty($GLOBALS['peppol_sessie_gesloten']) || session_status() === PHP_SESSION_ACTIVE || headers_sent()) {
+		return;
+	}
+	$GLOBALS['peppol_sessie_gesloten'] = false;
+	$meldingen = (array) ($_SESSION['dol_events'] ?? array());
+	@session_start();
+	foreach ($meldingen as $soort => $lijst) {
+		$_SESSION['dol_events'][$soort] = array_merge((array) ($_SESSION['dol_events'][$soort] ?? array()), (array) $lijst);
+	}
+}
+
+/**
  * Check the anti-CSRF token of a request that changes data through a link (GET)
  *
  * @return	bool	true if the token sent with the request is the current session token
@@ -631,7 +666,8 @@ function peppolGetSupplierInvoicesList()
 	}
 }
 
-function peppolAddLog($ap_name, $fk_object, $object_typeid, $status, $message, $fulldata) {
+function peppolAddLog($ap_name, $fk_object, $object_typeid, $status, $message, $fulldata)
+{
 	global $db, $user, $conf;
 	$sql = "INSERT INTO ".MAIN_DB_PREFIX."peppol(entity,fk_object,object_typeid,status,message,fulldata,ap_name,fk_user_creat) VALUES (";
 	$sql .= ((int) $conf->entity) . ", ";

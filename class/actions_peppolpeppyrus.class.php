@@ -354,7 +354,7 @@ class ActionsPeppolpeppyrus
 		global $user;
 
 		if ($parameters['features'] == 'myobject') {
-			if ($user->rights->peppolpeppyrus->myobject->read) {
+			if ($user->hasRight('peppolpeppyrus', 'myobject', 'read')) {
 				$this->results['result'] = 1;
 				return 1;
 			} else {
