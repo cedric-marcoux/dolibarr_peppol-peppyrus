@@ -58,7 +58,7 @@ class modPeppolpeppyrus extends DolibarrModules
 		$this->editor_url = 'https://github.com/RealRidrick/dolibarr_peppol-peppyrus';
 
 		// Possible values for version are: 'development', 'experimental', 'dolibarr', 'dolibarr_deprecated' or a version string like 'x.y.z'
-		$this->version = '2.6.5';
+		$this->version = '2.7.0';
 		// File with the latest version number (VERSION in the public repository), read by checkForUpdate()
 		$this->url_last_version = 'https://raw.githubusercontent.com/RealRidrick/dolibarr_peppol-peppyrus/main/VERSION';
 
@@ -249,6 +249,20 @@ class modPeppolpeppyrus extends DolibarrModules
 				'comment' => 'Searches customers and suppliers without a Peppol ID in the Peppol directory by VAT number and registration number (not by name). Results: Third parties > Peppol candidates.',
 				'frequency' => 1,
 				'unitfrequency' => 604800,
+				'status' => 1,
+				'test' => 'isModEnabled("peppolpeppyrus")',
+				'priority' => 50,
+			),
+			1 => array(
+				'label' => 'Peppol: daily fetch of incoming documents from the access point',
+				'jobtype' => 'method',
+				'class' => '/peppolpeppyrus/class/peppolinboxfetch.class.php',
+				'objectname' => 'PeppolInboxFetch',
+				'method' => 'runDailyFetch',
+				'parameters' => '',
+				'comment' => 'Fetches the new documents (supplier invoices) from the access point into Billing > Peppol > Incoming documents. Does not create or validate supplier invoices. The user of the job needs the right Peppol: write.',
+				'frequency' => 1,
+				'unitfrequency' => 86400,
 				'status' => 1,
 				'test' => 'isModEnabled("peppolpeppyrus")',
 				'priority' => 50,

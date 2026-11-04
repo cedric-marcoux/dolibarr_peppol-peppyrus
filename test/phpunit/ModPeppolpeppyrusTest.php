@@ -102,4 +102,24 @@ class ModPeppolpeppyrusTest extends TestCase
 		}
 		$this->assertSame(array('/peppolpeppyrus/peppolimport_list.php', '/peppolpeppyrus/peppol_candidates.php', '/peppolpeppyrus/peppol_list.php'), $urls);
 	}
+
+	/**
+	 * Scheduled jobs: the weekly candidate check and the daily fetch, both with an existing class and method
+	 *
+	 * @return void
+	 */
+	public function testCronJobs()
+	{
+		$mod = new modPeppolpeppyrus(null);
+		$this->assertCount(2, $mod->cronjobs);
+		$this->assertSame(604800, $mod->cronjobs[0]['unitfrequency']);
+		$this->assertSame('runDailyFetch', $mod->cronjobs[1]['method']);
+		$this->assertSame(86400, $mod->cronjobs[1]['unitfrequency']);
+		foreach ($mod->cronjobs as $job) {
+			$file = dirname(__DIR__, 2).str_replace('/peppolpeppyrus', '', $job['class']);
+			$this->assertFileExists($file);
+			require_once $file;
+			$this->assertTrue(method_exists($job['objectname'], $job['method']), $job['objectname'].'::'.$job['method']);
+		}
+	}
 }

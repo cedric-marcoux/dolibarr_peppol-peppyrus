@@ -649,6 +649,12 @@ $newcardbutton .= dolGetButtonTitle($langs->trans('Refresh'), '', 'fa fa-repeat 
 
 print_barre_liste($title, $page, $_SERVER["PHP_SELF"], $param, $sortfield, $sortorder, $massactionbutton, $num, $nbtotalofrecords, 'object_'.$object->picto, 0, $newcardbutton, '', $limit, 0, 0, 1);
 
+// When the documents were last fetched from the access point (by hand or by the daily scheduled job)
+$lastFetch = getDolGlobalInt('PEPPOL_INBOX_LAST_FETCH');
+print '<div class="opacitymedium marginbottomonly">';
+print $lastFetch > 0 ? $langs->trans('peppolInboxLastFetch', dol_print_date($lastFetch, 'dayhour', 'tzuserrel')) : $langs->trans('peppolInboxNeverFetched');
+print '</div>';
+
 // Add code for pre mass action (confirmation or email presend form)
 $topicmail = "SendPeppolimportRef";
 $modelmail = "peppolimport";

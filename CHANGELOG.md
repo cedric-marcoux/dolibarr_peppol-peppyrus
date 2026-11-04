@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.7.0
+
+Daily fetch of incoming documents:
+
+- New scheduled job "Peppol: daily fetch of incoming documents from the access point" (`PeppolInboxFetch::runDailyFetch()`, once a day, enabled). It does what the button "Refresh" on Billing > Peppol > Incoming documents does: fetch the new documents and confirm them at the access point. It never creates, validates or pays a supplier invoice.
+- The user of the job needs the right "Peppol: write"; without it the job stops with a clear message.
+- A document that is already known but still unconfirmed at the access point (an earlier download or confirmation failed) is downloaded and confirmed again instead of being skipped for good.
+- The time of the last successful contact with the access point is shown on the list of incoming documents (`PEPPOL_INBOX_LAST_FETCH`, per entity).
+- The job result and the log lines hold counts only: no names, no Peppol IDs, no amounts.
+- The message id of the access point is URL-encoded in the request; sender and date from the access point are escaped in the screen message.
+- Tests of the daily fetch and of the scheduled job definitions.
+
+**After updating:** replace the module files, then deactivate and reactivate the module once so the new scheduled job is added (settings and data are kept); flush memcached. Check under Tools > Scheduled jobs that the job is enabled and runs with a user that has the right "Peppol: write".
+
 ## 2.6.5
 
 One menu "Peppol" in the left menu of Billing, with the pages of the module under it, instead of separate entries in several menus:
