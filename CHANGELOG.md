@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.8.0
+
+Book an incoming document as supplier invoice in one click:
+
+- With the module PDF OCR Inkoop installed (4.53.0 or newer), Billing > Peppol > Incoming documents shows a button **Book** in the column Invoice of every document that is not booked yet, and on the card of the document. It opens PDF OCR Inkoop with the XML of the document loaded: the PDF from the XML is shown, the data of the XML (supplier, VAT number, registration number, invoice number, dates, IBAN, amount, VAT rate) are filled in. After checking, **Save** there creates the supplier invoice and validates it; the document is then linked to the invoice and gets the status "Success".
+- Only for users with the rights to import Peppol documents, to create supplier invoices and the write right of PDF OCR Inkoop; only when the file of the document exists.
+- The button "Manual import" of the original module is only shown when its page (`importinvoice.php`) exists; it is not part of this fork, so the button led to a missing page.
+- New function `peppolBookingUrl()` with a test.
+
+**After updating:** replace the module files and flush memcached; deactivating and reactivating is not needed. Update PDF OCR Inkoop to 4.53.0 for the button.
+
 ## 2.7.0
 
 Daily fetch of incoming documents:

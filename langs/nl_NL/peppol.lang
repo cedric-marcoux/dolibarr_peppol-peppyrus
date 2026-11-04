@@ -382,3 +382,7 @@ peppolInboxFetchNoRight = De gebruiker van de geplande taak heeft geen recht om 
 peppolInboxFetchNoAccessPoint = Het accesspoint kon niet worden geladen.
 peppolInboxLastFetch = Laatst opgehaald bij het accesspoint: %s
 peppolInboxNeverFetched = Nog niet opgehaald bij het accesspoint.
+
+# Book an incoming document as supplier invoice (PDF OCR Inkoop)
+peppolBookInvoice = Inboeken
+peppolBookInvoiceHelp = Inboeken als inkoopfactuur met PDF OCR Inkoop: de e-factuur wordt daar geladen; opslaan maakt de factuur aan en valideert hem.

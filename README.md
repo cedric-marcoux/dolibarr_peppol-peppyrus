@@ -88,6 +88,10 @@ Billing > Peppol > Peppol candidates lists customers and suppliers without a Pep
 
 A daily scheduled job ("Peppol: daily fetch of incoming documents from the access point") fetches the new documents from the access point into Billing > Peppol > Incoming documents and confirms them at the access point, as the button "Refresh" on that page does. It does not create, validate or pay supplier invoices. A document whose download or confirmation failed stays unconfirmed at the access point and is tried again the next day. The user of the scheduled job needs the right "Peppol: write". The time of the last fetch is shown on the page. The job result and the log hold counts only. Requires the module "Scheduled jobs" and the Dolibarr cron script on the server.
 
+## Book incoming documents (with PDF OCR Inkoop)
+
+With the module PDF OCR Inkoop installed, Billing > Peppol > Incoming documents has a button "Book" for every document that is not booked yet. It opens PDF OCR Inkoop with the e-invoice (XML) of the document loaded; saving there creates and validates the supplier invoice and links it to the document. Without that module the button is not shown.
+
 ## Requirements
 
 - Dolibarr 18.0 up to 24.0.2 (see *Standard and deliberate deviations*)

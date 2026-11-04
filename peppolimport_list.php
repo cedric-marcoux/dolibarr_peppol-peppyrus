@@ -891,6 +891,9 @@ while ($i < $imaxinloop) {
 					print $object->getLibStatut(5);
 				} elseif ($key == 'rowid') {
 					print $object->showOutputField($val, $key, $object->id, '');
+				} elseif ($key == 'fk_invoice' && empty($object->fk_invoice) && ($bookingUrl = peppolBookingUrl($object, $user)) !== '') {
+					// Not booked yet: book it as supplier invoice with PDF OCR Inkoop in one click
+					print '<a class="button smallpaddingimp" href="' . dol_escape_htmltag($bookingUrl) . '" title="' . dol_escape_htmltag($langs->trans('peppolBookInvoiceHelp')) . '">' . img_picto('', 'bill', 'class="pictofixedwidth"') . $langs->trans('peppolBookInvoice') . '</a>';
 				} else {
 					print $object->showOutputField($val, $key, $object->$key, '');
 				}
