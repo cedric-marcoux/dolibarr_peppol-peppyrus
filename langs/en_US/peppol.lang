@@ -366,3 +366,7 @@ peppolInboxFetchNoRight = The user of the scheduled job has no right to fetch Pe
 peppolInboxFetchNoAccessPoint = The access point could not be loaded.
 peppolInboxLastFetch = Last fetched from the access point: %s
 peppolInboxNeverFetched = Not yet fetched from the access point.
+
+# Book an incoming document as supplier invoice (PDF OCR Inkoop)
+peppolBookInvoice = Book
+peppolBookInvoiceHelp = Book as supplier invoice with PDF OCR Inkoop: the e-invoice is loaded there; saving creates and validates the invoice.

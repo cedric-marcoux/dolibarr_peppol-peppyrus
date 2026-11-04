@@ -324,3 +324,7 @@ peppolInboxFetchNoRight = L'utilisateur de la tâche planifiée n'a pas le droit
 peppolInboxFetchNoAccessPoint = Le point d'accès n'a pas pu être chargé.
 peppolInboxLastFetch = Dernière récupération auprès du point d'accès : %s
 peppolInboxNeverFetched = Pas encore récupéré auprès du point d'accès.
+
+# Book an incoming document as supplier invoice (PDF OCR Inkoop)
+peppolBookInvoice = Comptabiliser
+peppolBookInvoiceHelp = Comptabiliser comme facture fournisseur avec PDF OCR Inkoop : la facture électronique y est chargée ; l'enregistrement crée et valide la facture.

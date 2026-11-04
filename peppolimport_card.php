@@ -519,7 +519,15 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 			// 	print dolGetButtonAction($langs->trans('AnalyzeNow'), '', 'default', $_SERVER["PHP_SELF"] . '?id=' . $object->id . '&action=analyze&mode=now');
 			// }
 
-			if ($object->status == $object::STATUS_HALFSUCCESS || $object->status == $object::STATUS_ERROR || $object->status == $object::STATUS_DRAFT) {
+			// Book as supplier invoice with PDF OCR Inkoop (when installed): the XML is loaded there, saving validates the invoice
+			$bookingUrl = peppolBookingUrl($object, $user);
+			if ($bookingUrl !== '') {
+				print dolGetButtonAction($langs->trans('peppolBookInvoiceHelp'), $langs->trans('peppolBookInvoice'), 'default', $bookingUrl);
+			}
+
+			// Manual import page of the original module: only when that page is installed
+			if (($object->status == $object::STATUS_HALFSUCCESS || $object->status == $object::STATUS_ERROR || $object->status == $object::STATUS_DRAFT)
+				&& is_file(dol_buildpath('/peppolpeppyrus/importinvoice.php', 0))) {
 				$target = dol_buildpath("/peppolpeppyrus/importinvoice.php", 1) . "?filenamePDF=" . urlencode($object->filename) . '&action=create';
 				$target .= "&peppolimportId=" . $object->id;
 				if ($object->fk_supplier > 0) {

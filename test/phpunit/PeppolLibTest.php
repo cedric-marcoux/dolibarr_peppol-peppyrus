@@ -181,4 +181,20 @@ class PeppolLibTest extends TestCase
 			$this->assertSame(0, $result['http_code']);
 		}
 	}
+
+	/**
+	 * The booking link is only there with the module PDF OCR Inkoop; without it (as in the tests) it is empty
+	 *
+	 * @return void
+	 */
+	public function testBookingUrlNeedsModule()
+	{
+		global $conf;
+		$conf->modules = array();
+		$doc = new stdClass();
+		$doc->id = 5;
+		$doc->fk_invoice = 0;
+		$this->assertSame('', peppolBookingUrl($doc, null));
+		$this->assertSame('', peppolBookingUrl(null, null));
+	}
 }
