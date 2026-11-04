@@ -55,12 +55,12 @@ class modPeppolpeppyrus extends DolibarrModules
 
 		// Author
 		$this->editor_name = '';
-		$this->editor_url = '';
+		$this->editor_url = 'https://github.com/RealRidrick/dolibarr_peppol-peppyrus';
 
 		// Possible values for version are: 'development', 'experimental', 'dolibarr', 'dolibarr_deprecated' or a version string like 'x.y.z'
-		$this->version = '2.6.2';
-		// Url to the file with your last numberversion of this module
-		$this->url_last_version = '';
+		$this->version = '2.6.3';
+		// File with the latest version number (VERSION in the public repository), read by checkForUpdate()
+		$this->url_last_version = 'https://raw.githubusercontent.com/RealRidrick/dolibarr_peppol-peppyrus/main/VERSION';
 
 		// Key used in llx_const table to save module status enabled/disabled (where PEPPOLPEPPYRUS is value of property name of module in uppercase)
 		$this->const_name = 'MAIN_MODULE_' . strtoupper($this->name);
@@ -438,5 +438,30 @@ class modPeppolpeppyrus extends DolibarrModules
 	{
 		$sql = array();
 		return $this->_remove($sql, $options);
+	}
+
+	/**
+	 * Check whether a newer version exists (shown in the module list).
+	 * Same as DolibarrModules::checkForUpdate(), but HTTPS only and only an answer with HTTP status 200 counts:
+	 * the built-in version would also take a short error page as version number. The repository is public,
+	 * so no key is sent.
+	 *
+	 * @return int	1 newer version available, 0 not (or no URL), -1 could not be checked
+	 */
+	public function checkForUpdate()
+	{
+		require_once DOL_DOCUMENT_ROOT . '/core/lib/geturl.lib.php';
+		if (empty($this->url_last_version)) {
+			return 0;
+		}
+		$result = getURLContent($this->url_last_version, 'GET', '', 0, array(), array('https'), 0);
+		$content = isset($result['content']) ? trim((string) $result['content']) : '';
+		if ((int) ($result['http_code'] ?? 0) !== 200 || $content === '' || strlen($content) >= 30) {
+			return -1;
+		}
+		// Remote content: keep only the characters of a version number
+		$this->lastVersion = preg_replace('/[^a-zA-Z0-9_\.\-]+/', '', $content);
+		$this->needUpdate = (version_compare($this->lastVersion, $this->version) > 0);
+		return $this->needUpdate ? 1 : 0;
 	}
 }

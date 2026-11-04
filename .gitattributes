@@ -1,0 +1,4 @@
+# Not part of the installation package (git archive / GitHub zip)
+/.tx export-ignore
+/dev export-ignore
+/.gitattributes export-ignore

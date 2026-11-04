@@ -86,7 +86,7 @@ Third parties > Peppol candidates lists customers and suppliers without a Peppol
 
 ## Requirements
 
-- Dolibarr 18.0 up to 24.0.2
+- Dolibarr 18.0 up to 24.0.2 (see *Standard and deliberate deviations*)
 - PHP 7.1 or higher
 - A Peppyrus account (free registration at [peppyrus.be](https://www.peppyrus.be))
 
@@ -106,6 +106,35 @@ Third parties > Peppol candidates lists customers and suppliers without a Peppol
 ### Optional settings:
 - **Force XML with VAT null**: Generate XML even for customers without VAT number
 - **Enable API trigger**: Automatically generate Peppol XML when creating invoices via Dolibarr API
+
+## Translations
+
+As in DoliMods: `langs/en_US/peppol.lang` is the source and the only language file edited by hand. Every other language is synchronised with Transifex (`.tx/config`):
+
+- after adding or changing a key in `en_US`: `./dev/translation/txpush.sh source`
+- to get the translations: `./dev/translation/txpull.sh all` (or one language, e.g. `nl_NL`)
+- a local correction of a translation can be pushed with `./dev/translation/txpush.sh nl_NL`
+
+The Transifex organisation and project in `.tx/config` must exist; the scripts need the Transifex client (`tx`). `.tx/` and `dev/` are not part of the installation package.
+
+## Update check
+
+The module list of Dolibarr shows when a newer version exists: `checkForUpdate()` reads `VERSION` from this repository (public, so no key) over HTTPS and only accepts an answer with HTTP status 200.
+
+## Standard and deliberate deviations
+
+The module follows the standard of the repository `RealRidrick/dolibarr-module` (`STANDAARD.md`), which combines an internal security guideline with the rules of DoliMods. Checked with its tools: `dev/tools/beveiliging.php` (no errors, three recorded exceptions in `public/hook.php` and `class/peppolimport.class.php`) and `phpcs` (no errors).
+
+Deliberate deviations, because the module is also used outside that repository and by the original author:
+
+| Standard | Here | Reason |
+| --- | --- | --- |
+| Oldest supported Dolibarr 22.0, PHP 8.4 | Dolibarr 18.0 up to 24.0.2, PHP 7.1+ | Supported range of this module; every function used exists in Dolibarr 18 (checked against its source). |
+| Only `en_US` and `nl_NL`, both by hand | `en_US` by hand, other languages via Transifex | Same as DoliMods; the module is used in several countries. |
+| Module number between 500000 and 599999 | 436181 | Changing it would remove every granted Peppol permission (Dolibarr stores them by number), also for other users of the module. Only changed if it ever conflicts with another module. |
+| CHANGELOG and documentation in Dutch | English | Readable for everyone who uses or reviews the module. Each version has an **After updating** line. |
+| Module in its own folder of `dolibarr-module` | Own repository | Fork of the module of the original author; changes are offered back. |
+| `checkForUpdate()` with a GitHub key | Without key | The repository is public. |
 
 ## API Endpoints
 
