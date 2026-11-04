@@ -22,6 +22,7 @@ Code changes found by these checks:
 - No `curl_close()` any more (deprecated in PHP 8.5, no effect since 8.0).
 - Two menu entries use `isModEnabled("peppolpeppyrus")`.
 - SQL files: explicit table aliases, final newline.
+- The executable bit is removed from 155 files that are not scripts (PHP, language, SQL, image and library files); only the two shell scripts in `dev/translation/` stay executable.
 
 **After updating:** replace the module files and flush memcached; deactivating and reactivating is not needed.
 
