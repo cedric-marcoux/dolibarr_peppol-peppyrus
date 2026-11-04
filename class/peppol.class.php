@@ -1068,44 +1068,10 @@ class Peppol
 	 */
 	static public function searchPeppolDirectory($query)
 	{
-		$apiUrl = 'https://directory.peppol.eu/search/1.0/json';
-
-		// Build query parameters
-		$params = array(
-			'q' => $query
-		);
-
-		$url = $apiUrl . '?' . http_build_query($params);
-
-		// getURLContent() passes these to CURLOPT_HTTPHEADER, which expects "Name: value" lines
-		$headers = [
-			'Accept: application/json',
-			'User-Agent: Dolibarr-PEPPOL-Module'
-		];
-
-		// Use Dolibarr's getURLContent function
-		$result = getURLContent($url, 'GET', '', 1, $headers, array('https'), 0);
-
-		// Check for errors
-		if (empty($result['content'])) {
-			if (!empty($result['curl_error_msg'])) {
-				return array('error' => 'Connection error: ' . $result['curl_error_msg']);
-			}
-			return array('error' => 'Empty response from PEPPOL Directory');
+		// Same request through peppolApiRequest(): HTTPS only, and the search term stays out of the log
+		if (!function_exists('peppolDirectorySearch')) {
+			dol_include_once('/peppolpeppyrus/lib/peppol.lib.php');
 		}
-
-		// Check HTTP code
-		if (!empty($result['http_code']) && $result['http_code'] != 200) {
-			return array('error' => 'HTTP error: ' . $result['http_code']);
-		}
-
-		// Decode JSON response
-		$data = json_decode($result['content'], true);
-
-		if (json_last_error() !== JSON_ERROR_NONE) {
-			return array('error' => 'JSON decode error: ' . json_last_error_msg());
-		}
-
-		return $data;
+		return peppolDirectorySearch($query);
 	}
 }

@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.6.0
+
+New page **Third parties > Peppol candidates** (`peppol_candidates.php`): customers and suppliers without a Peppol ID that were found in the Peppol directory.
+
+- A weekly scheduled job (`PeppolCandidateCheck::runWeeklyCheck`, class `class/peppolcandidatecheck.class.php`) checks active customers and suppliers without a Peppol ID that have a VAT number or professional ID 1 (KvK number in the Netherlands). Private customers are skipped. It searches by number only, never by name, and keeps only directory entries whose number is exactly the number of the third party. A third party is checked at most once every 6 days; up to `PEPPOL_CANDIDATE_BATCH` (default 500) per run. When the directory cannot be reached the job stops and the remaining third parties are checked next time.
+- The page shows per candidate: third party, customer/supplier, Peppol ID with the kind of number, name in the directory, whether it accepts invoices, which number matches, date found, status, and a "Recommended" mark. Filters: customer/supplier, status (new, linked, ignored), found since.
+- Select candidates and **Link** (stores the Peppol ID on the third party, one ID per third party, only the `peppol_id` extra field is updated) or **Ignore**. **Check now** checks a small batch (`PEPPOL_CANDIDATE_BATCH_WEB`, default 25) at once.
+- Rights: viewing needs the module read right and the third party read right; linking, ignoring and checking need the module write right and the third party write right. Sales representatives without "see all third parties" only see their own third parties.
+- Requests to the Peppol directory (also the existing search) go through `peppolApiRequest()`: HTTPS only, and the search term no longer ends up in the Dolibarr log. Log lines of the check hold counts only.
+- New tables `llx_peppol_candidate` and `llx_peppol_lookup`.
+
+**After updating:** deactivate and reactivate the module once (creates the tables, the menu entry and the scheduled job). The weekly job needs the module "Scheduled jobs" (cron) and the Dolibarr cron script running on the server.
+
 ## 2.5.0
 
 Security:

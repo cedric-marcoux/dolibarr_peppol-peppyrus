@@ -58,7 +58,7 @@ class modPeppolpeppyrus extends DolibarrModules
 		$this->editor_url = '';
 
 		// Possible values for version are: 'development', 'experimental', 'dolibarr', 'dolibarr_deprecated' or a version string like 'x.y.z'
-		$this->version = '2.5.0';
+		$this->version = '2.6.0';
 		// Url to the file with your last numberversion of this module
 		$this->url_last_version = '';
 
@@ -239,20 +239,20 @@ class modPeppolpeppyrus extends DolibarrModules
 		// Cronjobs (List of cron jobs entries to add when module is enabled)
 		// unit_frequency must be 60 for minute, 3600 for hour, 86400 for day, 604800 for week
 		$this->cronjobs = array(
-			//  0 => array(
-			//      'label' => 'MyJob label',
-			//      'jobtype' => 'method',
-			//      'class' => '/peppolpeppyrus/class/myobject.class.php',
-			//      'objectname' => 'MyObject',
-			//      'method' => 'doScheduledJob',
-			//      'parameters' => '',
-			//      'comment' => 'Comment',
-			//      'frequency' => 2,
-			//      'unitfrequency' => 3600,
-			//      'status' => 0,
-			//      'test' => '$conf->peppolpeppyrus->enabled',
-			//      'priority' => 50,
-			//  ),
+			0 => array(
+				'label' => 'Peppol: weekly check of customers and suppliers in the Peppol directory',
+				'jobtype' => 'method',
+				'class' => '/peppolpeppyrus/class/peppolcandidatecheck.class.php',
+				'objectname' => 'PeppolCandidateCheck',
+				'method' => 'runWeeklyCheck',
+				'parameters' => '',
+				'comment' => 'Searches customers and suppliers without a Peppol ID in the Peppol directory by VAT number and registration number (not by name). Results: Third parties > Peppol candidates.',
+				'frequency' => 1,
+				'unitfrequency' => 604800,
+				'status' => 1,
+				'test' => 'isModEnabled("peppolpeppyrus")',
+				'priority' => 50,
+			),
 		);
 		// Example: $this->cronjobs=array(
 		//    0=>array('label'=>'My label', 'jobtype'=>'method', 'class'=>'/dir/class/file.class.php', 'objectname'=>'MyClass', 'method'=>'myMethod', 'parameters'=>'param1, param2', 'comment'=>'Comment', 'frequency'=>2, 'unitfrequency'=>3600, 'status'=>0, 'test'=>'$conf->peppolpeppyrus->enabled', 'priority'=>50),
@@ -313,6 +313,22 @@ class modPeppolpeppyrus extends DolibarrModules
 			'perms' => '$user->rights->peppolpeppyrus->import', // if you want your menu with a permission rules
 			'target' => '',
 			'user' => 2, // 0=Menu for internal users, 1=external users, 2=both
+		];
+
+		$this->menu[$r++] = [
+			'fk_menu' => 'fk_mainmenu=companies',
+			'type' => 'left',
+			'titre' => 'peppolCandidatesMenu',
+			'prefix' => 'fa-network-wired',
+			'mainmenu' => 'companies',
+			'leftmenu' => 'peppol_candidates',
+			'url' => '/peppolpeppyrus/peppol_candidates.php',
+			'langs' => 'peppol@peppolpeppyrus',
+			'position' => 1000 + $r,
+			'enabled' => 'isModEnabled("peppolpeppyrus")',
+			'perms' => '$user->hasRight("peppolpeppyrus", "read") && $user->hasRight("societe", "lire")',
+			'target' => '',
+			'user' => 0,
 		];
 
 		// Add here entries to declare new menus

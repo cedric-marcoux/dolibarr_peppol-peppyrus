@@ -80,6 +80,10 @@ This module allows sending electronic invoices via the PEPPOL network using the 
 
 # Technical Documentation
 
+## Peppol candidates
+
+Third parties > Peppol candidates lists customers and suppliers without a Peppol ID that a weekly scheduled job found in the Peppol directory by VAT number or registration number (never by name). Select the right ID and link it to the third party. Requires the module "Scheduled jobs" and the Dolibarr cron script on the server.
+
 ## Requirements
 
 - Dolibarr 18.0 up to 24.0.2

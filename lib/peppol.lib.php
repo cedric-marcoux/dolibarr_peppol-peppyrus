@@ -202,11 +202,13 @@ function peppolApiRequest($url, $method, $body, $headers)
 	$result = array('http_code' => 0, 'content' => '', 'curl_error_no' => 0, 'curl_error_msg' => '');
 	$parts = parse_url((string) $url);
 	$host = is_array($parts) ? strtolower((string) ($parts['host'] ?? '')) : '';
-	if (!is_array($parts) || ($parts['scheme'] ?? '') !== 'https' || !in_array($host, array('api.peppyrus.be', 'api.test.peppyrus.be'), true)
-		|| isset($parts['user']) || isset($parts['port']) || !in_array($method, array('GET', 'POST', 'PATCH', 'PUT', 'DELETE'), true)) {
-		dol_syslog('peppolApiRequest refused: not an HTTPS request to the Peppyrus API', LOG_ERR);
+	// Peppyrus API (all methods) and the public Peppol directory (GET only)
+	$allowed = (in_array($host, array('api.peppyrus.be', 'api.test.peppyrus.be'), true) && in_array($method, array('GET', 'POST', 'PATCH', 'PUT', 'DELETE'), true))
+		|| ($host === 'directory.peppol.eu' && $method === 'GET');
+	if (!is_array($parts) || ($parts['scheme'] ?? '') !== 'https' || !$allowed || isset($parts['user']) || isset($parts['port'])) {
+		dol_syslog('peppolApiRequest refused: not an HTTPS request to the Peppyrus API or the Peppol directory', LOG_ERR);
 		$result['curl_error_no'] = -1;
-		$result['curl_error_msg'] = 'Request refused (only HTTPS to the Peppyrus API)';
+		$result['curl_error_msg'] = 'Request refused (only HTTPS to the Peppyrus API or the Peppol directory)';
 		return $result;
 	}
 	if (!function_exists('curl_init')) {
@@ -255,6 +257,33 @@ function peppolApiRequest($url, $method, $body, $headers)
 	dol_syslog('peppolApiRequest '.$method.' '.$host.' HTTP '.$result['http_code'].($result['curl_error_no'] ? ' curl error '.$result['curl_error_no'] : ''));
 
 	return $result;
+}
+
+/**
+ * Search the public Peppol directory (directory.peppol.eu).
+ * Goes through peppolApiRequest(), so the search term (a name, VAT or registration number) does not end up in the log.
+ *
+ * @param	string	$query	Search term
+ * @return	array			Decoded JSON of the directory ('matches' => [...]), or array('error' => message)
+ */
+function peppolDirectorySearch($query)
+{
+	$url = 'https://directory.peppol.eu/search/1.0/json?' . http_build_query(array('q' => (string) $query));
+	$result = peppolApiRequest($url, 'GET', '', array('Accept: application/json'));
+	if ($result['content'] === '') {
+		if ($result['curl_error_no']) {
+			return array('error' => 'Connection error: ' . $result['curl_error_msg']);
+		}
+		return array('error' => 'Empty response from PEPPOL Directory');
+	}
+	if ($result['http_code'] != 200) {
+		return array('error' => 'HTTP error: ' . $result['http_code']);
+	}
+	$data = json_decode($result['content'], true);
+	if (!is_array($data)) {
+		return array('error' => 'JSON decode error: ' . json_last_error_msg());
+	}
+	return $data;
 }
 
 /**
