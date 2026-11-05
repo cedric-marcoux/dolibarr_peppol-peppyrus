@@ -83,6 +83,15 @@ class ActionsPeppolpeppyrus
 
 		switch ($action) {
 			case "confirm_peppolSendFile":
+				$refusal = peppolSendRefusalReason($user, $object, GETPOST('confirm', 'alpha'));
+				if ($refusal !== '') {
+					dol_syslog(get_class($this) . '::doActions confirm_peppolSendFile refused: ' . $refusal, LOG_WARNING);
+					if ($refusal !== 'PeppolSendNotConfirmed') {
+						$langs->load("peppol@peppolpeppyrus");
+						setEventMessages($langs->trans($refusal), null, 'errors');
+					}
+					break;
+				}
 				$filename = peppolFindFileToUse($object, $parameters['outputdir']);
 				$object->fetch_optionals();
 				peppolSendToAccessPoint($filename, $object);
@@ -207,14 +216,16 @@ class ActionsPeppolpeppyrus
 
 		dol_syslog(get_class($this) . '::executeHooks peppolpeppyrus action=' . $action);
 
+		// Documents the module does not handle are skipped with 0: a negative value makes
+		// Dolibarr abort the document generation (e.g. drafts created by recurring invoices, #4)
 		if ($parameters['object']->element != "facture") {
-			dol_syslog(get_class($this) . '::executeHooks not a customer invoice but a ' . $parameters['object']->element . ', return');
-			return -10;
+			dol_syslog(get_class($this) . '::executeHooks not a customer invoice but a ' . $parameters['object']->element . ', skip');
+			return 0;
 		}
 
-		if ($parameters['object']->status != Facture::STATUS_VALIDATED) {
-			dol_syslog(get_class($this) . '::executeHooks not a validated invoice, status is ' . $parameters['object']->status . ', return');
-			return -20;
+		if (!peppolIsInvoiceStatusEligible($parameters['object'])) {
+			dol_syslog(get_class($this) . '::executeHooks invoice status ' . $parameters['object']->status . ' is not eligible for Peppol (draft or abandoned), skip');
+			return 0;
 		}
 
 		$requestPath = $_SERVER['REQUEST_URI'];
@@ -239,9 +250,12 @@ class ActionsPeppolpeppyrus
 			dol_syslog("Peppolpeppyrus afterPDFCreation called with empty file name !", LOG_WARNING);
 		}
 
-		dol_syslog(get_class($this) . '::executeHooks peppolpeppyrus end action=' . $action);
+		dol_syslog(get_class($this) . '::executeHooks peppolpeppyrus end action=' . $action . ' makePDF=' . $ret);
 
-		return $ret;
+		// The Peppol XML is optional, the document is not: when the XML cannot be made (private
+		// customer, missing VAT number...) the reason is already shown as a warning; a negative
+		// value here would make Dolibarr report the document generation itself as failed (#4)
+		return ($ret < 0) ? 0 : $ret;
 	}
 
 	/**
@@ -257,14 +271,16 @@ class ActionsPeppolpeppyrus
 
 		dol_syslog(get_class($this) . '::executeHooks peppolpeppyrus action=' . $action);
 
+		// Documents the module does not handle are skipped with 0: a negative value makes
+		// Dolibarr abort the document generation (e.g. drafts created by recurring invoices, #4)
 		if ($parameters['object']->element != "facture") {
-			dol_syslog(get_class($this) . '::executeHooks not a customer invoice but a ' . $parameters['object']->element . ', return');
-			return -10;
+			dol_syslog(get_class($this) . '::executeHooks not a customer invoice but a ' . $parameters['object']->element . ', skip');
+			return 0;
 		}
 
-		if ($parameters['object']->status != Facture::STATUS_VALIDATED) {
-			dol_syslog(get_class($this) . '::executeHooks not a validated invoice, status is ' . $parameters['object']->status . ', return');
-			return -20;
+		if (!peppolIsInvoiceStatusEligible($parameters['object'])) {
+			dol_syslog(get_class($this) . '::executeHooks invoice status ' . $parameters['object']->status . ' is not eligible for Peppol (draft or abandoned), skip');
+			return 0;
 		}
 
 		$objFacture = $parameters['object'];
@@ -284,15 +300,18 @@ class ActionsPeppolpeppyrus
 			} else {
 				dol_syslog(get_class($this) . '::executeHooks pdf file does not exists, peppolpeppyrus NEED a pdf file as input, return');
 				setEventMessage($langs->trans("PeppolErrorNeedPDF"), 'warnings');
-				return -30;
+				return 0;
 			}
 		} else {
 			dol_syslog("Peppolpeppyrus afterODTCreation called with empty file name !", LOG_WARNING);
 		}
 
-		dol_syslog(get_class($this) . '::executeHooks peppolpeppyrus end action=' . $action);
+		dol_syslog(get_class($this) . '::executeHooks peppolpeppyrus end action=' . $action . ' makePDF=' . $ret);
 
-		return $ret;
+		// The Peppol XML is optional, the document is not: when the XML cannot be made (private
+		// customer, missing VAT number...) the reason is already shown as a warning; a negative
+		// value here would make Dolibarr report the document generation itself as failed (#4)
+		return ($ret < 0) ? 0 : $ret;
 	}
 
 	/**
@@ -434,13 +453,13 @@ class ActionsPeppolpeppyrus
 
 		$contextArray = explode(':', $parameters['context']);
 		if (in_array('invoicecard', $contextArray)) {
-			if ($object->status == Facture::STATUS_VALIDATED) {
+			if (peppolIsInvoiceStatusEligible($object) && peppolUserCanSend($user)) {
 				$classAction = "butAction";
 				if (!empty($object->array_options['options_peppol_id'])) {
 					$classAction = "butActionRefused";
 				}
-				print '<div class="inline-block divButAction"><a class="' . $classAction . ' classfortooltip" title="' . $langs->trans('peppolBtnSendTooltip') . '" href="' . dol_escape_htmltag($_SERVER["PHP_SELF"]) . '?id=' . $object->id . '&action=peppolSendFile"><i class=\"fa fa-paper-plane\"></i>' . $langs->trans('peppolBtnSend') . '</a></div>';
-				print '<div class="inline-block divButAction"><a class="butAction classfortooltip" title="' . $langs->trans('peppolBtnCheckTooltip') . '" href="' . dol_escape_htmltag($_SERVER["PHP_SELF"]) . '?id=' . $object->id . '&action=peppolCheck"><i class=\"fa fa-paper-plane\"></i>' . $langs->trans('peppolBtnCheck') . '</a></div>';
+				print '<div class="inline-block divButAction"><a class="' . $classAction . ' classfortooltip" title="' . $langs->trans('peppolBtnSendTooltip') . '" href="' . dol_escape_htmltag($_SERVER["PHP_SELF"]) . '?id=' . $object->id . '&action=peppolSendFile&token=' . newToken() . '"><i class=\"fa fa-paper-plane\"></i>' . $langs->trans('peppolBtnSend') . '</a></div>';
+				print '<div class="inline-block divButAction"><a class="butAction classfortooltip" title="' . $langs->trans('peppolBtnCheckTooltip') . '" href="' . dol_escape_htmltag($_SERVER["PHP_SELF"]) . '?id=' . $object->id . '&action=peppolCheck&token=' . newToken() . '"><i class=\"fa fa-paper-plane\"></i>' . $langs->trans('peppolBtnCheck') . '</a></div>';
 			}
 		}
 		if (in_array('thirdpartycard', $contextArray)) {

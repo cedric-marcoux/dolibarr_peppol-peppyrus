@@ -206,6 +206,17 @@ When ready to go live:
 
 # Changelog
 
+## Unreleased (branch dev)
+- Fix: credit notes are now sent with positive quantities, prices and totals, as required for a Peppol CreditNote (type 381); version 2.2.3 produced a negative CreditedQuantity and negative totals (#11)
+- Fix: line discount of a credit note computed from the absolute line total (the line amount matches Dolibarr)
+- Fix: paid invoices and credit notes converted into a discount (status Paid) get their Peppol XML and the Peppol buttons again, as for sending by e-mail; drafts and abandoned documents stay excluded (#12)
+- Fix: the PDF hook no longer returns an error for documents it does not handle (drafts, other objects): recurring invoices created as draft no longer fail and roll back (#4)
+- Fix: the PDF/ODT hooks never report a failure to Dolibarr when the Peppol XML cannot be made (private customer, missing VAT number): the document itself is generated, the reason is shown as a warning (#4)
+- Fix: the "Send via Peppol" and "Check" links carry the CSRF token, required by Dolibarr 24 (MAIN_SECURITY_CSRF_WITH_TOKEN = 3) (#5)
+- Fix: sending now requires the answer "Yes" in the confirmation dialog, the module write right or the right to create or send invoices, and an eligible document (validated or paid); the send button is shown only to users allowed to send (#13)
+- Fix: PHP warnings in the XML generation (VAT summary, reverse-charge flag)
+- New: regression tests, command line only: `php htdocs/custom/peppolpeppyrus/tests/run.php`
+
 ## Version 2.2.3
 - Fix: BR-27 - Credit notes failed PEPPOL validation because BT-146 (Item net price) was negative
 - Fix: Dolibarr credit note lines have negative unit price + positive qty; now normalized to positive price + negative qty as required by EN 16931

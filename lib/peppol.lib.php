@@ -138,6 +138,68 @@ function peppolGetRetainedWarrantyAmount($invoice, $rounding)
 }
 
 /**
+ * Can this customer invoice or credit note go through Peppol (XML generation, sending)?
+ *
+ * Same rule as Dolibarr for sending a document by e-mail: validated or paid/closed.
+ * A credit note converted into a discount or refunded is "paid", it must stay sendable.
+ * Drafts and abandoned documents are excluded.
+ *
+ * @param   CommonObject  $invoice  Customer invoice
+ * @return  bool
+ */
+function peppolIsInvoiceStatusEligible($invoice)
+{
+	if (!is_object($invoice)) {
+		return false;
+	}
+	require_once DOL_DOCUMENT_ROOT . '/compta/facture/class/facture.class.php';
+	$status = isset($invoice->status) ? (int) $invoice->status : (int) $invoice->statut;
+	return in_array($status, array(Facture::STATUS_VALIDATED, Facture::STATUS_CLOSED), true);
+}
+
+/**
+ * May this user send customer invoices through Peppol?
+ *
+ * Module "write" right, or the rights Dolibarr asks for sending an invoice by e-mail
+ * (create invoices, or the advanced "send" right).
+ *
+ * @param   User  $user  User
+ * @return  bool
+ */
+function peppolUserCanSend($user)
+{
+	if (!is_object($user)) {
+		return false;
+	}
+	return !empty($user->admin)
+		|| !empty($user->rights->peppolpeppyrus->write)
+		|| !empty($user->rights->facture->creer)
+		|| !empty($user->rights->facture->invoice_advance->send);
+}
+
+/**
+ * Checks done before sending a document to the access point (confirm_peppolSendFile).
+ *
+ * @param   User          $user     User
+ * @param   CommonObject  $invoice  Customer invoice
+ * @param   string        $confirm  Answer of the confirmation dialog
+ * @return  string                  '' when the document may be sent, otherwise the translation key of the reason
+ */
+function peppolSendRefusalReason($user, $invoice, $confirm)
+{
+	if ($confirm !== 'yes') {
+		return 'PeppolSendNotConfirmed';
+	}
+	if (!peppolUserCanSend($user)) {
+		return 'NotEnoughPermissions';
+	}
+	if (!peppolIsInvoiceStatusEligible($invoice)) {
+		return 'PeppolErrorStatusNotEligible';
+	}
+	return '';
+}
+
+/**
  * Get list of files linked to object
  *
  * @param   CommonObject  $obj  Object

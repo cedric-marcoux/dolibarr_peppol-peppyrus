@@ -96,6 +96,7 @@ class Peppol
 		global $conf, $user, $langs, $mysoc;
 
 		$enableVatForThatInvoice = true;
+		$enableVatReverseChargeForThatInvoice = false;
 		$ret = 0;
 		$buyerIdent = null;
 		$objFacture = $this->_invoice; //migrating code from dolibar
@@ -682,13 +683,11 @@ class Peppol
 					}
 				}
 			} else {
-				// Fix BR-27: BT-146 (Item net price) shall NOT be negative
-				// Dolibarr credit notes have negative subprice + positive qty
-				// PEPPOL requires positive price + negative quantity
-				if ($unitPrice < 0) {
-					$unitPrice = abs($unitPrice);
-					$qty = -abs($qty);
-				}
+				// Credit note: Dolibarr stores a positive quantity, a negative unit price and negative totals.
+				// A Peppol CreditNote (type 381) carries positive quantities and amounts: the document type
+				// already says it is a credit, and the item net price shall not be negative (BR-27).
+				$unitPrice = abs($unitPrice);
+				$qty = abs($qty);
 				$subprice = round($unitPrice * $qty, 2);
 			}
 
@@ -721,7 +720,7 @@ class Peppol
 				}
 			}
 
-			if (!is_array($tabTVA[$tva_tx])) {
+			if (!isset($tabTVA[$tva_tx])) {
 				$tabTVA[$tva_tx] = [];
 				$tabTVA[$tva_tx]['totalHT'] = 0;
 				$tabTVA[$tva_tx]['totalTVA'] = 0;
@@ -819,7 +818,8 @@ class Peppol
 			if (!$remiseLigne) {
 				if (!empty($line->remise_percent)) {
 					// Fix PEPPOL-EN16931-R120: ensure allowance makes LineExtensionAmount = total_ht exactly
-					$remise_abs = round($subprice - $line->total_ht, 2);
+					// abs(): credit note line totals are negative in Dolibarr, the UBL line amounts are positive
+					$remise_abs = round($subprice - abs($line->total_ht), 2);
 					dol_syslog("  peppol line add remise (Allowance): " . $line->remise_percent . " absolute remise=" . $remise_abs);
 					$allowance = (new AllowanceOrCharge())->setReason('Discount')
 						->setReasonCode(95)

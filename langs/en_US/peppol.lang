@@ -200,3 +200,5 @@ peppolPdfNotAvailable = PDF is not available separately via Peppyrus (embedded i
 peppolRejectNotAvailable = Invoice rejection is not available via Peppyrus API
 peppolCheckErrorNoPeppolID = Third party Peppol ID is empty
 PeppolCheckErrorSenderPeppolID = Your company Peppol ID is not configured
+PeppolSendNotConfirmed = Sending cancelled
+PeppolErrorStatusNotEligible = Only validated or paid invoices and credit notes can be sent through Peppol
