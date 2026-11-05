@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 //convertisseur rapide du fichier json en CSV pour avoir les codes pays
 

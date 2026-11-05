@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 /**
  *   	\file       peppolimport_list.php
@@ -59,28 +60,36 @@ if (!$res) {
 	die("Include of main fails");
 }
 
-$permissiontoaccess = $user->rights->peppolpeppyrus->import;
+
+/**
+ * @var Conf $conf
+ * @var DoliDB $db
+ * @var HookManager $hookmanager
+ * @var Societe $mysoc
+ * @var Translate $langs
+ * @var User $user
+ */
+$permissiontoaccess = $user->hasRight('peppolpeppyrus', 'import');
 /*
-Note: vérification des droits associés et nécessaires:
-	- lire les tiers societe->lire;
-	- créer des tiers societe->creer
-	- etendre societe->client->voir
-	- lire les fournisseurs (?) fournisseur->lire
-	- lire les factures fournisseur (recherche doublons) fournisseur->facture->lire
-	- créer facture fournisseur fournisseur->facture->creer
-	- lire les produits (?) produit->lire
-	- lire les services service->lire
-	.../...?
+Note: rights needed to import a supplier document:
+	- read third parties: societe, lire
+	- create third parties: societe, creer
+	- see all third parties: societe, client, voir
+	- read suppliers: fournisseur, lire
+	- read supplier invoices (duplicate check): fournisseur, facture, lire
+	- create supplier invoices: fournisseur, facture, creer
+	- read products: produit, lire
+	- read services: service, lire
 */
 $otherModulesRights = [
-	$user->rights->societe->lire,
-	$user->rights->societe->creer,
-	$user->rights->societe->client->voir,
-	$user->rights->fournisseur->lire,
-	$user->rights->fournisseur->facture->lire,
-	$user->rights->fournisseur->facture->creer,
-	$user->rights->produit->lire,
-	$user->rights->service->lire
+	$user->hasRight('societe', 'lire'),
+	$user->hasRight('societe', 'creer'),
+	$user->hasRight('societe', 'client', 'voir'),
+	$user->hasRight('fournisseur', 'lire'),
+	$user->hasRight('fournisseur', 'facture', 'lire'),
+	$user->hasRight('fournisseur', 'facture', 'creer'),
+	$user->hasRight('produit', 'lire'),
+	$user->hasRight('service', 'lire')
 ];
 // Security check - Protection if external user
 if ($user->socid > 0) {
@@ -126,7 +135,7 @@ $id = GETPOST('id', 'int');
 $limit = GETPOST('limit', 'int') ? GETPOST('limit', 'int') : $conf->liste_limit;
 $sortfield = GETPOST('sortfield', 'aZ09comma');
 $sortorder = GETPOST('sortorder', 'aZ09comma');
-$page = GETPOSTISSET('pageplusone') ? (GETPOST('pageplusone') - 1) : GETPOST("page", 'int');
+$page = GETPOSTISSET('pageplusone') ? (GETPOSTINT('pageplusone') - 1) : GETPOST("page", 'int');
 if (empty($page) || $page < 0 || GETPOST('button_search', 'alpha') || GETPOST('button_removefilter', 'alpha')) {
 	// If $page is not defined, or '' or -1 or if we click on clear filters
 	$page = 0;
@@ -186,9 +195,9 @@ foreach ($object->fields as $key => $val) {
 	}
 }
 
-$permissiontoaccess = $user->rights->peppolpeppyrus->read;
-$permissiontoadd = $user->rights->peppolpeppyrus->write;
-$permissiontodelete = $user->rights->peppolpeppyrus->delete;
+$permissiontoaccess = $user->hasRight('peppolpeppyrus', 'read');
+$permissiontoadd = $user->hasRight('peppolpeppyrus', 'write');
+$permissiontodelete = $user->hasRight('peppolpeppyrus', 'delete');
 
 // Security check
 if (empty($conf->peppolpeppyrus->enabled)) {
@@ -202,6 +211,11 @@ if ($user->socid > 0) {	// Protection if external user
 //$result = restrictedArea($user, 'peppolpeppyrus', $id, '');
 //if (!$permissiontoread) accessforbidden();
 
+/**
+ * Header row of the import table
+ *
+ * @return string HTML of the header row
+ */
 function createTableHeader()
 {
 	global $langs;
@@ -215,6 +229,16 @@ function createTableHeader()
 	return $h;
 }
 
+/**
+ * One row of the import table
+ *
+ * @param int $nb Row number
+ * @param string $filename File name
+ * @param string $fourn Supplier (HTML)
+ * @param string $fact Invoice (HTML)
+ * @param string $justif Document (HTML)
+ * @return string HTML of the row
+ */
 function createTableRow($nb, $filename, $fourn, $fact, $justif)
 {
 	$h = "<tr>";
@@ -240,8 +264,14 @@ if (!GETPOST('confirmmassaction', 'alpha') && $massaction != 'presend' && $massa
 	$massaction = '';
 }
 
-if($action == "refresh") {
+if ($action == "refresh") {
+	if (!$user->hasRight('peppolpeppyrus', 'write') || !peppolCheckToken()) {
+		accessforbidden();
+	}
+	// Fetches every new document from the access point: release the session meanwhile (a long action must not block the browser)
+	peppol_sessie_los();
 	peppolGetSupplierInvoicesList();
+	peppol_sessie_terug();
 }
 
 $parameters = array();
@@ -304,7 +334,7 @@ if (empty($reshook)) {
 		}
 		$importHtml .= "</tbody>";
 		$importHtml .= "</table></div>";
-		dol_syslog("PeppolImport : Import Now returns " . json_encode($res));
+		dol_syslog("PeppolImport : Import Now done");
 	}
 }
 
@@ -366,12 +396,13 @@ foreach ($search as $key => $val) {
 	} else {
 		if (preg_match('/(_dtstart|_dtend)$/', $key) && $search[$key] != '') {
 			$columnName = preg_replace('/(_dtstart|_dtend)$/', '', $key);
-			if (preg_match('/^(date|timestamp|datetime)/', $object->fields[$columnName]['type'])) {
+			// A column name cannot be quoted: only a defined field with a plain name (letters, digits, underscore)
+			if (isset($object->fields[$columnName]) && preg_match('/^[a-z0-9_]+$/i', $columnName) && preg_match('/^(date|timestamp|datetime)/', $object->fields[$columnName]['type'])) {
 				if (preg_match('/_dtstart$/', $key)) {
-					$sql .= " AND t.".$db->escape($columnName)." >= '".$db->idate($search[$key])."'";
+					$sql .= " AND t.".$db->escape($columnName)." >= '".$db->idate($search[$key])."'"; // @phan-suppress-current-line SqlInjectionUnquotedEscape -- column name of a defined field, checked above
 				}
 				if (preg_match('/_dtend$/', $key)) {
-					$sql .= " AND t.".$db->escape($columnName)." <= '".$db->idate($search[$key])."'";
+					$sql .= " AND t.".$db->escape($columnName)." <= '".$db->idate($search[$key])."'"; // @phan-suppress-current-line SqlInjectionUnquotedEscape -- column name of a defined field, checked above
 				}
 			}
 		}
@@ -614,9 +645,16 @@ $newcardbutton = '';
 //$newcardbutton .= dolGetButtonTitle($langs->trans('ViewList'), '', 'fa fa-bars imgforviewmode', $_SERVER["PHP_SELF"].'?mode=common'.preg_replace('/(&|\?)*mode=[^&]+/', '', $param), '', ((empty($mode) || $mode == 'common') ? 2 : 1), array('morecss'=>'reposition'));
 //$newcardbutton .= dolGetButtonTitle($langs->trans('ViewKanban'), '', 'fa fa-th-list imgforviewmode', $_SERVER["PHP_SELF"].'?mode=kanban'.preg_replace('/(&|\?)*mode=[^&]+/', '', $param), '', ($mode == 'kanban' ? 2 : 1), array('morecss'=>'reposition'));
 //$newcardbutton .= dolGetButtonTitleSeparator();
-$newcardbutton .= dolGetButtonTitle($langs->trans('Refresh'), '', 'fa fa-repeat fas fa-redo', dol_buildpath('/peppolpeppyrus/peppolimport_list.php?action=refresh', 1), '', $permissiontoadd);
+$newcardbutton .= peppolCandidatesButton($user);
+$newcardbutton .= dolGetButtonTitle($langs->trans('Refresh'), '', 'fa fa-repeat fas fa-redo', dol_buildpath('/peppolpeppyrus/peppolimport_list.php?action=refresh&token='.newToken(), 1), '', $permissiontoadd);
 
 print_barre_liste($title, $page, $_SERVER["PHP_SELF"], $param, $sortfield, $sortorder, $massactionbutton, $num, $nbtotalofrecords, 'object_'.$object->picto, 0, $newcardbutton, '', $limit, 0, 0, 1);
+
+// When the documents were last fetched from the access point (by hand or by the daily scheduled job)
+$lastFetch = getDolGlobalInt('PEPPOL_INBOX_LAST_FETCH');
+print '<div class="opacitymedium marginbottomonly">';
+print $lastFetch > 0 ? $langs->trans('peppolInboxLastFetch', dol_print_date($lastFetch, 'dayhour', 'tzuserrel')) : $langs->trans('peppolInboxNeverFetched');
+print '</div>';
 
 // Add code for pre mass action (confirmation or email presend form)
 $topicmail = "SendPeppolimportRef";
@@ -854,6 +892,9 @@ while ($i < $imaxinloop) {
 					print $object->getLibStatut(5);
 				} elseif ($key == 'rowid') {
 					print $object->showOutputField($val, $key, $object->id, '');
+				} elseif ($key == 'fk_invoice' && empty($object->fk_invoice) && ($bookingUrl = peppolBookingUrl($object, $user)) !== '') {
+					// Not booked yet: book it as supplier invoice in one click
+					print '<a class="button smallpaddingimp" href="' . dol_escape_htmltag($bookingUrl) . '" title="' . dol_escape_htmltag($langs->trans('peppolBookInvoiceHelp')) . '">' . img_picto('', 'bill', 'class="pictofixedwidth"') . $langs->trans('peppolBookInvoice') . '</a>';
 				} else {
 					print $object->showOutputField($val, $key, $object->$key, '');
 				}

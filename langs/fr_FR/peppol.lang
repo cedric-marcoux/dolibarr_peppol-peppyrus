@@ -29,6 +29,7 @@ PeppolAboutPage = Module de facturation électronique Peppol
 PeppolMassActionZip = Créer un ZIP avec tous les fichiers Peppol
 PeppolError = Erreur Peppol:
 BuyerDoesNotHaveVATDetails = Le numéro de TVA intra-communautaire est nécessaire pour établir un document conforme à la norme Peppol
+BuyerDoesNotHaveEmailOrPeppolID = Le client n'a ni identifiant Peppol, ni numéro de TVA, ni adresse e-mail. Renseignez au moins l'un de ces éléments sur le tiers pour créer un document Peppol.
 PeppolWarning = Note Peppol:
 BuyerDoesNotHaveVATDetailsForce = En l'absence de numéro de TVA pour ce client le fichier XML généré utilise le code de TVA spécial '00000000' mais n'est pas conforme à la norme Peppol.
 InvoiceDoesNotHaveBankAccountLinked = Votre facture n'a pas de compte bancaire liée, votre client n'aura donc pas les informations permettant de vous payer
@@ -73,6 +74,10 @@ PEPPOL_AP_API_KEY = Clé API Peppyrus (Production)
 PEPPOL_AP_API_KEYTooltip = Votre clé pour vous connecter à l'API Peppyrus en mode PRODUCTION. Cette clé vous est fournie par Peppyrus.
 PEPPOL_AP_API_KEY_DEV = Clé API Peppyrus (Test/DEV)
 PEPPOL_AP_API_KEY_DEVTooltip = Votre clé pour vous connecter à l'API Peppyrus en mode TEST. Utilisez cette clé pour vos tests sur l'environnement de développement.
+PEPPOL_AP_WEBHOOK_KEY = Clé secrète du webhook
+PEPPOL_AP_WEBHOOK_KEYTooltip = Clé secrète servant à vérifier la signature (HMAC) des appels webhook. Sans cette clé, le webhook refuse tout appel.
+PeppolSecretConfigured = Configurée (masquée)
+PeppolSecretKeepCurrent = Laisser vide pour conserver la clé actuelle
 peppolBtnSend = Peppol : Envoyer
 peppolBtnSendTooltip = Cliquez sur ce bouton pour envoyer votre facture dans le réseau Peppol
 peppolNoPdfFilesAssociated = Il n'y a pas de fichier XML lié à cette facture
@@ -137,6 +142,16 @@ peppolName = Nom
 peppolCountryCode = Pays
 peppolDocumentTypes = Type de documents acceptés
 peppolAction = Action
+peppolSearchQueryPlaceholder = Raison sociale, numéro de TVA ou SIREN
+peppolSearchedBy = recherche par %s
+peppolSearchCriterion_vat = numéro de TVA
+peppolSearchCriterion_profid1 = numéro d'immatriculation (SIREN...)
+peppolSearchCriterion_name = nom
+peppolDirectoryNotFound = Aucun participant trouvé dans l'annuaire Peppol. Essayez un autre nom, un numéro de TVA ou un numéro d'immatriculation.
+peppolBackToThirdparty_card = Retour à la fiche tiers
+peppolBackToThirdparty_comm = Retour à la fiche client
+peppolBackToThirdparty_fourn = Retour à la fiche fournisseur
+SearchQuery = Recherche
 peppolIdSet = Identifiant Peppol configuré
 PeppolErrorNeedPDF = Le fichier PDF de la facture ne semble pas être présent !
 
@@ -203,3 +218,177 @@ peppolPdfNotAvailable = Le PDF n'est pas disponible séparément via Peppyrus (i
 peppolRejectNotAvailable = Le rejet de facture n'est pas disponible via l'API Peppyrus
 peppolCheckErrorNoPeppolID = L'identifiant Peppol du tiers est vide
 PeppolCheckErrorSenderPeppolID = L'identifiant Peppol de votre entreprise n'est pas configuré
+
+# Peppol directory results
+peppolSameOrganisation = Ces %s identifiants appartiennent à la même organisation. Une facture envoyée à un identifiant qui accepte les factures parvient au même destinataire. Choisissez de préférence l'identifiant recommandé.
+peppolLocation = Pays / localité
+peppolAcceptsInvoice = Accepte les factures
+peppolMatchThirdparty = Correspondance avec le tiers
+peppolRecommended = Recommandé
+peppolRegisteredSince = Sur Peppol depuis %s
+peppolUnknown = Inconnu
+peppolMatchesField = Même %s
+peppolNoRecommendation = Aucun de ces identifiants ne correspond au numéro de TVA ou à un identifiant professionnel du tiers. Vérifiez le nom et la localité, ou complétez la fiche du tiers et relancez la recherche.
+peppolScheme0002 = Numéro SIREN (FR)
+peppolScheme0007 = Numéro d'organisation (SE)
+peppolScheme0009 = Numéro SIRET (FR)
+peppolScheme0060 = Numéro DUNS
+peppolScheme0088 = GLN (GS1)
+peppolScheme0106 = Numéro KvK (NL)
+peppolScheme0190 = OIN (NL)
+peppolScheme0208 = Numéro d'entreprise (BE)
+peppolScheme0204 = Leitweg-ID (DE)
+peppolScheme0199 = LEI
+peppolScheme9910 = Numéro de TVA (HU)
+peppolScheme9914 = Numéro de TVA (AT)
+peppolScheme9920 = Numéro de TVA (ES)
+peppolScheme9922 = Numéro de TVA (AD)
+peppolScheme9923 = Numéro de TVA (AL)
+peppolScheme9924 = Numéro de TVA (BA)
+peppolScheme9925 = Numéro de TVA (BE)
+peppolScheme9926 = Numéro de TVA (BG)
+peppolScheme9927 = Numéro de TVA (CH)
+peppolScheme9928 = Numéro de TVA (CY)
+peppolScheme9929 = Numéro de TVA (CZ)
+peppolScheme9930 = Numéro de TVA (DE)
+peppolScheme9931 = Numéro de TVA (EE)
+peppolScheme9932 = Numéro de TVA (GB)
+peppolScheme9933 = Numéro de TVA (GR)
+peppolScheme9934 = Numéro de TVA (HR)
+peppolScheme9935 = Numéro de TVA (IE)
+peppolScheme9936 = Numéro de TVA (LI)
+peppolScheme9937 = Numéro de TVA (LT)
+peppolScheme9938 = Numéro de TVA (LU)
+peppolScheme9939 = Numéro de TVA (LV)
+peppolScheme9940 = Numéro de TVA (MC)
+peppolScheme9941 = Numéro de TVA (ME)
+peppolScheme9942 = Numéro de TVA (MK)
+peppolScheme9943 = Numéro de TVA (MT)
+peppolScheme9944 = Numéro de TVA (NL)
+peppolScheme9945 = Numéro de TVA (PL)
+peppolScheme9946 = Numéro de TVA (PT)
+peppolScheme9947 = Numéro de TVA (RO)
+peppolScheme9948 = Numéro de TVA (RS)
+peppolScheme9949 = Numéro de TVA (SI)
+peppolScheme9950 = Numéro de TVA (SK)
+peppolScheme9951 = Numéro de TVA (SM)
+peppolScheme9952 = Numéro de TVA (TR)
+peppolScheme9953 = Numéro de TVA (VA)
+peppolScheme9957 = Numéro de TVA (FR)
+
+# 2.5.0
+PEPPOL_VAT_EXEMPT_CODE = TVA sur les lignes à 0 % (opérations exonérées)
+PEPPOL_VAT_EXEMPT_CODETooltip = Pour une ligne à 0 % de TVA qui n'est ni en autoliquidation ni une livraison intracommunautaire : le motif d'exonération envoyé avec la catégorie de TVA E (exonéré). Soins médicaux : VATEX-EU-132-1C ; aide sociale : VATEX-EU-132-1G. Choisissez « Hors champ de la TVA » pour l'ancien comportement (catégorie O, sans numéros de TVA).
+PeppolVatCategoryO = Hors champ de la TVA (catégorie O, ancien comportement)
+
+# Peppol candidates (weekly check)
+peppolCandidatesMenu = Candidats Peppol
+peppolCandidatesNewCount = %s nouveau(x)
+peppolCandidatesTitle = Clients et fournisseurs trouvés sur Peppol
+peppolCandidatesIntro = Clients et fournisseurs sans identifiant Peppol trouvés dans l'annuaire Peppol par leur numéro de TVA ou d'immatriculation. Vérifiez, cochez le bon identifiant et cliquez sur "Lier". La vérification a lieu chaque semaine ; "Vérifier maintenant" vérifie un petit lot tout de suite.
+peppolCandidateLastCheck = Dernière vérification : %s (%s tiers vérifiés au total).
+peppolCandidateNeverChecked = Aucune vérification n'a encore eu lieu.
+peppolCandidateCheckNow = Vérifier maintenant
+peppolCandidateFoundSince = Trouvé depuis
+peppolCandidateStatusNew = Nouveau
+peppolCandidateStatusLinked = Lié
+peppolCandidateStatusIgnored = Ignoré
+peppolCandidateDirName = Nom dans l'annuaire Peppol
+peppolCandidateFoundOn = Trouvé le
+peppolCandidateNone = Aucun candidat.
+peppolCandidateLink = Lier les identifiants cochés
+peppolCandidateIgnore = Ignorer
+peppolCandidateRestore = Remettre en nouveau
+peppolCandidateLinkHelp = Lier enregistre l'identifiant Peppol sur le tiers. Un identifiant par tiers ; un tiers qui a déjà un identifiant est ignoré.
+peppolCandidateActionDone_link = %s identifiant(s) Peppol lié(s).
+peppolCandidateActionDone_ignore = %s candidat(s) ignoré(s).
+peppolCandidateActionDone_restore = %s candidat(s) remis en nouveau.
+peppolCandidateActionSkipped = %s ignoré(s) (le tiers a déjà un identifiant ou deux identifiants cochés pour le même tiers).
+peppolCandidateActionError = Erreur, rien n'a été modifié.
+peppolCandidateCheckResult = %s tiers vérifiés, %s identifiant(s) trouvé(s), dont %s nouveau(x).
+peppolCandidateCheckErrors = L'annuaire Peppol n'était pas joignable (%s fois) ; les autres tiers seront vérifiés la prochaine fois.
+
+# Menu Billing > Peppol
+PeppolMenu = Peppol
+peppolMenuDocuments = Documents entrants
+peppolMenuPage = Page
+peppolMenuDocumentsDesc = Documents (factures fournisseurs) reçus par le réseau Peppol et en attente d'import. Les nouveaux documents sont récupérés chaque jour par une tâche planifiée.
+peppolMenuCandidatesDesc = Clients et fournisseurs sans identifiant Peppol trouvés sur Peppol par la vérification hebdomadaire ; liez-les ici.
+peppolMenuLogDesc = Journal des documents envoyés au point d'accès et reçus de celui-ci.
+
+# Daily fetch of incoming documents
+peppolInboxFetchResult = %s nouveau(x) document(s) récupéré(s) auprès du point d'accès.
+peppolInboxFetchSomeFailed = %s document(s) n'ont pas pu être récupérés ; nouvel essai la prochaine fois.
+peppolInboxFetchFailed = Le point d'accès n'a pas pu être joint ; les documents seront récupérés la prochaine fois.
+peppolInboxFetchNoRight = L'utilisateur de la tâche planifiée n'a pas le droit de récupérer les documents Peppol (Peppol : écriture).
+peppolInboxFetchNoAccessPoint = Le point d'accès n'a pas pu être chargé.
+peppolInboxLastFetch = Dernière récupération auprès du point d'accès : %s
+peppolInboxNeverFetched = Pas encore récupéré auprès du point d'accès.
+
+# Button "Book"
+peppolBookInvoice = Comptabiliser
+
+# Book an incoming document as supplier invoice
+peppolBookInvoiceHelp = Comptabiliser comme facture fournisseur : fournisseur, lignes et montants de la facture électronique ; validée si le total correspond ; PDF et XML joints.
+peppolBookNoRight = Vous n'avez pas le droit de comptabiliser les documents Peppol (importer les documents Peppol et créer des factures fournisseurs).
+peppolBookAlreadyBooked = Ce document a déjà été comptabilisé.
+peppolBookNoFile = Le fichier de ce document est absent. Récupérez à nouveau les documents.
+peppolBookNotAnInvoice = Ce document n'est pas une facture électronique lisible (UBL, Peppol BIS Billing 3.0).
+peppolBookCreditNote = Ceci est un avoir. Saisissez-le à la main comme avoir de la facture fournisseur.
+peppolBookOtherCurrency = La facture est en %s, pas dans la devise de la société. Saisissez-la à la main.
+peppolBookIncomplete = La facture électronique n'a pas de numéro, de date ou de lignes. Saisissez-la à la main.
+peppolBookSeveralSuppliers = Plusieurs tiers ont cet identifiant Peppol, ce numéro de TVA ou ce numéro d'entreprise. Fusionnez-les ou saisissez la facture à la main.
+peppolBookSupplierUnknown = Le fournisseur est inconnu et vous n'avez pas le droit de créer des tiers.
+peppolBookNoSupplierName = La facture électronique ne contient pas le nom du fournisseur.
+peppolBookNotASupplier = Le tiers n'est pas fournisseur et vous n'avez pas le droit de modifier les tiers.
+peppolBookLinkedExisting = Cette facture fournisseur existait déjà (même fournisseur et même numéro) ; le document y est lié.
+peppolBookNote = Comptabilisée depuis le document Peppol %s.
+peppolBookTotalDiffers = Gardée en brouillon : le total de la facture (%s) diffère du total de la facture électronique (%s). Vérifiez les lignes et validez.
+peppolBookNoValidateRight = Gardée en brouillon : vous n'avez pas le droit de valider les factures fournisseurs.
+peppolBookValidateFailed = Gardée en brouillon : la validation a échoué (%s).
+peppolBookFilesNotAttached = Le PDF ou le XML n'a pas pu être joint à la facture.
+peppolBookDoneValidated = Comptabilisée et validée.
+peppolBookDoneDraft = Comptabilisée en brouillon.
+peppolBookSupplierCreated = Le fournisseur a été créé depuis la facture électronique.
+peppolBookOpenInvoice = Ouvrir la facture fournisseur
+
+# Setup: booking and automatic tasks
+peppolSetupBooking = Comptabilisation des factures entrantes (bouton « Comptabiliser »)
+peppolSetupBookMode = Factures comptabilisées
+peppolSetupBookModeHelp = Valider tout de suite si le total correspond au total de la facture électronique, ou toujours garder un brouillon à vérifier.
+peppolSetupBookModeValidate = Valider si le total correspond
+peppolSetupBookModeDraft = Toujours garder en brouillon
+peppolSetupCreateSupplier = Créer les fournisseurs inconnus
+peppolSetupCreateSupplierHelp = Si aucun tiers n'a l'identifiant Peppol, le numéro de TVA ou le numéro d'entreprise, le fournisseur est créé depuis la facture électronique. Non : la facture n'est pas comptabilisée ; créez ou liez d'abord le fournisseur.
+peppolSetupUpdateSupplier = Compléter les tiers connus
+peppolSetupUpdateSupplierHelp = Enregistrer l'identifiant Peppol sur un tiers connu qui n'en a pas, et en faire un fournisseur s'il ne l'est pas.
+peppolSetupAutomation = Tâches automatiques (travaux planifiés)
+peppolSetupJobFetch = Récupérer chaque jour les documents entrants
+peppolSetupJobFetchHelp = Récupère les nouveaux documents du point d'accès dans Documents entrants. Rien n'est comptabilisé automatiquement.
+peppolSetupJobCandidates = Contrôle hebdomadaire des clients et fournisseurs dans l'annuaire Peppol
+peppolSetupJobCandidatesHelp = Cherche les clients et fournisseurs sans identifiant Peppol dans l'annuaire Peppol (candidats Peppol).
+peppolSetupAutoSend = Envoyer automatiquement les factures clients
+peppolSetupAutoSendHelp = Désactivé par défaut. Envoie aux heures ci-dessous les factures clients validées, non encore envoyées, des clients ayant un identifiant Peppol. Seules les factures validées après l'activation sont envoyées ; les factures plus anciennes ne le sont jamais automatiquement.
+peppolSetupAutoSendSince = Activé le %s : les factures validées à partir de ce moment sont envoyées.
+peppolSetupAutoSendTestMode = Le module est en mode test : les factures vont au point d'accès de test.
+peppolSetupAutoSendHours = Heures d'envoi
+peppolSetupAutoSendHoursHelp = Heure(s) de la journée, par exemple 9 pour une fois par jour, ou 9,13,17 pour trois fois par jour.
+peppolSetupAutoSendMax = Maximum par envoi
+peppolSetupAutoSendMaxHelp = Au plus ce nombre de factures par heure d'envoi ; le reste suit à l'heure d'envoi suivante.
+peppolSetupCronList = Travaux planifiés
+peppolSetupCronListLink = Ouvrir les travaux planifiés de ce module
+peppolSetupCronModuleOff = Le module « Travaux planifiés » est désactivé : les tâches automatiques ne tournent pas. Activez-le dans Modules.
+peppolSetupJobMissing = Ce travail planifié n'existe pas encore : désactivez puis réactivez le module une fois (les réglages sont conservés).
+peppolBookSupplierUnknownNoCreate = Le fournisseur est inconnu et la création de fournisseurs est désactivée dans la configuration du module.
+peppolAutoSendNotNow = Pas une heure d'envoi : rien n'est envoyé.
+peppolAutoSendNoRight = L'utilisateur du travail planifié n'a pas le droit d'envoyer les factures (Peppol : écriture et créer des factures).
+peppolAutoSendResult = %s facture(s) envoyée(s), %s ignorée(s) (pas de fichier Peppol), %s en échec.
+
+# About page
+peppolAboutReactivate = Version activée : %s. Désactivez puis réactivez le module une fois pour terminer la mise à jour.
+peppolAboutChangelog = Nouveautés
+peppolAboutChangelogHelp = Les versions les plus récentes (en anglais) ; la liste complète est dans CHANGELOG.md du module.
+peppolAboutReadme = À propos du module
+
+# Recommended Dolibarr version
+peppolDolibarrRecommended = Dolibarr %s avec PHP %s : le module fonctionne, mais Dolibarr 22 ou plus récent est recommandé. Les versions plus anciennes ne reçoivent plus de mises à jour de sécurité et ne sont pas testées avec PHP 8.4 ou 8.5.

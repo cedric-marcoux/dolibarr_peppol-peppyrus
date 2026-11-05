@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: GPL-3.0-or-later
 $matches  = preg_grep('/Restler\/AutoLoader.php/i', get_included_files());
 dol_syslog("Peppol matches test for restler is (1) " . json_encode($matches));
 if (count($matches) == 0) {

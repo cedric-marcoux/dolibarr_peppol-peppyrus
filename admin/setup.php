@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 /**
  * \file    peppol/admin/setup.php
@@ -23,6 +24,13 @@ if (!$res && file_exists("../../main.inc.php")) $res = include "../../main.inc.p
 if (!$res && file_exists("../../../main.inc.php")) $res = include "../../../main.inc.php";
 if (!$res) die("Include of main fails");
 
+
+/**
+ * @var Conf $conf
+ * @var DoliDB $db
+ * @var Translate $langs
+ * @var User $user
+ */
 global $langs, $user, $conf, $db;
 
 // Libraries
@@ -54,17 +62,30 @@ if ($action == 'update' && !empty($user->admin)) {
 		$error++;
 	}
 
-	// Update PEPPOL_AP_API_KEY (Production)
-	// Use 'alphanohtml' to allow alphanumeric characters (API keys contain numbers)
-	$api_key = GETPOST('PEPPOL_AP_API_KEY', 'alphanohtml');
-	if (!dolibarr_set_const($db, 'PEPPOL_AP_API_KEY', $api_key, 'chaine', 0, '', $conf->entity)) {
-		$error++;
+	// Secrets (names end with _KEY so dolibarr_set_const() stores them encrypted).
+	// An empty field means: keep the current value. Secrets are never sent back to the browser.
+	$secretfields = array(
+		'PEPPOL_AP_API_KEY' => 'PEPPOL_AP_API_KEY',
+		'PEPPOL_AP_DEV_API_KEY' => 'PEPPOL_AP_DEV_API_KEY',
+		'PEPPOL_AP_WEBHOOK_KEY' => 'PEPPOL_AP_WEBHOOK_KEY',
+	);
+	foreach ($secretfields as $field => $constname) {
+		$secret = trim(GETPOST($field, 'alphanohtml'));
+		if ($secret !== '') {
+			if (!dolibarr_set_const($db, $constname, $secret, 'chaine', 0, '', $conf->entity)) {
+				$error++;
+			} elseif ($constname == 'PEPPOL_AP_DEV_API_KEY') {
+				// Old name was not encrypted, remove it once the new one is stored
+				dolibarr_del_const($db, 'PEPPOL_AP_API_KEY_DEV', $conf->entity);
+			}
+		}
 	}
 
-	// Update PEPPOL_AP_API_KEY_DEV (Test/Development)
-	// Use 'alphanohtml' to allow alphanumeric characters (API keys contain numbers)
-	$api_key_dev = GETPOST('PEPPOL_AP_API_KEY_DEV', 'alphanohtml');
-	if (!dolibarr_set_const($db, 'PEPPOL_AP_API_KEY_DEV', $api_key_dev, 'chaine', 0, '', $conf->entity)) {
+	// VAT category of 0% lines: exemption reason (category E) or 'O' (not subject to VAT, old behaviour)
+	$exemptcode = GETPOST('PEPPOL_VAT_EXEMPT_CODE', 'alphanohtml');
+	if ($exemptcode !== 'O' && !array_key_exists($exemptcode, peppolVatExemptChoices())) {
+		$error++;
+	} elseif (!dolibarr_set_const($db, 'PEPPOL_VAT_EXEMPT_CODE', $exemptcode, 'chaine', 0, '', $conf->entity)) {
 		$error++;
 	}
 
@@ -99,6 +120,35 @@ if ($action == 'update' && !empty($user->admin)) {
 	exit;
 }
 
+// Automation and booking (own form on this page)
+if ($action == 'updateauto' && !empty($user->admin)) {
+	$error = 0;
+	$mode = GETPOST('PEPPOL_BOOK_MODE', 'aZ09') === 'draft' ? 'draft' : 'validate';
+	$error += dolibarr_set_const($db, 'PEPPOL_BOOK_MODE', $mode, 'chaine', 0, '', $conf->entity) > 0 ? 0 : 1;
+	$error += dolibarr_set_const($db, 'PEPPOL_BOOK_CREATE_SUPPLIER', (string) (((int) GETPOST('PEPPOL_BOOK_CREATE_SUPPLIER', 'int')) ? 1 : 0), 'chaine', 0, '', $conf->entity) > 0 ? 0 : 1;
+	$error += dolibarr_set_const($db, 'PEPPOL_BOOK_UPDATE_SUPPLIER', (string) (((int) GETPOST('PEPPOL_BOOK_UPDATE_SUPPLIER', 'int')) ? 1 : 0), 'chaine', 0, '', $conf->entity) > 0 ? 0 : 1;
+
+	$error += peppolSetCronJob($db, 'runDailyFetch', ((int) GETPOST('PEPPOL_JOB_FETCH', 'int'))) ? 0 : 1;
+	$error += peppolSetCronJob($db, 'runWeeklyCheck', ((int) GETPOST('PEPPOL_JOB_CANDIDATES', 'int'))) ? 0 : 1;
+
+	// Automatic sending: when switched on, only invoices validated from now on are sent
+	$sendOn = ((int) GETPOST('PEPPOL_AUTO_SEND', 'int')) ? 1 : 0;
+	if ($sendOn && !getDolGlobalInt('PEPPOL_AUTO_SEND')) {
+		dolibarr_set_const($db, 'PEPPOL_AUTO_SEND_SINCE', (string) dol_now(), 'chaine', 0, '', $conf->entity);
+		dolibarr_del_const($db, 'PEPPOL_AUTO_SEND_LAST_SLOT', $conf->entity);
+	}
+	$error += peppolSetCronJob($db, 'runAutoSend', $sendOn) ? 0 : 1;
+	require_once __DIR__ . '/../class/peppolautosend.class.php';
+	$hours = implode(',', PeppolAutoSend::hours(GETPOST('PEPPOL_AUTO_SEND_HOURS', 'alphanohtml')));
+	$error += dolibarr_set_const($db, 'PEPPOL_AUTO_SEND_HOURS', $hours, 'chaine', 0, '', $conf->entity) > 0 ? 0 : 1;
+	$max = min(500, max(1, ((int) GETPOST('PEPPOL_AUTO_SEND_MAX', 'int'))));
+	$error += dolibarr_set_const($db, 'PEPPOL_AUTO_SEND_MAX', (string) $max, 'chaine', 0, '', $conf->entity) > 0 ? 0 : 1;
+
+	setEventMessages($langs->trans($error ? "Error" : "SetupSaved"), null, $error ? 'errors' : 'mesgs');
+	header("Location: " . $_SERVER["PHP_SELF"]);
+	exit;
+}
+
 // Test connection action
 if ($action == 'check') {
 	$fact = new Facture($db);
@@ -128,6 +178,7 @@ $apiUrl = $isProd ? 'https://api.peppyrus.be/v1/' : 'https://api.test.peppyrus.b
 $modeLabel = $isProd ? $langs->trans('peppolModeProduction') : $langs->trans('peppolModeTest');
 $modeClass = $isProd ? 'warning' : 'info';
 
+print peppolDolibarrRecommendedNotice();
 print '<div class="'.$modeClass.'" style="margin-bottom: 20px; padding: 15px;">';
 print '<i class="fas fa-'.($isProd ? 'exclamation-triangle' : 'info-circle').'"></i> ';
 print '<strong>' . $langs->trans('peppolCurrentMode') . ':</strong> ';
@@ -157,21 +208,28 @@ if ($action == 'edit') {
 	print '<tr class="oddeven">';
 	print '<td><label for="PEPPOL_AP_SENDER_ID">' . $langs->trans("PEPPOL_AP_SENDER_ID") . '</label>';
 	print '<br><span class="opacitymedium small">' . $langs->trans("PEPPOL_AP_SENDER_IDTooltip") . '</span></td>';
-	print '<td><input type="text" name="PEPPOL_AP_SENDER_ID" id="PEPPOL_AP_SENDER_ID" class="flat minwidth400" value="' . getDolGlobalString('PEPPOL_AP_SENDER_ID', '') . '" placeholder="0208:0000000097"></td>';
+	print '<td><input type="text" name="PEPPOL_AP_SENDER_ID" id="PEPPOL_AP_SENDER_ID" class="flat minwidth400" value="' . dol_escape_htmltag(getDolGlobalString('PEPPOL_AP_SENDER_ID', '')) . '" placeholder="0208:0000000097"></td>';
 	print '</tr>';
 
 	// PEPPOL_AP_API_KEY (Production)
 	print '<tr class="oddeven">';
 	print '<td><label for="PEPPOL_AP_API_KEY">' . $langs->trans("PEPPOL_AP_API_KEY") . '</label>';
 	print '<br><span class="opacitymedium small">' . $langs->trans("PEPPOL_AP_API_KEYTooltip") . '</span></td>';
-	print '<td><input type="text" name="PEPPOL_AP_API_KEY" id="PEPPOL_AP_API_KEY" class="flat minwidth400" value="' . getDolGlobalString('PEPPOL_AP_API_KEY', '') . '"></td>';
+	print '<td><input type="password" name="PEPPOL_AP_API_KEY" id="PEPPOL_AP_API_KEY" class="flat minwidth400" value="" autocomplete="new-password" placeholder="' . dol_escape_htmltag($langs->trans(peppolGetApiKey('PEPPOL_AP_API_KEY') ? "PeppolSecretKeepCurrent" : "NotConfigured")) . '"></td>';
 	print '</tr>';
 
-	// PEPPOL_AP_API_KEY_DEV (Test/Development)
+	// PEPPOL_AP_DEV_API_KEY (Test/Development)
 	print '<tr class="oddeven">';
-	print '<td><label for="PEPPOL_AP_API_KEY_DEV">' . $langs->trans("PEPPOL_AP_API_KEY_DEV") . '</label>';
+	print '<td><label for="PEPPOL_AP_DEV_API_KEY">' . $langs->trans("PEPPOL_AP_API_KEY_DEV") . '</label>';
 	print '<br><span class="opacitymedium small">' . $langs->trans("PEPPOL_AP_API_KEY_DEVTooltip") . '</span></td>';
-	print '<td><input type="text" name="PEPPOL_AP_API_KEY_DEV" id="PEPPOL_AP_API_KEY_DEV" class="flat minwidth400" value="' . getDolGlobalString('PEPPOL_AP_API_KEY_DEV', '') . '"></td>';
+	print '<td><input type="password" name="PEPPOL_AP_DEV_API_KEY" id="PEPPOL_AP_DEV_API_KEY" class="flat minwidth400" value="" autocomplete="new-password" placeholder="' . dol_escape_htmltag($langs->trans(peppolGetApiKey('PEPPOL_AP_DEV_API_KEY') ? "PeppolSecretKeepCurrent" : "NotConfigured")) . '"></td>';
+	print '</tr>';
+
+	// PEPPOL_AP_WEBHOOK_KEY
+	print '<tr class="oddeven">';
+	print '<td><label for="PEPPOL_AP_WEBHOOK_KEY">' . $langs->trans("PEPPOL_AP_WEBHOOK_KEY") . '</label>';
+	print '<br><span class="opacitymedium small">' . $langs->trans("PEPPOL_AP_WEBHOOK_KEYTooltip") . '</span></td>';
+	print '<td><input type="password" name="PEPPOL_AP_WEBHOOK_KEY" id="PEPPOL_AP_WEBHOOK_KEY" class="flat minwidth400" value="" autocomplete="new-password" placeholder="' . dol_escape_htmltag($langs->trans(getDolGlobalString('PEPPOL_AP_WEBHOOK_KEY') ? "PeppolSecretKeepCurrent" : "NotConfigured")) . '"></td>';
 	print '</tr>';
 
 	// PEPPOL_PROD
@@ -183,6 +241,19 @@ if ($action == 'edit') {
 	print '<option value="1"' . (getDolGlobalString('PEPPOL_PROD', '') ? ' selected' : '') . '>' . $langs->trans("Yes") . ' (' . $langs->trans("peppolModeProduction") . ')</option>';
 	print '</select>';
 	print '</td>';
+	print '</tr>';
+
+	// PEPPOL_VAT_EXEMPT_CODE
+	$curexempt = peppolVatExemptCode();
+	print '<tr class="oddeven">';
+	print '<td><label for="PEPPOL_VAT_EXEMPT_CODE">' . $langs->trans("PEPPOL_VAT_EXEMPT_CODE") . '</label>';
+	print '<br><span class="opacitymedium small">' . $langs->trans("PEPPOL_VAT_EXEMPT_CODETooltip") . '</span></td>';
+	print '<td><select name="PEPPOL_VAT_EXEMPT_CODE" id="PEPPOL_VAT_EXEMPT_CODE" class="flat minwidth400">';
+	print '<option value="O"' . ($curexempt === '' ? ' selected' : '') . '>' . dol_escape_htmltag($langs->trans("PeppolVatCategoryO")) . '</option>';
+	foreach (peppolVatExemptChoices() as $code => $label) {
+		print '<option value="' . dol_escape_htmltag($code) . '"' . ($curexempt === $code ? ' selected' : '') . '>' . dol_escape_htmltag($code . ' - ' . $label) . '</option>';
+	}
+	print '</select></td>';
 	print '</tr>';
 
 	print '</tbody>';
@@ -233,7 +304,6 @@ if ($action == 'edit') {
 	print '</div>';
 
 	print '</form>';
-
 } else {
 	// View mode
 	print '<table class="noborder centpercent">';
@@ -249,39 +319,37 @@ if ($action == 'edit') {
 	print '<tr class="oddeven">';
 	print '<td>' . $langs->trans("PEPPOL_AP_SENDER_ID") . '</td>';
 	$sender_id = getDolGlobalString('PEPPOL_AP_SENDER_ID', '');
-	print '<td>' . ($sender_id ? $sender_id : '<span class="opacitymedium">' . $langs->trans("NotConfigured") . '</span>') . '</td>';
+	print '<td>' . ($sender_id ? dol_escape_htmltag($sender_id) : '<span class="opacitymedium">' . $langs->trans("NotConfigured") . '</span>') . '</td>';
 	print '</tr>';
 
-	// PEPPOL_AP_API_KEY (Production)
-	print '<tr class="oddeven">';
-	print '<td>' . $langs->trans("PEPPOL_AP_API_KEY") . '</td>';
-	$api_key = getDolGlobalString('PEPPOL_AP_API_KEY', '');
-	if ($api_key) {
-		// Mask API key for security
-		$masked = substr($api_key, 0, 4) . str_repeat('*', max(0, strlen($api_key) - 8)) . substr($api_key, -4);
-		print '<td>' . $masked . '</td>';
-	} else {
-		print '<td><span class="opacitymedium">' . $langs->trans("NotConfigured") . '</span></td>';
+	// Secrets: only show whether they are configured, never (part of) the value
+	$secretrows = array(
+		'PEPPOL_AP_API_KEY' => peppolGetApiKey('PEPPOL_AP_API_KEY'),
+		'PEPPOL_AP_API_KEY_DEV' => peppolGetApiKey('PEPPOL_AP_DEV_API_KEY'),
+		'PEPPOL_AP_WEBHOOK_KEY' => getDolGlobalString('PEPPOL_AP_WEBHOOK_KEY'),
+	);
+	foreach ($secretrows as $label => $secretvalue) {
+		print '<tr class="oddeven">';
+		print '<td>' . $langs->trans($label) . '</td>';
+		if ($secretvalue !== '') {
+			print '<td>' . $langs->trans("PeppolSecretConfigured") . '</td>';
+		} else {
+			print '<td><span class="opacitymedium">' . $langs->trans("NotConfigured") . '</span></td>';
+		}
+		print '</tr>';
 	}
-	print '</tr>';
-
-	// PEPPOL_AP_API_KEY_DEV (Test/Development)
-	print '<tr class="oddeven">';
-	print '<td>' . $langs->trans("PEPPOL_AP_API_KEY_DEV") . '</td>';
-	$api_key_dev = getDolGlobalString('PEPPOL_AP_API_KEY_DEV', '');
-	if ($api_key_dev) {
-		// Mask API key for security
-		$masked_dev = substr($api_key_dev, 0, 4) . str_repeat('*', max(0, strlen($api_key_dev) - 8)) . substr($api_key_dev, -4);
-		print '<td>' . $masked_dev . '</td>';
-	} else {
-		print '<td><span class="opacitymedium">' . $langs->trans("NotConfigured") . '</span></td>';
-	}
-	print '</tr>';
 
 	// PEPPOL_PROD
 	print '<tr class="oddeven">';
 	print '<td>' . $langs->trans("PEPPOL_PROD") . '</td>';
 	print '<td>' . yn(getDolGlobalString('PEPPOL_PROD', '')) . '</td>';
+	print '</tr>';
+
+	// PEPPOL_VAT_EXEMPT_CODE
+	$curexempt = peppolVatExemptCode();
+	print '<tr class="oddeven">';
+	print '<td>' . $langs->trans("PEPPOL_VAT_EXEMPT_CODE") . '</td>';
+	print '<td>' . dol_escape_htmltag($curexempt !== '' ? 'E: ' . $curexempt . ' - ' . peppolVatExemptChoices()[$curexempt] : $langs->trans("PeppolVatCategoryO")) . '</td>';
 	print '</tr>';
 
 	print '</tbody>';
@@ -317,6 +385,83 @@ if ($action == 'edit') {
 	print '<a class="butAction" href="' . $_SERVER["PHP_SELF"] . '?action=check&token=' . newToken() . '">' . $langs->trans("peppolBtnCheckServer") . '</a>';
 	print '</div>';
 }
+
+// Automation and booking: what the module does by itself, and how incoming invoices are booked
+$jobStatus = array();
+foreach (array_keys(peppolCronSettings()) as $method) {
+	$jobStatus[$method] = peppolCronJobStatus($db, $method);
+}
+$yesno = function ($name, $value) use ($langs) {
+	$html = '<select name="' . $name . '" id="' . $name . '" class="flat">';
+	$html .= '<option value="1"' . ($value ? ' selected' : '') . '>' . $langs->trans('Yes') . '</option>';
+	$html .= '<option value="0"' . ($value ? '' : ' selected') . '>' . $langs->trans('No') . '</option></select>';
+	return $html;
+};
+$jobNote = function ($status) use ($langs) {
+	return $status < 0 ? '<br><span class="warning small">' . $langs->trans('peppolSetupJobMissing') . '</span>' : '';
+};
+
+print '<br>';
+print '<form method="POST" action="' . $_SERVER["PHP_SELF"] . '">';
+print '<input type="hidden" name="token" value="' . newToken() . '">';
+print '<input type="hidden" name="action" value="updateauto">';
+print '<table class="noborder centpercent">';
+print '<tr class="liste_titre"><td colspan="2">' . $langs->trans('peppolSetupBooking') . '</td></tr>';
+
+print '<tr class="oddeven"><td><label for="PEPPOL_BOOK_MODE">' . $langs->trans('peppolSetupBookMode') . '</label>';
+print '<br><span class="opacitymedium small">' . $langs->trans('peppolSetupBookModeHelp') . '</span></td><td>';
+print '<select name="PEPPOL_BOOK_MODE" id="PEPPOL_BOOK_MODE" class="flat">';
+foreach (array('validate' => 'peppolSetupBookModeValidate', 'draft' => 'peppolSetupBookModeDraft') as $k => $label) {
+	print '<option value="' . $k . '"' . (getDolGlobalString('PEPPOL_BOOK_MODE', 'validate') === $k ? ' selected' : '') . '>' . $langs->trans($label) . '</option>';
+}
+print '</select></td></tr>';
+
+print '<tr class="oddeven"><td><label for="PEPPOL_BOOK_CREATE_SUPPLIER">' . $langs->trans('peppolSetupCreateSupplier') . '</label>';
+print '<br><span class="opacitymedium small">' . $langs->trans('peppolSetupCreateSupplierHelp') . '</span></td>';
+print '<td>' . $yesno('PEPPOL_BOOK_CREATE_SUPPLIER', getDolGlobalInt('PEPPOL_BOOK_CREATE_SUPPLIER', 1)) . '</td></tr>';
+
+print '<tr class="oddeven"><td><label for="PEPPOL_BOOK_UPDATE_SUPPLIER">' . $langs->trans('peppolSetupUpdateSupplier') . '</label>';
+print '<br><span class="opacitymedium small">' . $langs->trans('peppolSetupUpdateSupplierHelp') . '</span></td>';
+print '<td>' . $yesno('PEPPOL_BOOK_UPDATE_SUPPLIER', getDolGlobalInt('PEPPOL_BOOK_UPDATE_SUPPLIER', 1)) . '</td></tr>';
+
+print '<tr class="liste_titre"><td colspan="2">' . $langs->trans('peppolSetupAutomation') . '</td></tr>';
+
+print '<tr class="oddeven"><td><label for="PEPPOL_JOB_FETCH">' . $langs->trans('peppolSetupJobFetch') . '</label>';
+print '<br><span class="opacitymedium small">' . $langs->trans('peppolSetupJobFetchHelp') . '</span>' . $jobNote($jobStatus['runDailyFetch']) . '</td>';
+print '<td>' . $yesno('PEPPOL_JOB_FETCH', $jobStatus['runDailyFetch'] > 0) . '</td></tr>';
+
+print '<tr class="oddeven"><td><label for="PEPPOL_JOB_CANDIDATES">' . $langs->trans('peppolSetupJobCandidates') . '</label>';
+print '<br><span class="opacitymedium small">' . $langs->trans('peppolSetupJobCandidatesHelp') . '</span>' . $jobNote($jobStatus['runWeeklyCheck']) . '</td>';
+print '<td>' . $yesno('PEPPOL_JOB_CANDIDATES', $jobStatus['runWeeklyCheck'] > 0) . '</td></tr>';
+
+print '<tr class="oddeven"><td><label for="PEPPOL_AUTO_SEND">' . $langs->trans('peppolSetupAutoSend') . '</label>';
+print '<br><span class="opacitymedium small">' . $langs->trans('peppolSetupAutoSendHelp') . '</span>' . $jobNote($jobStatus['runAutoSend']);
+if ($jobStatus['runAutoSend'] > 0 && getDolGlobalInt('PEPPOL_AUTO_SEND_SINCE') > 0) {
+	print '<br><span class="small">' . $langs->trans('peppolSetupAutoSendSince', dol_print_date(getDolGlobalInt('PEPPOL_AUTO_SEND_SINCE'), 'dayhour', 'tzuserrel')) . '</span>';
+}
+if ($jobStatus['runAutoSend'] > 0 && !getDolGlobalString('PEPPOL_PROD')) {
+	print '<br><span class="warning small">' . $langs->trans('peppolSetupAutoSendTestMode') . '</span>';
+}
+print '</td><td>' . $yesno('PEPPOL_AUTO_SEND', $jobStatus['runAutoSend'] > 0) . '</td></tr>';
+
+print '<tr class="oddeven"><td><label for="PEPPOL_AUTO_SEND_HOURS">' . $langs->trans('peppolSetupAutoSendHours') . '</label>';
+print '<br><span class="opacitymedium small">' . $langs->trans('peppolSetupAutoSendHoursHelp') . '</span></td>';
+print '<td><input type="text" class="flat width100" name="PEPPOL_AUTO_SEND_HOURS" id="PEPPOL_AUTO_SEND_HOURS" value="' . dol_escape_htmltag(getDolGlobalString('PEPPOL_AUTO_SEND_HOURS', '9')) . '" placeholder="9"></td></tr>';
+
+print '<tr class="oddeven"><td><label for="PEPPOL_AUTO_SEND_MAX">' . $langs->trans('peppolSetupAutoSendMax') . '</label>';
+print '<br><span class="opacitymedium small">' . $langs->trans('peppolSetupAutoSendMaxHelp') . '</span></td>';
+print '<td><input type="number" min="1" max="500" class="flat width75" name="PEPPOL_AUTO_SEND_MAX" id="PEPPOL_AUTO_SEND_MAX" value="' . getDolGlobalInt('PEPPOL_AUTO_SEND_MAX', 20) . '"></td></tr>';
+
+print '<tr class="oddeven"><td>' . $langs->trans('peppolSetupCronList') . '</td><td>';
+if (isModEnabled('cron')) {
+	print '<a href="' . DOL_URL_ROOT . '/cron/list.php?search_module_name=peppolpeppyrus">' . img_picto('', 'cron', 'class="pictofixedwidth"') . $langs->trans('peppolSetupCronListLink') . '</a>';
+} else {
+	print '<span class="warning">' . $langs->trans('peppolSetupCronModuleOff') . '</span>';
+}
+print '</td></tr>';
+print '</table>';
+print '<div class="center"><input type="submit" class="button button-save" value="' . $langs->trans('Save') . '"></div>';
+print '</form>';
 
 // Page end
 print dol_get_fiche_end();

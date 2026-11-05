@@ -1,0 +1,269 @@
+# Checks on every push and pull request (same approach as DoliCloud/DoliMods and RealRidrick/dolibarr-module).
+# Supported range: Dolibarr 18.0 up to 24.0.2, PHP 7.1 or later (README, "Standard and deliberate deviations").
+name: Checks
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  syntax:
+    name: PHP syntax ${{ matrix.php }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: [ '7.1', '7.4', '8.1', '8.2', '8.3', '8.4', '8.5' ]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          tools: parallel-lint
+      - name: parallel-lint (the module, its tests and the einvoicing library in vendor/)
+        run: parallel-lint --exclude .git --exclude .github .
+
+  codestyle:
+    name: Code standard and debug leftovers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Ruleset of DoliCloud/DoliMods (not copied into this repository)
+        run: |
+          git clone --quiet --depth 1 --filter=blob:none --sparse https://github.com/DoliCloud/DoliMods.git .dolimods
+          git -C .dolimods sparse-checkout set dev/setup/codesniffer
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          tools: phpcs:3, cs2pr, php-parallel-lint/php-var-dump-check
+      - name: phpcs (phpcs.xml.dist)
+        run: phpcs -q --report=checkstyle | cs2pr --graceful-warnings
+      - name: No var_dump or print_r
+        run: var-dump-check --extensions php --exclude .git --exclude vendor --exclude backport --exclude .dolimods --exclude dev .
+      # Deprecated in PHP 8.5 (and doing nothing since PHP 8.0); a syntax check does not see this
+      - name: No functions deprecated in PHP 8.5
+        run: |
+          if grep -rnE --include=*.php '\b(curl_close|curl_share_close|finfo_close|imagedestroy|xml_parser_free)\s*\(' --exclude-dir=.git --exclude-dir=vendor --exclude-dir=backport --exclude-dir=.dolimods .; then
+            echo "::error::Do not use functions that are deprecated in PHP 8.5 (see above)."
+            exit 1
+          fi
+
+  versions:
+    name: Versions (VERSION, module, CHANGELOG)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+      - run: php dev/tools/check-versions.php
+
+  secrets:
+    name: No passwords or keys
+    runs-on: ubuntu-latest
+    env:
+      GITLEAKS_VERSION: 8.30.0
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: gitleaks
+        run: |
+          set -euo pipefail
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" | tar xz gitleaks
+          ./gitleaks git --redact --no-banner --exit-code 1 .
+
+  workflows:
+    name: Workflow files (actionlint)
+    runs-on: ubuntu-latest
+    env:
+      ACTIONLINT_VERSION: 1.7.7
+    steps:
+      - uses: actions/checkout@v7
+      - name: actionlint
+        run: |
+          set -euo pipefail
+          curl -sSL "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz" | tar xz actionlint
+          ./actionlint -shellcheck= -pyflakes=
+
+  phpstan:
+    name: PHPStan against Dolibarr ${{ matrix.dolibarr }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dolibarr: [ '18.0', '24.0.2' ]
+    env:
+      PHPSTAN_VERSION: 2.1.17
+    steps:
+      - uses: actions/checkout@v7
+      - name: Dolibarr ${{ matrix.dolibarr }} (only to know the core, not analysed)
+        uses: actions/checkout@v7
+        with:
+          repository: Dolibarr/dolibarr
+          ref: ${{ matrix.dolibarr }}
+          path: .ci/dolibarr
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          tools: cs2pr
+      - name: PHPStan (phpstan.neon.dist, baseline in dev/phpstan)
+        env:
+          DOLIBARR_HTDOCS: ${{ github.workspace }}/.ci/dolibarr/htdocs
+        run: |
+          curl -sSL -o phpstan.phar "https://github.com/phpstan/phpstan/releases/download/${PHPSTAN_VERSION}/phpstan.phar"
+          php -d memory_limit=4G phpstan.phar analyse --no-progress --error-format=checkstyle | cs2pr --graceful-warnings
+
+  # SQL injection with the Phan plugin of Dolibarr itself (dev/phan/config.php); the plugin exists since Dolibarr 24
+  phan:
+    name: Phan SQL injection
+    runs-on: ubuntu-latest
+    env:
+      PHAN_VERSION: 5.5.1
+    steps:
+      - uses: actions/checkout@v7
+      - name: Dolibarr 24.0.2 (only to know the core and the plugin, not analysed)
+        uses: actions/checkout@v7
+        with:
+          repository: Dolibarr/dolibarr
+          ref: '24.0.2'
+          path: .ci/dolibarr
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          extensions: ast
+          tools: cs2pr
+      - name: Phan with SqlInjectionPlugin
+        env:
+          DOLIBARR_HTDOCS: ${{ github.workspace }}/.ci/dolibarr/htdocs
+        run: |
+          curl -sSL -o phan.phar "https://github.com/phan/phan/releases/download/${PHAN_VERSION}/phan.phar"
+          php -d memory_limit=4G phan.phar --config-file dev/phan/config.php --no-progress-bar --output-mode checkstyle | cs2pr
+
+  phpunit:
+    name: PHPUnit against Dolibarr ${{ matrix.dolibarr }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dolibarr: [ '18.0', '24.0.2' ]
+    steps:
+      - uses: actions/checkout@v7
+      - name: Dolibarr ${{ matrix.dolibarr }}
+        uses: actions/checkout@v7
+        with:
+          repository: Dolibarr/dolibarr
+          ref: ${{ matrix.dolibarr }}
+          path: .ci/dolibarr
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          tools: phpunit:9.6
+      - name: PHPUnit (phpunit.xml.dist)
+        env:
+          DOLIBARR_HTDOCS: ${{ github.workspace }}/.ci/dolibarr/htdocs
+        run: phpunit
+
+  sqlshell:
+    name: SQL and shell files
+    runs-on: ubuntu-latest
+    env:
+      SQLFLUFF_VERSION: 3.4.2
+      SHELLCHECK_VERSION: 0.10.0.1
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install sqlfluff and shellcheck
+        run: pip install --quiet "sqlfluff==${SQLFLUFF_VERSION}" "shellcheck-py==${SHELLCHECK_VERSION}"
+      - name: sqlfluff (.sqlfluff)
+        run: sqlfluff lint sql/
+      - name: shellcheck
+        run: git ls-files '*.sh' | xargs --no-run-if-empty shellcheck -W 100
+      - name: Executable scripts start with #! and scripts with #! are executable
+        run: |
+          fout=0
+          while read -r mode _ _ path; do
+            first=$(head -c 2 "$path")
+            if [ "$mode" = "100755" ] && [ "$first" != "#!" ]; then
+              echo "::error file=$path::Executable file without #! on the first line"
+              fout=1
+            fi
+            if [ "$mode" = "100644" ] && [ "$first" = "#!" ] && [ "${path##*.}" = "sh" ]; then
+              echo "::error file=$path::Script with #! is not executable (git update-index --chmod=+x)"
+              fout=1
+            fi
+          done < <(git ls-files -s)
+          exit "$fout"
+
+  # The security and language checks of the private repository RealRidrick/dolibarr-module. They only run when the
+  # secret DOLIBARR_MODULE_TOKEN (read-only access to that repository) is set; otherwise they are skipped with a
+  # notice. Not on pull requests from other forks: those get no secrets. The two documented deviations (Dolibarr 18
+  # and the languages via Transifex) are not counted as errors.
+  standard:
+    name: Standard of dolibarr-module (security, languages)
+    runs-on: ubuntu-latest
+    env:
+      TOKEN: ${{ secrets.DOLIBARR_MODULE_TOKEN }}
+    steps:
+      - name: Token present?
+        id: token
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::notice::Secret DOLIBARR_MODULE_TOKEN is not set: the checks of dolibarr-module are skipped."
+            echo "present=no" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=yes" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v7
+        if: steps.token.outputs.present == 'yes'
+        with:
+          path: module
+      - uses: actions/checkout@v7
+        if: steps.token.outputs.present == 'yes'
+        with:
+          repository: RealRidrick/dolibarr-module
+          token: ${{ secrets.DOLIBARR_MODULE_TOKEN }}
+          path: standard
+      - uses: shivammathur/setup-php@v2
+        if: steps.token.outputs.present == 'yes'
+        with:
+          php-version: '8.3'
+          coverage: none
+      - name: Put the module into the copy of dolibarr-module (without vendor, backport, dev, test)
+        if: steps.token.outputs.present == 'yes'
+        run: |
+          mkdir standard/peppolpeppyrus
+          git -C module ls-files -z | grep -zvE '^(vendor|backport|dev|test|\.github)/' | (cd module && xargs -0 cp --parents -t ../standard/peppolpeppyrus)
+      - name: Security check (dev/tools/beveiliging.php)
+        if: steps.token.outputs.present == 'yes'
+        working-directory: standard
+        run: php dev/tools/beveiliging.php
+      - name: Language files (dev/tools/taalbestanden.php), without the documented deviation
+        if: steps.token.outputs.present == 'yes'
+        working-directory: standard
+        run: |
+          set +e
+          out=$(php dev/tools/taalbestanden.php 2>&1)
+          echo "$out"
+          errors=$(echo "$out" | grep '^peppolpeppyrus:' | grep -v 'wordt niet geladen')
+          if [ -n "$errors" ]; then
+            echo "::error::Language files of the module: see above"
+            exit 1
+          fi

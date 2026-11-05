@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 /**
  * \file    peppol_list.php
@@ -10,7 +11,7 @@
 $res = 0;
 // Try main.inc.php into web root known defined into CONTEXT_DOCUMENT_ROOT (not always defined)
 if (!$res && !empty($_SERVER["CONTEXT_DOCUMENT_ROOT"])) {
-    $res = @include $_SERVER["CONTEXT_DOCUMENT_ROOT"]."/main.inc.php";
+	$res = @include $_SERVER["CONTEXT_DOCUMENT_ROOT"]."/main.inc.php";
 }
 // Try main.inc.php into web root detected using web root calculated from SCRIPT_FILENAME
 $tmp = empty($_SERVER['SCRIPT_FILENAME']) ? '' : $_SERVER['SCRIPT_FILENAME'];
@@ -18,30 +19,40 @@ $tmp2 = realpath(__FILE__);
 $i = strlen($tmp) - 1;
 $j = strlen($tmp2) - 1;
 while ($i > 0 && $j > 0 && isset($tmp[$i]) && isset($tmp2[$j]) && $tmp[$i] == $tmp2[$j]) {
-    $i--;
-    $j--;
+	$i--;
+	$j--;
 }
 if (!$res && $i > 0 && file_exists(substr($tmp, 0, ($i + 1))."/main.inc.php")) {
-    $res = @include substr($tmp, 0, ($i + 1))."/main.inc.php";
+	$res = @include substr($tmp, 0, ($i + 1))."/main.inc.php";
 }
 if (!$res && $i > 0 && file_exists(dirname(substr($tmp, 0, ($i + 1)))."/main.inc.php")) {
-    $res = @include dirname(substr($tmp, 0, ($i + 1)))."/main.inc.php";
+	$res = @include dirname(substr($tmp, 0, ($i + 1)))."/main.inc.php";
 }
 // Try main.inc.php using relative path
 if (!$res && file_exists("../main.inc.php")) {
-    $res = @include "../main.inc.php";
+	$res = @include "../main.inc.php";
 }
 if (!$res && file_exists("../../main.inc.php")) {
-    $res = @include "../../main.inc.php";
+	$res = @include "../../main.inc.php";
 }
 if (!$res && file_exists("../../../main.inc.php")) {
-    $res = @include "../../../main.inc.php";
+	$res = @include "../../../main.inc.php";
 }
 if (!$res) {
-    die("Include of main fails");
+	die("Include of main fails");
 }
 
+
+/**
+ * @var Conf $conf
+ * @var DoliDB $db
+ * @var HookManager $hookmanager
+ * @var Societe $mysoc
+ * @var Translate $langs
+ * @var User $user
+ */
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.formfile.class.php';
+dol_include_once('/peppolpeppyrus/lib/peppol.lib.php');
 
 // Load translation files required by the page
 $langs->loadLangs(array("peppol@peppolpeppyrus"));
@@ -65,11 +76,11 @@ $result = restrictedArea($user, 'peppolpeppyrus');
 
 // List of fields to show in the list
 $arrayfields = array(
-    'p.rowid' => array('label' => $langs->trans("Ref"), 'checked' => 1, 'position' => 10),
-    'p.fk_object' => array('label' => $langs->trans("Object"), 'checked' => 1, 'position' => 20),
-    'p.status' => array('label' => $langs->trans("Status"), 'checked' => 1, 'position' => 30),
-    'p.message' => array('label' => $langs->trans("Message"), 'checked' => 1, 'position' => 40),
-    'p.ap_name' => array('label' => $langs->trans("AccessPoint"), 'checked' => 1, 'position' => 50),
+	'p.rowid' => array('label' => $langs->trans("Ref"), 'checked' => 1, 'position' => 10),
+	'p.fk_object' => array('label' => $langs->trans("Object"), 'checked' => 1, 'position' => 20),
+	'p.status' => array('label' => $langs->trans("Status"), 'checked' => 1, 'position' => 30),
+	'p.message' => array('label' => $langs->trans("Message"), 'checked' => 1, 'position' => 40),
+	'p.ap_name' => array('label' => $langs->trans("AccessPoint"), 'checked' => 1, 'position' => 50),
 );
 
 /*
@@ -79,7 +90,7 @@ $arrayfields = array(
 $parameters = array();
 $reshook = $hookmanager->executeHooks('doActions', $parameters, $object, $action);
 if ($reshook < 0) {
-    setEventMessages($hookmanager->error, $hookmanager->errors, 'errors');
+	setEventMessages($hookmanager->error, $hookmanager->errors, 'errors');
 }
 
 /*
@@ -102,90 +113,90 @@ $sql .= " p.status,";
 $sql .= " p.message,";
 $sql .= " p.ap_name";
 $sql .= " FROM ".MAIN_DB_PREFIX."peppol as p";
-$sql .= " WHERE 1 = 1";
+$sql .= " WHERE p.entity IN (".getEntity('invoice').")";
 
 // Add sql order
 $sql .= $db->order('p.rowid', 'DESC');
 
 $resql = $db->query($sql);
 if ($resql) {
-    $num = $db->num_rows($resql);
+	$num = $db->num_rows($resql);
 
-    $param = '';
+	$param = '';
 
-    print '<form method="POST" id="searchFormList" action="'.$_SERVER["PHP_SELF"].'">';
-    if ($optioncss != '') {
-        print '<input type="hidden" name="optioncss" value="'.$optioncss.'">';
-    }
-    print '<input type="hidden" name="token" value="'.newToken().'">';
-    print '<input type="hidden" name="formfilter" value="list">';
-    print '<input type="hidden" name="action" value="list">';
-    print '<input type="hidden" name="sortfield" value="'.$sortfield.'">';
-    print '<input type="hidden" name="sortorder" value="'.$sortorder.'">';
-    print '<input type="hidden" name="page" value="'.$page.'">';
+	print '<form method="POST" id="searchFormList" action="'.$_SERVER["PHP_SELF"].'">';
+	if ($optioncss != '') {
+		print '<input type="hidden" name="optioncss" value="'.$optioncss.'">';
+	}
+	print '<input type="hidden" name="token" value="'.newToken().'">';
+	print '<input type="hidden" name="formfilter" value="list">';
+	print '<input type="hidden" name="action" value="list">';
+	print '<input type="hidden" name="sortfield" value="'.$sortfield.'">';
+	print '<input type="hidden" name="sortorder" value="'.$sortorder.'">';
+	print '<input type="hidden" name="page" value="'.$page.'">';
 
-    print_barre_liste($title, 0, $_SERVER["PHP_SELF"], $param, '', '', '', $num, 0, 'title_generic.png', 0, '', '', 0);
+	print_barre_liste($title, 0, $_SERVER["PHP_SELF"], $param, '', '', '', $num, 0, 'title_generic.png', 0, peppolCandidatesButton($user), '', 0);
 
-    print '<div class="div-table-responsive">';
-    print '<table class="tagtable nobottomiftotal liste">'."\n";
+	print '<div class="div-table-responsive">';
+	print '<table class="tagtable nobottomiftotal liste">'."\n";
 
-    // Fields title
-    print '<tr class="liste_titre">';
-    print '<th class="left">'.$langs->trans("Ref").'</th>';
-    print '<th class="left">'.$langs->trans("Object").'</th>';
-    print '<th class="left">'.$langs->trans("Status").'</th>';
-    print '<th class="left">'.$langs->trans("Message").'</th>';
-    print '<th class="left">'.$langs->trans("AccessPoint").'</th>';
-    print '</tr>'."\n";
+	// Fields title
+	print '<tr class="liste_titre">';
+	print '<th class="left">'.$langs->trans("Ref").'</th>';
+	print '<th class="left">'.$langs->trans("Object").'</th>';
+	print '<th class="left">'.$langs->trans("Status").'</th>';
+	print '<th class="left">'.$langs->trans("Message").'</th>';
+	print '<th class="left">'.$langs->trans("AccessPoint").'</th>';
+	print '</tr>'."\n";
 
-    $i = 0;
-    while ($i < $num) {
-        $obj = $db->fetch_object($resql);
+	$i = 0;
+	while ($i < $num) {
+		$obj = $db->fetch_object($resql);
 
-        if ($obj) {
-            // Determine object type label
-            $object_label = '';
-            if ($obj->object_typeid == 1) {
-                $object_label = $langs->trans("CustomerInvoice").' #'.$obj->fk_object;
-            } elseif ($obj->object_typeid == 2) {
-                $object_label = $langs->trans("SupplierInvoice").' #'.$obj->fk_object;
-            } else {
-                $object_label = $langs->trans("Object").' #'.$obj->fk_object;
-            }
+		if ($obj) {
+			// Determine object type label
+			$object_label = '';
+			if ($obj->object_typeid == 1) {
+				$object_label = $langs->trans("CustomerInvoice").' #'.$obj->fk_object;
+			} elseif ($obj->object_typeid == 2) {
+				$object_label = $langs->trans("SupplierInvoice").' #'.$obj->fk_object;
+			} else {
+				$object_label = $langs->trans("Object").' #'.$obj->fk_object;
+			}
 
-            print '<tr class="oddeven">';
+			print '<tr class="oddeven">';
 
-            // Ref with link to detail page
-            print '<td class="left">';
-            print '<a href="peppol_tab.php?id='.$obj->fk_object.'">'.$obj->rowid.'</a>';
-            print '</td>';
+			// Ref with link to detail page
+			print '<td class="left">';
+			print '<a href="peppol_tab.php?id='.((int) $obj->fk_object).'">'.((int) $obj->rowid).'</a>';
+			print '</td>';
 
-            // Object
-            print '<td class="left">'.$object_label.'</td>';
+			// Object
+			print '<td class="left">'.$object_label.'</td>';
 
-            // Status
-            print '<td class="left">'.dol_escape_htmltag($obj->status).'</td>';
+			// Status
+			print '<td class="left">'.dol_escape_htmltag($obj->status).'</td>';
 
-            // Message
-            print '<td class="left">'.dol_escape_htmltag($obj->message).'</td>';
+			// Message
+			print '<td class="left">'.dol_escape_htmltag($obj->message).'</td>';
 
-            // Access Point
-            print '<td class="left">'.dol_escape_htmltag($obj->ap_name).'</td>';
+			// Access Point
+			print '<td class="left">'.dol_escape_htmltag($obj->ap_name).'</td>';
 
-            print '</tr>'."\n";
-        }
+			print '</tr>'."\n";
+		}
 
-        $i++;
-    }
+		$i++;
+	}
 
-    print '</table>'."\n";
-    print '</div>';
+	print '</table>'."\n";
+	print '</div>';
 
-    print '</form>'."\n";
+	print '</form>'."\n";
 
-    $db->free($resql);
+	$db->free($resql);
 } else {
-    dol_print_error($db);
+	dol_print_error($db);
 }
 
 // End of page

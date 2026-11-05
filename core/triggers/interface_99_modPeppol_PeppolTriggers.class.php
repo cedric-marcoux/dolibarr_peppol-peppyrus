@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 /**
  * \file    core/triggers/interface_99_modPeppol_PeppolTriggers.class.php
@@ -301,7 +302,7 @@ class InterfacePeppolTriggers extends DolibarrTriggers
 			// and more...
 			case 'ECMFILES_CREATE':
 			case 'ECMFILES_MODIFY':
-				if (empty($conf->global->PEPPOL_USE_TRIGGER)) {
+				if (!getDolGlobalString('PEPPOL_USE_TRIGGER')) {
 					dol_syslog("Trigger Peppol is not enabled into module setup");
 					return 0;
 				}
@@ -310,14 +311,14 @@ class InterfacePeppolTriggers extends DolibarrTriggers
 					$inv = new \Facture($this->db);
 					$res = $inv->fetch($object->src_object_id);
 					if ($res) {
-						dol_syslog("Trigger peppol get details = ".json_encode($inv));
+						dol_syslog("Trigger peppol for invoice id=".((int) $inv->id));
 						$peppol = new \custom\peppolpeppyrus\Peppol($this->db, $inv);
 						$dir = $conf->facture->dir_output.'/'.get_exdir($inv->id, 2, 0, 0, $inv, 'invoice');
 						$filename = $dir."/".$object->filename;
 						$peppol->makePDF($filename);
 					}
 				}
-				dol_syslog("Trigger peppol ".json_encode($object));
+				dol_syslog("Trigger peppol done for file id=".((int) $object->id));
 				break;
 
 			default:

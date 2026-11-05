@@ -1,4 +1,6 @@
 {
+    "description": "Peppol e-invoicing for Dolibarr with the Peppyrus access point",
+    "license": "GPL-3.0-or-later",
     "config": {
         "vendor-dir" : "vendor"
     },

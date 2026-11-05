@@ -14,6 +14,10 @@ Ce module permet d'envoyer des factures électroniques via le réseau PEPPOL en 
 - Suivi du statut de livraison des documents
 - Recherche dans l'annuaire PEPPOL
 - Détection automatique de l'identifiant PEPPOL par numéro de TVA
+- Réception : récupération quotidienne des documents entrants et comptabilisation en un clic comme facture fournisseur
+- Candidats Peppol : contrôle hebdomadaire des clients et fournisseurs dans l'annuaire Peppol
+- Envoi automatique des factures clients à heures fixes (désactivé par défaut)
+- Tout se règle dans la configuration du module (roue dentée)
 
 ### Liens :
 - Peppyrus : [https://www.peppyrus.be](https://www.peppyrus.be)
@@ -33,6 +37,10 @@ Deze module maakt het mogelijk om elektronische facturen te verzenden via het PE
 - Tracking van de leveringsstatus van documenten
 - Zoeken in de PEPPOL-directory
 - Automatische detectie van PEPPOL-ID op basis van BTW-nummer
+- Ontvangen: elke dag inkomende documenten ophalen en met één klik inboeken als inkoopfactuur
+- Peppol-kandidaten: wekelijkse controle van klanten en leveranciers in de Peppol-directory
+- Verkoopfacturen automatisch versturen op vaste tijdstippen (standaard uit)
+- Alles in te stellen in de instellingen van de module (tandwiel)
 
 ### Links:
 - Peppyrus: [https://www.peppyrus.be](https://www.peppyrus.be)
@@ -52,6 +60,10 @@ Dieses Modul ermöglicht das Versenden elektronischer Rechnungen über das PEPPO
 - Verfolgung des Lieferstatus von Dokumenten
 - Suche im PEPPOL-Verzeichnis
 - Automatische Erkennung der PEPPOL-ID anhand der USt-IdNr.
+- Empfang: tägliches Abholen eingehender Dokumente und Buchen als Lieferantenrechnung mit einem Klick
+- Peppol-Kandidaten: wöchentliche Prüfung von Kunden und Lieferanten im Peppol-Verzeichnis
+- Automatischer Versand von Kundenrechnungen zu festen Zeiten (standardmäßig aus)
+- Alles einstellbar in der Modulkonfiguration (Zahnrad)
 
 ### Links:
 - Peppyrus: [https://www.peppyrus.be](https://www.peppyrus.be)
@@ -71,6 +83,10 @@ This module allows sending electronic invoices via the PEPPOL network using the 
 - Tracking document delivery status
 - Search in the PEPPOL directory
 - Automatic PEPPOL ID detection by VAT number
+- Receiving: daily fetch of incoming documents, booked as supplier invoice in one click
+- Peppol candidates: weekly check of customers and suppliers in the Peppol directory
+- Automatic sending of customer invoices at set hours (off by default)
+- Everything set up on the setup page of the module (gear icon)
 
 ### Links:
 - Peppyrus: [https://www.peppyrus.be](https://www.peppyrus.be)
@@ -80,10 +96,32 @@ This module allows sending electronic invoices via the PEPPOL network using the 
 
 # Technical Documentation
 
+## Peppol candidates
+
+Billing > Peppol > Peppol candidates lists customers and suppliers without a Peppol ID that a weekly scheduled job found in the Peppol directory by VAT number or registration number (never by name). Select the right ID and link it to the third party. Requires the module "Scheduled jobs" and the Dolibarr cron script on the server.
+
+## Daily fetch of incoming documents
+
+A daily scheduled job ("Peppol: daily fetch of incoming documents from the access point") fetches the new documents from the access point into Billing > Peppol > Incoming documents and confirms them at the access point, as the button "Refresh" on that page does. It does not create, validate or pay supplier invoices. A document whose download or confirmation failed stays unconfirmed at the access point and is tried again the next day. The user of the scheduled job needs the right "Peppol: write". The time of the last fetch is shown on the page. The job result and the log hold counts only. Requires the module "Scheduled jobs" and the Dolibarr cron script on the server.
+
+## Book incoming documents
+
+Billing > Peppol > Incoming documents has a button "Book" for every document that is not booked yet (also on the card of the document). One click books the e-invoice (UBL, Peppol BIS Billing 3.0) as supplier invoice, without other modules:
+
+- The supplier is found by Peppol ID, VAT number or registration number (KvK); when it is not known it is created from the e-invoice (with the right to create third parties).
+- The invoice gets the invoice number, dates, lines (quantity, price, VAT rate) and the allowances and charges of the e-invoice, and a note with the IBAN.
+- It is validated when its total equals the total in the e-invoice and the user may validate supplier invoices; otherwise it stays a draft with the reason.
+- The PDF from the e-invoice and the XML are attached to the invoice; the document is linked to the invoice.
+- Not booked automatically: credit notes, invoices in another currency, and documents without number, date or lines. An invoice with the same supplier and number is linked instead of booked twice.
+
+## Setup: booking and automatic tasks
+
+The setup page of the module (gear icon) has a block for booking incoming invoices (validate when the total matches or always keep a draft; create unknown suppliers or not; complete known third parties or not) and for the automatic tasks: fetch incoming documents every day, the weekly check in the Peppol directory, and automatic sending of validated customer invoices at set hours (off by default; only invoices validated after switching it on, at most a set number per hour of sending). A link opens the scheduled jobs of the module.
+
 ## Requirements
 
-- Dolibarr 14.0 or higher
-- PHP 7.4 or higher
+- **Recommended: Dolibarr 22 or newer** with a PHP version that Dolibarr version supports (up to PHP 8.5 for Dolibarr 24). Older Dolibarr versions get no security updates any more and are not tested with PHP 8.4 or 8.5; the setup page shows a notice on them.
+- Minimum: Dolibarr 18.0 (tested up to 24.0.2, see *Standard and deliberate deviations*) and PHP 7.1
 - A Peppyrus account (free registration at [peppyrus.be](https://www.peppyrus.be))
 
 ## Installation
@@ -103,6 +141,51 @@ This module allows sending electronic invoices via the PEPPOL network using the 
 - **Force XML with VAT null**: Generate XML even for customers without VAT number
 - **Enable API trigger**: Automatically generate Peppol XML when creating invoices via Dolibarr API
 
+## Translations
+
+As in DoliMods: `langs/en_US/peppol.lang` is the source and the only language file edited by hand. Every other language is synchronised with Transifex (`.tx/config`):
+
+- after adding or changing a key in `en_US`: `./dev/translation/txpush.sh source`
+- to get the translations: `./dev/translation/txpull.sh all` (or one language, e.g. `nl_NL`)
+- a local correction of a translation can be pushed with `./dev/translation/txpush.sh nl_NL`
+
+The Transifex organisation and project in `.tx/config` must exist; the scripts need the Transifex client (`tx`). `.tx/` and `dev/` are not part of the installation package.
+
+## Update check
+
+The module list of Dolibarr shows when a newer version exists: `checkForUpdate()` reads `VERSION` from this repository (public, so no key) over HTTPS and only accepts an answer with HTTP status 200.
+
+## Checks
+
+Every push and pull request runs `.github/workflows/checks.yml`: PHP syntax (7.1 to 8.4), `phpcs` with the DoliMods ruleset, PHPStan and PHPUnit against Dolibarr 18.0 and 24.0.2, Phan (SQL injection), versions, gitleaks, actionlint, sqlfluff and ShellCheck. Locally, from the root:
+
+```
+git clone --depth 1 https://github.com/DoliCloud/DoliMods .dolimods     # once, for phpcs
+phpcs
+php dev/tools/check-versions.php
+DOLIBARR_HTDOCS=/path/to/dolibarr/htdocs phpunit
+DOLIBARR_HTDOCS=/path/to/dolibarr/htdocs phpstan analyse
+DOLIBARR_HTDOCS=/path/to/dolibarr-24/htdocs php phan.phar --config-file dev/phan/config.php
+sqlfluff lint sql/
+```
+
+Optional, for the maintainer of this fork only: extra security and language checks from a private repository run when the secret `DOLIBARR_MODULE_TOKEN` is set. Without it they are skipped with a notice; all other checks above are public and enough for contributors. The module itself does not use anything from that repository.
+
+## Standard and deliberate deviations
+
+The module follows the rules of DoliMods (code standard, checks above) and an internal security guideline of the maintainer (rights and entity checks, CSRF tokens, escaping, no secrets or personal data in logs, long actions do not block the browser). Comments `beveiliging-uitzondering` mark the three reviewed security exceptions (the HMAC-checked webhook in `public/hook.php` and one SQL filter in `class/peppolimport.class.php`).
+
+Deliberate deviations from that internal guideline, because the module is public and also used by the original author:
+
+| Standard | Here | Reason |
+| --- | --- | --- |
+| Oldest supported Dolibarr 22.0, PHP 8.4 | Dolibarr 18.0 up to 24.0.2, PHP 7.1+ | Supported range of this module; every function used exists in Dolibarr 18 (checked against its source). |
+| Only `en_US` and `nl_NL`, both by hand | `en_US` by hand, other languages via Transifex | Same as DoliMods; the module is used in several countries. |
+| Module number between 500000 and 599999 | 436181 | Changing it would remove every granted Peppol permission (Dolibarr stores them by number), also for other users of the module. Only changed if it ever conflicts with another module. |
+| CHANGELOG and documentation in Dutch | English | Readable for everyone who uses or reviews the module. Each version has an **After updating** line. |
+| Module in a private repository | Own public repository | Fork of the module of the original author under the GPL; changes are offered back. |
+| `checkForUpdate()` with a GitHub key | Without key | The repository is public. |
+
 ## API Endpoints
 
 - **Test**: `https://api.test.peppyrus.be/v1/`
@@ -110,12 +193,20 @@ This module allows sending electronic invoices via the PEPPOL network using the 
 
 ## Source Code
 
-This plugin is available on GitHub:
-[https://github.com/cedric-marcoux/dolibarr_peppol-peppyrus](https://github.com/cedric-marcoux/dolibarr_peppol-peppyrus)
+Original module: [https://github.com/cedric-marcoux/dolibarr_peppol-peppyrus](https://github.com/cedric-marcoux/dolibarr_peppol-peppyrus)
+
+This fork (with the changes in `CHANGELOG.md`): [https://github.com/RealRidrick/dolibarr_peppol-peppyrus](https://github.com/RealRidrick/dolibarr_peppol-peppyrus)
 
 ## License
 
-GPLv3 or later.
+GPL-3.0-or-later, the same license as the original module (see `COPYING` and `NOTICE`).
+
+- The original module is by Cedric Marcoux; this fork adds the changes listed in `CHANGELOG.md` since version 2.3.0.
+- The changes of this fork are dedicated to the public domain (CC0 1.0): no copyright is claimed on them, so anyone may use, change and improve them without conditions.
+- The module as a whole stays under GPL-3.0-or-later, because it includes the original work. Each source file carries `SPDX-License-Identifier: GPL-3.0-or-later`.
+- The module is complete as published here: it does not use or need code from any other module or private repository.
+- Changes are offered back to the original module; anyone may use, change and share the module under the GPL.
+- Included libraries keep their own licenses (`vendor/*/LICENSE`), for example `josemmo/einvoicing` (MIT).
 
 ## Support
 
@@ -141,7 +232,9 @@ Peppyrus provides a separate test environment for development and testing purpos
 2. The test API key is different from the production key
 3. Configure both keys in the module settings:
    - **PEPPOL_AP_API_KEY**: Production API key
-   - **PEPPOL_AP_API_KEY_DEV**: Test/Development API key
+   - **PEPPOL_AP_DEV_API_KEY**: Test/Development API key (formerly PEPPOL_AP_API_KEY_DEV, still read until saved again)
+   - **PEPPOL_AP_WEBHOOK_KEY**: secret key for the webhook signature; without it the webhook refuses every call
+   - **PEPPOL_VAT_EXEMPT_CODE**: VAT category of invoice lines at 0% VAT that are not reverse charge and not an intra-community supply: category E with this exemption reason (default VATEX-EU-132-1C, medical care), or "Not subject to VAT" for category O
 
 ### Configuration for Testing
 

@@ -1,0 +1,11 @@
+# Not part of the installation package (git archive / GitHub zip)
+/.tx export-ignore
+/dev export-ignore
+/.gitattributes export-ignore
+/.github export-ignore
+/test export-ignore
+/phpcs.xml.dist export-ignore
+/phpstan.neon.dist export-ignore
+/phpunit.xml.dist export-ignore
+/.sqlfluff export-ignore
+/.gitignore export-ignore

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  PHPUnit tests of the module, in test/phpunit: one test file per source file, named <Source>Test.php.
+  test/ is not part of the installation package (.gitattributes).
+  Run:  DOLIBARR_HTDOCS=/path/to/dolibarr/htdocs phpunit
+-->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.6/phpunit.xsd"
+         bootstrap="test/phpunit/bootstrap.php"
+         colors="false"
+         beStrictAboutOutputDuringTests="true"
+         failOnWarning="true"
+         failOnRisky="true">
+  <testsuites>
+    <testsuite name="peppolpeppyrus">
+      <directory suffix="Test.php">./test/phpunit</directory>
+    </testsuite>
+  </testsuites>
+</phpunit>

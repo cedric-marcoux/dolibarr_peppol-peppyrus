@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 /**
  * 	\defgroup   peppolpeppyrus     Module Peppol Peppyrus
@@ -55,12 +56,12 @@ class modPeppolpeppyrus extends DolibarrModules
 
 		// Author
 		$this->editor_name = '';
-		$this->editor_url = '';
+		$this->editor_url = 'https://github.com/RealRidrick/dolibarr_peppol-peppyrus';
 
 		// Possible values for version are: 'development', 'experimental', 'dolibarr', 'dolibarr_deprecated' or a version string like 'x.y.z'
-		$this->version = '2.2.3';
-		// Url to the file with your last numberversion of this module
-		$this->url_last_version = '';
+		$this->version = '2.10.3';
+		// File with the latest version number (VERSION in the public repository), read by checkForUpdate()
+		$this->url_last_version = 'https://raw.githubusercontent.com/RealRidrick/dolibarr_peppol-peppyrus/main/VERSION';
 
 		// Key used in llx_const table to save module status enabled/disabled (where PEPPOLPEPPYRUS is value of property name of module in uppercase)
 		$this->const_name = 'MAIN_MODULE_' . strtoupper($this->name);
@@ -108,6 +109,7 @@ class modPeppolpeppyrus extends DolibarrModules
 				'doMassActions',
 				'thirdpartycard',
 				'thirdpartycomm',
+				'thirdpartysupplier',
 				'globalcard',
 				'odtgeneration',
 				//   'data' => array(
@@ -118,6 +120,8 @@ class modPeppolpeppyrus extends DolibarrModules
 			),
 			// Set this to 1 if features of module are opened to external users
 			'moduleforexternal' => 0,
+			// Data directory per entity: DOL_DATA_ROOT/peppol (entity 1) or DOL_DATA_ROOT/<entity>/peppol
+			'dir' => array('output' => 'peppol'),
 		);
 
 		// Data directories to create when module is enabled.
@@ -139,8 +143,8 @@ class modPeppolpeppyrus extends DolibarrModules
 		$this->langfiles = array("peppol@peppolpeppyrus");
 
 		// Prerequisites
-		$this->phpmin = array(7, 1); // Minimum version of PHP required by module
-		$this->need_dolibarr_version = array(10, -3); // Minimum version of Dolibarr required by module
+		$this->phpmin = array(7, 1); // Minimum version of PHP required by module (and by the einvoicing library)
+		$this->need_dolibarr_version = array(18, 0); // Minimum version of Dolibarr required by module (supported: 18.0 up to 24.0.2)
 
 		// Messages at activation
 		$this->warnings_activation = array(); // Warning to show when we activate module. array('always'='text') or array('FR'='textfr','ES'='textes'...)
@@ -171,8 +175,8 @@ class modPeppolpeppyrus extends DolibarrModules
 		$this->tabs[] = array('data' => 'invoice:+tabPeppol:PeppolTab:peppol@peppolpeppyrus:1:/peppolpeppyrus/peppol_tab.php?objectType=invoice&id=__ID__');
 
 		// Example:
-		// $this->tabs[] = array('data'=>'objecttype:+tabname1:Title1:mylangfile@peppol:$user->rights->peppol->read:/peppol/mynewtab1.php?id=__ID__');  					// To add a new tab identified by code tabname1
-		// $this->tabs[] = array('data'=>'objecttype:+tabname2:SUBSTITUTION_Title2:mylangfile@peppol:$user->rights->othermodule->read:/peppol/mynewtab2.php?id=__ID__',  	// To add another new tab identified by code tabname2. Label will be result of calling all substitution functions on 'Title2' key.
+		// $this->tabs[] = array('data'=>'objecttype:+tabname1:Title1:mylangfile@peppol:$user->hasRight('peppol', 'read'):/peppol/mynewtab1.php?id=__ID__');  					// To add a new tab identified by code tabname1
+		// $this->tabs[] = array('data'=>'objecttype:+tabname2:SUBSTITUTION_Title2:mylangfile@peppol:$user->hasRight('othermodule', 'read'):/peppol/mynewtab2.php?id=__ID__',  	// To add another new tab identified by code tabname2. Label will be result of calling all substitution functions on 'Title2' key.
 		// $this->tabs[] = array('data'=>'objecttype:-tabname:NU:conditiontoremove');                                                     										// To remove an existing tab identified by code tabname
 		//
 		// Where objecttype can be
@@ -236,20 +240,48 @@ class modPeppolpeppyrus extends DolibarrModules
 		// Cronjobs (List of cron jobs entries to add when module is enabled)
 		// unit_frequency must be 60 for minute, 3600 for hour, 86400 for day, 604800 for week
 		$this->cronjobs = array(
-			//  0 => array(
-			//      'label' => 'MyJob label',
-			//      'jobtype' => 'method',
-			//      'class' => '/peppolpeppyrus/class/myobject.class.php',
-			//      'objectname' => 'MyObject',
-			//      'method' => 'doScheduledJob',
-			//      'parameters' => '',
-			//      'comment' => 'Comment',
-			//      'frequency' => 2,
-			//      'unitfrequency' => 3600,
-			//      'status' => 0,
-			//      'test' => '$conf->peppolpeppyrus->enabled',
-			//      'priority' => 50,
-			//  ),
+			0 => array(
+				'label' => 'Peppol: weekly check of customers and suppliers in the Peppol directory',
+				'jobtype' => 'method',
+				'class' => '/peppolpeppyrus/class/peppolcandidatecheck.class.php',
+				'objectname' => 'PeppolCandidateCheck',
+				'method' => 'runWeeklyCheck',
+				'parameters' => '',
+				'comment' => 'Searches customers and suppliers without a Peppol ID in the Peppol directory by VAT number and registration number (not by name). Results: Third parties > Peppol candidates.',
+				'frequency' => 1,
+				'unitfrequency' => 604800,
+				'status' => 1,
+				'test' => 'isModEnabled("peppolpeppyrus")',
+				'priority' => 50,
+			),
+			1 => array(
+				'label' => 'Peppol: daily fetch of incoming documents from the access point',
+				'jobtype' => 'method',
+				'class' => '/peppolpeppyrus/class/peppolinboxfetch.class.php',
+				'objectname' => 'PeppolInboxFetch',
+				'method' => 'runDailyFetch',
+				'parameters' => '',
+				'comment' => 'Fetches the new documents (supplier invoices) from the access point into Billing > Peppol > Incoming documents. Does not create or validate supplier invoices. The user of the job needs the right Peppol: write.',
+				'frequency' => 1,
+				'unitfrequency' => 86400,
+				'status' => 1,
+				'test' => 'isModEnabled("peppolpeppyrus")',
+				'priority' => 50,
+			),
+			2 => array(
+				'label' => 'Peppol: automatic sending of validated customer invoices',
+				'jobtype' => 'method',
+				'class' => '/peppolpeppyrus/class/peppolautosend.class.php',
+				'objectname' => 'PeppolAutoSend',
+				'method' => 'runAutoSend',
+				'parameters' => '',
+				'comment' => 'Off by default; switched on and off on the setup page of the module. Runs every hour and sends only at the hours set up there, only invoices validated after switching on, of customers with a Peppol ID. The user of the job needs the rights Peppol: write and create invoices.',
+				'frequency' => 1,
+				'unitfrequency' => 3600,
+				'status' => 0,
+				'test' => 'isModEnabled("peppolpeppyrus")',
+				'priority' => 60,
+			),
 		);
 		// Example: $this->cronjobs=array(
 		//    0=>array('label'=>'My label', 'jobtype'=>'method', 'class'=>'/dir/class/file.class.php', 'objectname'=>'MyClass', 'method'=>'myMethod', 'parameters'=>'param1, param2', 'comment'=>'Comment', 'frequency'=>2, 'unitfrequency'=>3600, 'status'=>0, 'test'=>'$conf->peppolpeppyrus->enabled', 'priority'=>50),
@@ -261,55 +293,86 @@ class modPeppolpeppyrus extends DolibarrModules
 		$r = 0;
 		// Add here entries to declare new permissions
 		/* BEGIN MODULEBUILDER PERMISSIONS */
-		$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1); // Permission id (must not be already used)
+		$this->rights[$r][0] = (int) ($this->numero . '01'); // Permission id: <numero><nn>, never change (granted rights are stored by number)
 		$this->rights[$r][1] = 'Read Peppol objects'; // Permission label
-		$this->rights[$r][4] = 'read'; // In php code, permission will be checked by test if ($user->rights->peppolpeppyrus->level1->level2)
+		$this->rights[$r][4] = 'read'; // In php code: $user->hasRight('peppolpeppyrus', '<level1>')
 		$r++;
-		$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1); // Permission id (must not be already used)
+		$this->rights[$r][0] = (int) ($this->numero . '02'); // Permission id: <numero><nn>, never change (granted rights are stored by number)
 		$this->rights[$r][1] = 'Create/Update Peppol objects'; // Permission label
-		$this->rights[$r][4] = 'write'; // In php code, permission will be checked by test if ($user->rights->peppolpeppyrus->level1->level2)
+		$this->rights[$r][4] = 'write'; // In php code: $user->hasRight('peppolpeppyrus', '<level1>')
 		$r++;
-		$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1); // Permission id (must not be already used)
+		$this->rights[$r][0] = (int) ($this->numero . '03'); // Permission id: <numero><nn>, never change (granted rights are stored by number)
 		$this->rights[$r][1] = 'Delete Peppol objects'; // Permission label
-		$this->rights[$r][4] = 'delete'; // In php code, permission will be checked by test if ($user->rights->peppolpeppyrus->level1->level2)
+		$this->rights[$r][4] = 'delete'; // In php code: $user->hasRight('peppolpeppyrus', '<level1>')
 		$r++;
-		$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1); // Permission id (must not be already used)
+		$this->rights[$r][0] = (int) ($this->numero . '04'); // Permission id: <numero><nn>, never change (granted rights are stored by number)
 		$this->rights[$r][1] = 'Import Peppol invoices (supplier)'; // Permission label
-		$this->rights[$r][4] = 'import'; // In php code, permission will be checked by test if ($user->rights->peppolpeppyrus->level1->level2)
+		$this->rights[$r][4] = 'import'; // In php code: $user->hasRight('peppolpeppyrus', '<level1>')
 		$r++;
 		/* END MODULEBUILDER PERMISSIONS */
 
-		// Main menu entries to add
+		// Main menu entries to add: one entry "Peppol" in the left menu of Billing, with the pages under it
 		$this->menu = array();
 		$r = 0;
 		$this->menu[$r++] = [
-			'fk_menu' => 'fk_mainmenu=billing,fk_leftmenu=suppliers_bills', // '' if this is a top menu. For left menu, use 'fk_mainmenu=xxx' or 'fk_mainmenu=xxx,fk_leftmenu=yyy' where xxx is mainmenucode and yyy is a leftmenucode
-			'type' => 'left', // This is a Top menu entry
-			'titre' => 'ModulePeppolImportListing',
+			'fk_menu' => 'fk_mainmenu=billing',
+			'type' => 'left',
+			'titre' => 'PeppolMenu',
+			'prefix' => 'fa-paper-plane',
 			'mainmenu' => 'billing',
-			'leftmenu' => 'supplier_bills_peppol',
-			'url' => '/peppolpeppyrus/peppolimport_list.php',
-			'langs' => 'peppol@peppolpeppyrus', // Lang file to use (without .lang) by module. File must be in langs/code_CODE/ directory.
+			'leftmenu' => 'peppol',
+			'url' => '/peppolpeppyrus/index.php',
+			'langs' => 'peppol@peppolpeppyrus',
 			'position' => 1000 + $r,
-			'enabled' => '$conf->peppolpeppyrus->enabled', // Define condition to show or hide menu entry. Use '$conf->Peppol->enabled' if entry must be visible if module is enabled.
-			'perms' => '$user->rights->peppolpeppyrus->import', // if you want your menu with a permission rules
+			'enabled' => 'isModEnabled("peppolpeppyrus")',
+			'perms' => '$user->hasRight("peppolpeppyrus", "read") || $user->hasRight("peppolpeppyrus", "import")',
 			'target' => '',
-			'user' => 2, // 0=Menu for internal users, 1=external users, 2=both
+			'user' => 0, // internal users only
 		];
+		// Documents received from the access point (supplier invoices)
 		$this->menu[$r++] = [
-			'fk_menu' => 'fk_mainmenu=tools', // '' if this is a top menu. For left menu, use 'fk_mainmenu=xxx' or 'fk_mainmenu=xxx,fk_leftmenu=yyy' where xxx is mainmenucode and yyy is a leftmenucode
-			'type' => 'left', // This is a Top menu entry
-			'titre' => 'ModulePeppolList',
-			'prefix' => 'fa-globe',
-			'mainmenu' => 'tools',
-			'leftmenu' => 'peppol_list',
-			'url' => '/peppolpeppyrus/peppol_list.php',
-			'langs' => 'peppol@peppolpeppyrus', // Lang file to use (without .lang) by module. File must be in langs/code_CODE/ directory.
+			'fk_menu' => 'fk_mainmenu=billing,fk_leftmenu=peppol',
+			'type' => 'left',
+			'titre' => 'peppolMenuDocuments',
+			'mainmenu' => 'billing',
+			'leftmenu' => 'peppol_documents',
+			'url' => '/peppolpeppyrus/peppolimport_list.php',
+			'langs' => 'peppol@peppolpeppyrus',
 			'position' => 1000 + $r,
-			'enabled' => '$conf->peppolpeppyrus->enabled', // Define condition to show or hide menu entry. Use '$conf->Peppol->enabled' if entry must be visible if module is enabled.
-			'perms' => '$user->rights->peppolpeppyrus->import', // if you want your menu with a permission rules
+			'enabled' => 'isModEnabled("peppolpeppyrus")',
+			'perms' => '$user->hasRight("peppolpeppyrus", "import")',
 			'target' => '',
-			'user' => 2, // 0=Menu for internal users, 1=external users, 2=both
+			'user' => 0,
+		];
+		// Customers and suppliers found on Peppol (weekly check)
+		$this->menu[$r++] = [
+			'fk_menu' => 'fk_mainmenu=billing,fk_leftmenu=peppol',
+			'type' => 'left',
+			'titre' => 'peppolCandidatesMenu',
+			'mainmenu' => 'billing',
+			'leftmenu' => 'peppol_candidates',
+			'url' => '/peppolpeppyrus/peppol_candidates.php',
+			'langs' => 'peppol@peppolpeppyrus',
+			'position' => 1000 + $r,
+			'enabled' => 'isModEnabled("peppolpeppyrus")',
+			'perms' => '$user->hasRight("peppolpeppyrus", "read") && $user->hasRight("societe", "lire")',
+			'target' => '',
+			'user' => 0,
+		];
+		// Log of the exchanges with the access point
+		$this->menu[$r++] = [
+			'fk_menu' => 'fk_mainmenu=billing,fk_leftmenu=peppol',
+			'type' => 'left',
+			'titre' => 'PeppolList',
+			'mainmenu' => 'billing',
+			'leftmenu' => 'peppol_log',
+			'url' => '/peppolpeppyrus/peppol_list.php',
+			'langs' => 'peppol@peppolpeppyrus',
+			'position' => 1000 + $r,
+			'enabled' => 'isModEnabled("peppolpeppyrus")',
+			'perms' => '$user->hasRight("peppolpeppyrus", "import")',
+			'target' => '',
+			'user' => 0,
 		];
 
 		// Add here entries to declare new menus
@@ -379,10 +442,10 @@ class modPeppolpeppyrus extends DolibarrModules
 				}
 
 				$sql = array_merge($sql, array(
-					"DELETE FROM " . MAIN_DB_PREFIX . "document_model WHERE nom = 'standard_" . strtolower($myTmpObjectKey) . "' AND type = '" . strtolower($myTmpObjectKey) . "' AND entity = " . $conf->entity,
-					"INSERT INTO " . MAIN_DB_PREFIX . "document_model (nom, type, entity) VALUES('standard_" . strtolower($myTmpObjectKey) . "','" . strtolower($myTmpObjectKey) . "'," . $conf->entity . ")",
-					"DELETE FROM " . MAIN_DB_PREFIX . "document_model WHERE nom = 'generic_" . strtolower($myTmpObjectKey) . "_odt' AND type = '" . strtolower($myTmpObjectKey) . "' AND entity = " . $conf->entity,
-					"INSERT INTO " . MAIN_DB_PREFIX . "document_model (nom, type, entity) VALUES('generic_" . strtolower($myTmpObjectKey) . "_odt', '" . strtolower($myTmpObjectKey) . "', " . $conf->entity . ")"
+					"DELETE FROM " . MAIN_DB_PREFIX . "document_model WHERE nom = 'standard_" . $this->db->escape(strtolower($myTmpObjectKey)) . "' AND type = '" . $this->db->escape(strtolower($myTmpObjectKey)) . "' AND entity = " . ((int) $conf->entity),
+					"INSERT INTO " . MAIN_DB_PREFIX . "document_model (nom, type, entity) VALUES('standard_" . $this->db->escape(strtolower($myTmpObjectKey)) . "','" . $this->db->escape(strtolower($myTmpObjectKey)) . "'," . ((int) $conf->entity) . ")",
+					"DELETE FROM " . MAIN_DB_PREFIX . "document_model WHERE nom = 'generic_" . $this->db->escape(strtolower($myTmpObjectKey)) . "_odt' AND type = '" . $this->db->escape(strtolower($myTmpObjectKey)) . "' AND entity = " . ((int) $conf->entity),
+					"INSERT INTO " . MAIN_DB_PREFIX . "document_model (nom, type, entity) VALUES('generic_" . $this->db->escape(strtolower($myTmpObjectKey)) . "_odt', '" . $this->db->escape(strtolower($myTmpObjectKey)) . "', " . ((int) $conf->entity) . ")"
 				));
 			}
 		}
@@ -390,7 +453,13 @@ class modPeppolpeppyrus extends DolibarrModules
 		$sql[] = "UPDATE " . MAIN_DB_PREFIX . "extrafields SET label='PeppolSpecificInvoiceID',help='PeppolSpecificInvoiceIDTooltip',list=5 WHERE elementtype='facture' AND name='peppol_id'";
 
 		dolibarr_set_const($this->db, 'PEPPOL_MODULE_VERSION', $this->version, 'chaine', 0, 'Active module version', $conf->entity);
-		return $this->_init($sql, $options);
+		$result = $this->_init($sql, $options);
+		if ($result > 0) {
+			// The scheduled jobs get the status chosen on the setup page (deactivating removes the jobs)
+			dol_include_once('/peppolpeppyrus/lib/peppol.lib.php');
+			peppolApplyCronSettings($this->db);
+		}
+		return $result;
 	}
 
 	/**
@@ -405,5 +474,40 @@ class modPeppolpeppyrus extends DolibarrModules
 	{
 		$sql = array();
 		return $this->_remove($sql, $options);
+	}
+
+	/**
+	 * Check whether a newer version exists (shown in the module list).
+	 * Same as DolibarrModules::checkForUpdate(), but HTTPS only and only an answer with HTTP status 200 counts:
+	 * the built-in version would also take a short error page as version number. The repository is public,
+	 * so no key is sent.
+	 *
+	 * @return int	1 newer version available, 0 not (or no URL), -1 could not be checked
+	 */
+	public function checkForUpdate()
+	{
+		require_once DOL_DOCUMENT_ROOT . '/core/lib/geturl.lib.php';
+		if (empty($this->url_last_version)) {
+			return 0;
+		}
+		$result = $this->fetchLastVersion();
+		$content = isset($result['content']) ? trim((string) $result['content']) : '';
+		if ((int) ($result['http_code'] ?? 0) !== 200 || $content === '' || strlen($content) >= 30) {
+			return -1;
+		}
+		// Remote content: keep only the characters of a version number
+		$this->lastVersion = preg_replace('/[^a-zA-Z0-9_\.\-]+/', '', $content);
+		$this->needUpdate = (version_compare($this->lastVersion, $this->version) > 0);
+		return $this->needUpdate ? 1 : 0;
+	}
+
+	/**
+	 * Read the file with the latest version number: HTTPS only, no redirects
+	 *
+	 * @return array{http_code?:int,content?:string}	Result of getURLContent()
+	 */
+	protected function fetchLastVersion()
+	{
+		return getURLContent($this->url_last_version, 'GET', '', 0, array(), array('https'), 0);
 	}
 }
