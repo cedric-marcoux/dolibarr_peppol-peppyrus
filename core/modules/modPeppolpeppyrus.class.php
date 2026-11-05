@@ -58,7 +58,7 @@ class modPeppolpeppyrus extends DolibarrModules
 		$this->editor_url = 'https://github.com/RealRidrick/dolibarr_peppol-peppyrus';
 
 		// Possible values for version are: 'development', 'experimental', 'dolibarr', 'dolibarr_deprecated' or a version string like 'x.y.z'
-		$this->version = '2.9.0';
+		$this->version = '2.10.0';
 		// File with the latest version number (VERSION in the public repository), read by checkForUpdate()
 		$this->url_last_version = 'https://raw.githubusercontent.com/RealRidrick/dolibarr_peppol-peppyrus/main/VERSION';
 
@@ -267,6 +267,20 @@ class modPeppolpeppyrus extends DolibarrModules
 				'test' => 'isModEnabled("peppolpeppyrus")',
 				'priority' => 50,
 			),
+			2 => array(
+				'label' => 'Peppol: automatic sending of validated customer invoices',
+				'jobtype' => 'method',
+				'class' => '/peppolpeppyrus/class/peppolautosend.class.php',
+				'objectname' => 'PeppolAutoSend',
+				'method' => 'runAutoSend',
+				'parameters' => '',
+				'comment' => 'Off by default; switched on and off on the setup page of the module. Runs every hour and sends only at the hours set up there, only invoices validated after switching on, of customers with a Peppol ID. The user of the job needs the rights Peppol: write and create invoices.',
+				'frequency' => 1,
+				'unitfrequency' => 3600,
+				'status' => 0,
+				'test' => 'isModEnabled("peppolpeppyrus")',
+				'priority' => 60,
+			),
 		);
 		// Example: $this->cronjobs=array(
 		//    0=>array('label'=>'My label', 'jobtype'=>'method', 'class'=>'/dir/class/file.class.php', 'objectname'=>'MyClass', 'method'=>'myMethod', 'parameters'=>'param1, param2', 'comment'=>'Comment', 'frequency'=>2, 'unitfrequency'=>3600, 'status'=>0, 'test'=>'$conf->peppolpeppyrus->enabled', 'priority'=>50),
@@ -438,7 +452,13 @@ class modPeppolpeppyrus extends DolibarrModules
 		$sql[] = "UPDATE " . MAIN_DB_PREFIX . "extrafields SET label='PeppolSpecificInvoiceID',help='PeppolSpecificInvoiceIDTooltip',list=5 WHERE elementtype='facture' AND name='peppol_id'";
 
 		dolibarr_set_const($this->db, 'PEPPOL_MODULE_VERSION', $this->version, 'chaine', 0, 'Active module version', $conf->entity);
-		return $this->_init($sql, $options);
+		$result = $this->_init($sql, $options);
+		if ($result > 0) {
+			// The scheduled jobs get the status chosen on the setup page (deactivating removes the jobs)
+			dol_include_once('/peppolpeppyrus/lib/peppol.lib.php');
+			peppolApplyCronSettings($this->db);
+		}
+		return $result;
 	}
 
 	/**

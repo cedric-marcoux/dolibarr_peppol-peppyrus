@@ -370,6 +370,11 @@ class PeppolBooking
 			return -8;
 		}
 		if ($socid === 0) {
+			// Setup: create unknown suppliers from the e-invoice (default) or not
+			if (!getDolGlobalInt('PEPPOL_BOOK_CREATE_SUPPLIER', 1)) {
+				$this->error = $langs->trans('peppolBookSupplierUnknownNoCreate');
+				return -9;
+			}
 			if (!$user->hasRight('societe', 'creer')) {
 				$this->error = $langs->trans('peppolBookSupplierUnknown');
 				return -9;
@@ -383,7 +388,8 @@ class PeppolBooking
 		$soc->fetch($socid);
 		if ((int) $soc->fournisseur !== 1 || (empty($soc->array_options['options_peppol_id']) && $data['supplier']['peppolid'] !== '')) {
 			// Known third party: make it a supplier and remember its Peppol ID, with the right to change third parties
-			if ($user->hasRight('societe', 'creer')) {
+			// and when the setup allows changing third parties (default)
+			if ($user->hasRight('societe', 'creer') && getDolGlobalInt('PEPPOL_BOOK_UPDATE_SUPPLIER', 1)) {
 				if ((int) $soc->fournisseur !== 1) {
 					$soc->fournisseur = 1;
 					$soc->code_fournisseur = 'auto';
@@ -437,9 +443,11 @@ class PeppolBooking
 		$this->invoiceId = (int) $id;
 		$inv->fetch($id);
 
-		// Validate when the total is the total of the XML, and the user may validate
+		// Validate when the setup says so (default), the total is the total of the XML, and the user may validate
 		$canValidate = getDolGlobalString('MAIN_USE_ADVANCED_PERMS') ? $user->hasRight('fournisseur', 'supplier_invoice_advance', 'validate') : $user->hasRight('fournisseur', 'facture', 'creer');
-		if ($data['total_ttc'] !== null && abs((float) $inv->total_ttc - $data['total_ttc']) > self::TOTAL_TOLERANCE) {
+		if (getDolGlobalString('PEPPOL_BOOK_MODE', 'validate') === 'draft') {
+			dol_syslog('PeppolBooking::book kept as draft by the setup');
+		} elseif ($data['total_ttc'] !== null && abs((float) $inv->total_ttc - $data['total_ttc']) > self::TOTAL_TOLERANCE) {
 			$this->warnings[] = $langs->trans('peppolBookTotalDiffers', price($inv->total_ttc), price($data['total_ttc']));
 		} elseif (!$canValidate) {
 			$this->warnings[] = $langs->trans('peppolBookNoValidateRight');

@@ -98,6 +98,10 @@ Billing > Peppol > Incoming documents has a button "Book" for every document tha
 - The PDF from the e-invoice and the XML are attached to the invoice; the document is linked to the invoice.
 - Not booked automatically: credit notes, invoices in another currency, and documents without number, date or lines. An invoice with the same supplier and number is linked instead of booked twice.
 
+## Setup: booking and automatic tasks
+
+The setup page of the module (gear icon) has a block for booking incoming invoices (validate when the total matches or always keep a draft; create unknown suppliers or not; complete known third parties or not) and for the automatic tasks: fetch incoming documents every day, the weekly check in the Peppol directory, and automatic sending of validated customer invoices at set hours (off by default; only invoices validated after switching it on, at most a set number per hour of sending). A link opens the scheduled jobs of the module.
+
 ## Requirements
 
 - Dolibarr 18.0 up to 24.0.2 (see *Standard and deliberate deviations*)

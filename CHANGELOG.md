@@ -1,5 +1,25 @@
 # Changelog
 
+## 2.10.0
+
+More control on the setup page (gear icon), new block "Booking incoming invoices" and "Automatic tasks":
+
+- **Booked invoices:** validate when the total equals the total of the e-invoice (default, as in 2.9.0), or always keep as draft (`PEPPOL_BOOK_MODE`).
+- **Create unknown suppliers:** yes (default) or no (`PEPPOL_BOOK_CREATE_SUPPLIER`); with no, an invoice of an unknown supplier is not booked.
+- **Complete known third parties:** store the Peppol ID and make the third party a supplier, yes (default) or no (`PEPPOL_BOOK_UPDATE_SUPPLIER`).
+- **Fetch incoming documents every day** and **weekly check in the Peppol directory:** switched on and off here (the scheduled jobs are enabled or disabled).
+- **Send customer invoices automatically** (new scheduled job "Peppol: automatic sending of validated customer invoices", `PeppolAutoSend::runAutoSend()`), **off by default**:
+  - At the hours set up (`PEPPOL_AUTO_SEND_HOURS`: 9 for once a day, 9,13,17 for three times); the job runs every hour and sends once per hour of sending.
+  - Only validated invoices of customers with a Peppol ID, not private, not sent yet, and validated after the sending was switched on (`PEPPOL_AUTO_SEND_SINCE`): older invoices are never sent automatically.
+  - At most `PEPPOL_AUTO_SEND_MAX` (default 20) per hour of sending. The Peppol file is made with the PDF when it is missing.
+  - The user of the job needs the rights Peppol: write and create invoices. Result and log hold counts only.
+  - In test mode the setup page warns that invoices go to the test access point.
+- Link to the scheduled jobs of the module; a warning when the module "Scheduled jobs" is off or a job does not exist yet.
+- The choices for the scheduled jobs are kept when the module is deactivated and reactivated.
+- Tests of the hours of sending and of the scheduled job definitions.
+
+**After updating:** replace the module files, then deactivate and reactivate the module once so the new scheduled job is added (settings and data are kept); flush memcached. Automatic sending stays off until it is switched on in the setup.
+
 ## 2.9.0
 
 Book incoming documents as supplier invoice in the module itself, without another module:

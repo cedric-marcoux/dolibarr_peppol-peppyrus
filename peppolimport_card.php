@@ -227,7 +227,7 @@ if (empty($reshook)) {
 			$msg = $langs->trans($res > 0 ? ($booking->validated ? 'peppolBookDoneValidated' : 'peppolBookDoneDraft') : 'peppolBookAlreadyBooked');
 			$msg .= ($booking->supplierCreated ? ' ' . $langs->trans('peppolBookSupplierCreated') : '');
 			$msg .= ' <a href="' . dol_escape_htmltag($invoiceUrl) . '">' . $langs->trans('peppolBookOpenInvoice') . '</a>';
-			setEventMessages($msg, $booking->warnings, ($res > 0 && $booking->validated && !count($booking->warnings)) ? 'mesgs' : 'warnings');
+			setEventMessages($msg, $booking->warnings, ($res > 0 && !count($booking->warnings)) ? 'mesgs' : 'warnings');
 		} else {
 			setEventMessages(dol_escape_htmltag($booking->error), null, 'errors');
 		}

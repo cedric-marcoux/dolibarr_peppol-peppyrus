@@ -763,3 +763,75 @@ function peppolBookingUrl($object, $user)
 	}
 	return dol_buildpath('/peppolpeppyrus/peppolimport_card.php', 1) . '?id=' . ((int) $object->id) . '&action=book&token=' . newToken();
 }
+
+/**
+ * Scheduled jobs of the module that can be switched on and off on the setup page: method => [setting, default]
+ *
+ * @return	array<string,array{0:string,1:int}>
+ */
+function peppolCronSettings()
+{
+	return array(
+		'runDailyFetch' => array('PEPPOL_JOB_FETCH', 1),
+		'runWeeklyCheck' => array('PEPPOL_JOB_CANDIDATES', 1),
+		'runAutoSend' => array('PEPPOL_AUTO_SEND', 0),
+	);
+}
+
+/**
+ * Status of a scheduled job of the module in this entity
+ *
+ * @param	DoliDB	$db		Database handler
+ * @param	string	$method	Method of the job (runDailyFetch, runWeeklyCheck, runAutoSend)
+ * @return	int		1 enabled, 0 disabled, -1 the job does not exist (module not reactivated after an update)
+ */
+function peppolCronJobStatus($db, $method)
+{
+	global $conf;
+	$sql = "SELECT status FROM " . MAIN_DB_PREFIX . "cronjob WHERE module_name = 'peppolpeppyrus'";
+	$sql .= " AND methodename = '" . $db->escape($method) . "' AND entity = " . ((int) $conf->entity);
+	$resql = $db->query($sql);
+	if ($resql && ($obj = $db->fetch_object($resql))) {
+		return ((int) $obj->status) > 0 ? 1 : 0;
+	}
+	return -1;
+}
+
+/**
+ * Switch a scheduled job of the module on or off in this entity, and remember the choice (also after reactivating)
+ *
+ * @param	DoliDB	$db		Database handler
+ * @param	string	$method	Method of the job
+ * @param	int		$on		1 on, 0 off
+ * @return	bool	true when the setting was saved
+ */
+function peppolSetCronJob($db, $method, $on)
+{
+	global $conf;
+	$settings = peppolCronSettings();
+	if (!isset($settings[$method])) {
+		return false;
+	}
+	$on = $on ? 1 : 0;
+	$ok = dolibarr_set_const($db, $settings[$method][0], (string) $on, 'chaine', 0, '', $conf->entity) > 0;
+	$sql = "UPDATE " . MAIN_DB_PREFIX . "cronjob SET status = " . ((int) $on);
+	$sql .= " WHERE module_name = 'peppolpeppyrus' AND methodename = '" . $db->escape($method) . "' AND entity = " . ((int) $conf->entity);
+	return $db->query($sql) && $ok;
+}
+
+/**
+ * After (re)activating the module: give the scheduled jobs the status chosen on the setup page
+ *
+ * @param	DoliDB	$db		Database handler
+ * @return	void
+ */
+function peppolApplyCronSettings($db)
+{
+	global $conf;
+	foreach (peppolCronSettings() as $method => $setting) {
+		$on = getDolGlobalString($setting[0]) === '' ? $setting[1] : getDolGlobalInt($setting[0]);
+		$sql = "UPDATE " . MAIN_DB_PREFIX . "cronjob SET status = " . ($on ? 1 : 0);
+		$sql .= " WHERE module_name = 'peppolpeppyrus' AND methodename = '" . $db->escape($method) . "' AND entity = " . ((int) $conf->entity);
+		$db->query($sql);
+	}
+}

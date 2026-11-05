@@ -104,14 +104,18 @@ class ModPeppolpeppyrusTest extends TestCase
 	}
 
 	/**
-	 * Scheduled jobs: the weekly candidate check and the daily fetch, both with an existing class and method
+	 * Scheduled jobs: weekly candidate check, daily fetch and automatic sending, each with an existing class and method
 	 *
 	 * @return void
 	 */
 	public function testCronJobs()
 	{
 		$mod = new modPeppolpeppyrus(null);
-		$this->assertCount(2, $mod->cronjobs);
+		$this->assertCount(3, $mod->cronjobs);
+		// Automatic sending is off by default
+		$this->assertSame('runAutoSend', $mod->cronjobs[2]['method']);
+		$this->assertSame(0, $mod->cronjobs[2]['status']);
+		$this->assertSame(3600, $mod->cronjobs[2]['unitfrequency']);
 		$this->assertSame(604800, $mod->cronjobs[0]['unitfrequency']);
 		$this->assertSame('runDailyFetch', $mod->cronjobs[1]['method']);
 		$this->assertSame(86400, $mod->cronjobs[1]['unitfrequency']);
