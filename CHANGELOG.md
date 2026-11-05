@@ -5,7 +5,7 @@
 License made explicit, no change in behaviour:
 
 - Every source file of the module (PHP, JavaScript, SQL, shell) carries `SPDX-License-Identifier: GPL-3.0-or-later`, the license of the original module.
-- New file `NOTICE`: original author, the contributors of this fork, the license, and the included libraries with their own licenses.
+- New file `NOTICE`: original author, the license, and the included libraries with their own licenses. The changes of this fork (since 2.3.0) are dedicated to the public domain under CC0 1.0: no copyright is claimed on them. The module as a whole stays under GPL-3.0-or-later because it includes the original work.
 - `composer.json` states the license.
 - README: section License; the optional private checks are described as optional (the module does not use anything from another repository).
 - Comments that referred to a document that is not public now say what they mean.

@@ -202,7 +202,8 @@ This fork (with the changes in `CHANGELOG.md`): [https://github.com/RealRidrick/
 GPL-3.0-or-later, the same license as the original module (see `COPYING` and `NOTICE`).
 
 - The original module is by Cedric Marcoux; this fork adds the changes listed in `CHANGELOG.md` since version 2.3.0.
-- Every change in this fork is published under the same license. Each source file carries `SPDX-License-Identifier: GPL-3.0-or-later`.
+- The changes of this fork are dedicated to the public domain (CC0 1.0): no copyright is claimed on them, so anyone may use, change and improve them without conditions.
+- The module as a whole stays under GPL-3.0-or-later, because it includes the original work. Each source file carries `SPDX-License-Identifier: GPL-3.0-or-later`.
 - The module is complete as published here: it does not use or need code from any other module or private repository.
 - Changes are offered back to the original module; anyone may use, change and share the module under the GPL.
 - Included libraries keep their own licenses (`vendor/*/LICENSE`), for example `josemmo/einvoicing` (MIT).

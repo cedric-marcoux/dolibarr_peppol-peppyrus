@@ -1,19 +1,24 @@
 Peppol module for Dolibarr (peppolpeppyrus)
 
-Copyright (C) Cedric Marcoux and the contributors of the original module
-  (https://github.com/cedric-marcoux/dolibarr_peppol-peppyrus) - original author.
-Copyright (C) 2026 RealRidrick and the contributors of this fork
-  (https://github.com/RealRidrick/dolibarr_peppol-peppyrus) - changes since version 2.3.0,
-  see CHANGELOG.md and the history of the repository.
+Original module: Copyright (C) Cedric Marcoux and the contributors of the original module
+  (https://github.com/cedric-marcoux/dolibarr_peppol-peppyrus).
 
-This program is free software: you can redistribute it and/or modify it under the terms of the
-GNU General Public License as published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version. See COPYING for the full text.
+This fork (https://github.com/RealRidrick/dolibarr_peppol-peppyrus): the changes since version 2.3.0
+(see CHANGELOG.md and the history of the repository) are dedicated to the public domain: the
+maintainer of this fork claims no copyright on them and waives, as far as the law allows, all
+copyright and related rights in them under the Creative Commons CC0 1.0 Universal dedication
+(https://creativecommons.org/publicdomain/zero/1.0/). Where such a waiver is not possible, CC0 grants
+everyone an unconditional, free, worldwide licence to use, change and share these changes.
 
-Every change in this fork is published under the same license as the original module
-(GPL-3.0-or-later). The module does not contain or need any code that is not published here:
-it works without any other module or private repository. Each source file carries the line
-"SPDX-License-Identifier: GPL-3.0-or-later".
+License of the module as a whole: the module includes the work of the original author, so the
+module as a whole is distributed under the GNU General Public License, version 3 or (at your
+option) any later version (GPL-3.0-or-later), like the original module. See COPYING for the full
+text. Each source file carries "SPDX-License-Identifier: GPL-3.0-or-later". Anyone may use, change,
+improve and share the module under the GPL; the changes of this fork may also be used on their own
+without any condition (CC0).
+
+The module does not contain or need any code that is not published here: it works without any
+other module or private repository.
 
 Included libraries keep their own licenses (see vendor/*/LICENSE and composer.lock), for example
 josemmo/einvoicing (MIT), which is compatible with the GPL.
