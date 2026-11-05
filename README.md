@@ -120,8 +120,8 @@ The setup page of the module (gear icon) has a block for booking incoming invoic
 
 ## Requirements
 
-- Dolibarr 18.0 up to 24.0.2 (see *Standard and deliberate deviations*)
-- PHP 7.1 or higher
+- **Recommended: Dolibarr 22 or newer** with a PHP version that Dolibarr version supports (up to PHP 8.5 for Dolibarr 24). Older Dolibarr versions get no security updates any more and are not tested with PHP 8.4 or 8.5; the setup page shows a notice on them.
+- Minimum: Dolibarr 18.0 (tested up to 24.0.2, see *Standard and deliberate deviations*) and PHP 7.1
 - A Peppyrus account (free registration at [peppyrus.be](https://www.peppyrus.be))
 
 ## Installation

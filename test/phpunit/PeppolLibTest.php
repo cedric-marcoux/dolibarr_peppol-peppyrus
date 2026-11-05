@@ -215,4 +215,17 @@ class PeppolLibTest extends TestCase
 		$this->assertStringContainsString('## 1.0', peppolChangelogExcerpt($md, 10));
 		$this->assertSame('', peppolChangelogExcerpt('', 5));
 	}
+
+	/**
+	 * Dolibarr older than 22 gets a notice; 22 and newer not
+	 *
+	 * @return void
+	 */
+	public function testDolibarrBelowRecommended()
+	{
+		$this->assertTrue(peppolDolibarrBelowRecommended('18.0.4'));
+		$this->assertTrue(peppolDolibarrBelowRecommended('21.0.3'));
+		$this->assertFalse(peppolDolibarrBelowRecommended('22.0.0'));
+		$this->assertFalse(peppolDolibarrBelowRecommended('24.0.2'));
+	}
 }

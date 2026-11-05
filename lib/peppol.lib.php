@@ -855,3 +855,29 @@ function peppolChangelogExcerpt($markdown, $count)
 	}
 	return implode("\n", array_slice($versions, 0, max(1, (int) $count)));
 }
+
+/**
+ * Whether this Dolibarr version is older than the recommended one (22.0). Dolibarr 18 up to 21 still works,
+ * but those versions get no security updates any more and are not tested with PHP 8.4 or 8.5.
+ *
+ * @param	string	$version	Dolibarr version (DOL_VERSION)
+ * @return	bool
+ */
+function peppolDolibarrBelowRecommended($version)
+{
+	return version_compare((string) $version, '22.0', '<');
+}
+
+/**
+ * Notice on the setup and About pages when Dolibarr is older than the recommended version
+ *
+ * @return	string	HTML, or '' when the version is recent enough
+ */
+function peppolDolibarrRecommendedNotice()
+{
+	global $langs;
+	if (!peppolDolibarrBelowRecommended(DOL_VERSION)) {
+		return '';
+	}
+	return '<div class="warning">' . $langs->trans('peppolDolibarrRecommended', dol_escape_htmltag(DOL_VERSION), dol_escape_htmltag(PHP_VERSION)) . '</div>';
+}
