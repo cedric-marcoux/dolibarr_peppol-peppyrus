@@ -197,4 +197,21 @@ class PeppolLibTest extends TestCase
 		$this->assertSame('', peppolBookingUrl($doc, null));
 		$this->assertSame('', peppolBookingUrl(null, null));
 	}
+
+	/**
+	 * The About page shows the most recent versions of the changelog, without the title of the file
+	 *
+	 * @return void
+	 */
+	public function testChangelogExcerpt()
+	{
+		$md = "# Changelog\n\n## 3.0\n\n- C\n\n## 2.0\n\n- B\n\n## 1.0\n\n- A\n";
+		$out = peppolChangelogExcerpt($md, 2);
+		$this->assertStringContainsString('## 3.0', $out);
+		$this->assertStringContainsString('## 2.0', $out);
+		$this->assertStringNotContainsString('## 1.0', $out);
+		$this->assertStringNotContainsString('# Changelog', $out);
+		$this->assertStringContainsString('## 1.0', peppolChangelogExcerpt($md, 10));
+		$this->assertSame('', peppolChangelogExcerpt('', 5));
+	}
 }

@@ -425,3 +425,9 @@ peppolBookSupplierUnknownNoCreate = The supplier is not known and creating suppl
 peppolAutoSendNotNow = Not an hour of sending: nothing sent.
 peppolAutoSendNoRight = The user of the scheduled job has no right to send invoices (Peppol: write and create invoices).
 peppolAutoSendResult = %s invoice(s) sent, %s skipped (no Peppol file), %s failed.
+
+# About page
+peppolAboutReactivate = Activated version: %s. Deactivate and reactivate the module once to finish the update.
+peppolAboutChangelog = What is new
+peppolAboutChangelogHelp = The most recent versions; the full list is in CHANGELOG.md in the module.
+peppolAboutReadme = About the module

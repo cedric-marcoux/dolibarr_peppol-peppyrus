@@ -441,3 +441,9 @@ peppolBookSupplierUnknownNoCreate = De leverancier is onbekend en het aanmaken v
 peppolAutoSendNotNow = Geen tijdstip van versturen: niets verstuurd.
 peppolAutoSendNoRight = De gebruiker van de geplande taak heeft geen recht om facturen te versturen (Peppol: schrijven en facturen aanmaken).
 peppolAutoSendResult = %s factuur/facturen verstuurd, %s overgeslagen (geen Peppol-bestand), %s mislukt.
+
+# About page
+peppolAboutReactivate = Geactiveerde versie: %s. Zet de module één keer uit en weer aan om de update af te ronden.
+peppolAboutChangelog = Wat is er nieuw
+peppolAboutChangelogHelp = De meest recente versies (in het Engels); de volledige lijst staat in CHANGELOG.md in de module.
+peppolAboutReadme = Over de module
