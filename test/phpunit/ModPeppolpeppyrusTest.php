@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Tests of core/modules/modPeppolpeppyrus.class.php (no network: the answer of GitHub is stubbed).
  */

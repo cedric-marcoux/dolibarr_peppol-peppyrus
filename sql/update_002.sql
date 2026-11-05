@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: GPL-3.0-or-later
 DELETE l1 FROM llx_peppol_peppolimport AS l1
 INNER JOIN llx_peppol_peppolimport AS l2
 WHERE

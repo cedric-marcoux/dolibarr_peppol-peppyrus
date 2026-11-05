@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-3.0-or-later
 #------------------------------------------------------
 # Push language files to Transifex.
 # Adapted from DoliMods (dev/translation/txpush.sh, Laurent Destailleur, GPL-3)

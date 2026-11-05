@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 /**
  *   	\file       peppolimport_list.php
@@ -267,7 +268,7 @@ if ($action == "refresh") {
 	if (!$user->hasRight('peppolpeppyrus', 'write') || !peppolCheckToken()) {
 		accessforbidden();
 	}
-	// Fetches every new document from the access point: release the session meanwhile (STANDAARD.md 4.22)
+	// Fetches every new document from the access point: release the session meanwhile (a long action must not block the browser)
 	peppol_sessie_los();
 	peppolGetSupplierInvoicesList();
 	peppol_sessie_terug();

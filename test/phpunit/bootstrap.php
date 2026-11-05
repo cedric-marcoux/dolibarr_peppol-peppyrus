@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Bootstrap of the PHPUnit tests: loads the functions of Dolibarr without a database and without a
  * logged-in user, so rules, parsers and checks of the module can be tested on their own.

@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-3.0-or-later
 #------------------------------------------------------
 # Pull language files from Transifex.
 # Adapted from DoliMods (dev/translation/txpull.sh, Laurent Destailleur, GPL-3)

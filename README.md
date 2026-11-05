@@ -169,13 +169,13 @@ DOLIBARR_HTDOCS=/path/to/dolibarr-24/htdocs php phan.phar --config-file dev/phan
 sqlfluff lint sql/
 ```
 
-The security and language checks of the private repository `RealRidrick/dolibarr-module` run too when the secret `DOLIBARR_MODULE_TOKEN` is set in this repository (Settings > Secrets and variables > Actions): a fine-grained token with read access to the contents of that repository only. Without it they are skipped with a notice.
+Optional, for the maintainer of this fork only: extra security and language checks from a private repository run when the secret `DOLIBARR_MODULE_TOKEN` is set. Without it they are skipped with a notice; all other checks above are public and enough for contributors. The module itself does not use anything from that repository.
 
 ## Standard and deliberate deviations
 
-The module follows the standard of the repository `RealRidrick/dolibarr-module` (`STANDAARD.md`), which combines an internal security guideline with the rules of DoliMods. Checked with its tools: `dev/tools/beveiliging.php` (no errors, three recorded exceptions in `public/hook.php` and `class/peppolimport.class.php`) and `phpcs` (no errors).
+The module follows the rules of DoliMods (code standard, checks above) and an internal security guideline of the maintainer (rights and entity checks, CSRF tokens, escaping, no secrets or personal data in logs, long actions do not block the browser). Comments `beveiliging-uitzondering` mark the three reviewed security exceptions (the HMAC-checked webhook in `public/hook.php` and one SQL filter in `class/peppolimport.class.php`).
 
-Deliberate deviations, because the module is also used outside that repository and by the original author:
+Deliberate deviations from that internal guideline, because the module is public and also used by the original author:
 
 | Standard | Here | Reason |
 | --- | --- | --- |
@@ -183,7 +183,7 @@ Deliberate deviations, because the module is also used outside that repository a
 | Only `en_US` and `nl_NL`, both by hand | `en_US` by hand, other languages via Transifex | Same as DoliMods; the module is used in several countries. |
 | Module number between 500000 and 599999 | 436181 | Changing it would remove every granted Peppol permission (Dolibarr stores them by number), also for other users of the module. Only changed if it ever conflicts with another module. |
 | CHANGELOG and documentation in Dutch | English | Readable for everyone who uses or reviews the module. Each version has an **After updating** line. |
-| Module in its own folder of `dolibarr-module` | Own repository | Fork of the module of the original author; changes are offered back. |
+| Module in a private repository | Own public repository | Fork of the module of the original author under the GPL; changes are offered back. |
 | `checkForUpdate()` with a GitHub key | Without key | The repository is public. |
 
 ## API Endpoints
@@ -193,12 +193,19 @@ Deliberate deviations, because the module is also used outside that repository a
 
 ## Source Code
 
-This plugin is available on GitHub:
-[https://github.com/cedric-marcoux/dolibarr_peppol-peppyrus](https://github.com/cedric-marcoux/dolibarr_peppol-peppyrus)
+Original module: [https://github.com/cedric-marcoux/dolibarr_peppol-peppyrus](https://github.com/cedric-marcoux/dolibarr_peppol-peppyrus)
+
+This fork (with the changes in `CHANGELOG.md`): [https://github.com/RealRidrick/dolibarr_peppol-peppyrus](https://github.com/RealRidrick/dolibarr_peppol-peppyrus)
 
 ## License
 
-GPLv3 or later.
+GPL-3.0-or-later, the same license as the original module (see `COPYING` and `NOTICE`).
+
+- The original module is by Cedric Marcoux; this fork adds the changes listed in `CHANGELOG.md` since version 2.3.0.
+- Every change in this fork is published under the same license. Each source file carries `SPDX-License-Identifier: GPL-3.0-or-later`.
+- The module is complete as published here: it does not use or need code from any other module or private repository.
+- Changes are offered back to the original module; anyone may use, change and share the module under the GPL.
+- Included libraries keep their own licenses (`vendor/*/LICENSE`), for example `josemmo/einvoicing` (MIT).
 
 ## Support
 

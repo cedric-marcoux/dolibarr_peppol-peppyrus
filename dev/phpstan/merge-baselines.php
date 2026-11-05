@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Merge PHPStan baselines generated against several Dolibarr versions into dev/phpstan/baseline.php.
  * Per report (message, identifier, file) the highest count is kept, so the check passes on every version.

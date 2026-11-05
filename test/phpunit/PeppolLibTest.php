@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Tests of lib/peppol.lib.php (made-up data only).
  */
@@ -183,7 +184,7 @@ class PeppolLibTest extends TestCase
 	}
 
 	/**
-	 * The booking link is only there with the module PDF OCR Inkoop; without it (as in the tests) it is empty
+	 * The booking link is only there with the module enabled; without it (as in the tests) it is empty
 	 *
 	 * @return void
 	 */

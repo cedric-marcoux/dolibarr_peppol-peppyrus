@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Version check: VERSION, $this->version of the module and the latest heading in CHANGELOG.md are the same,
  * and that version in the CHANGELOG has an "After updating" line. need_dolibarr_version is 18.0 (README,

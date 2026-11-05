@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Phan only for SQL injection, with the plugin of Dolibarr itself (dev/tools/phan/plugins/SqlInjectionPlugin.php,
  * since Dolibarr 24). The plugin is read from the Dolibarr checkout, not copied into this repository. It follows a

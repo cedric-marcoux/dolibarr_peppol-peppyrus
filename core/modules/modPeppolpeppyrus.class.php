@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 /**
  * 	\defgroup   peppolpeppyrus     Module Peppol Peppyrus
@@ -58,7 +59,7 @@ class modPeppolpeppyrus extends DolibarrModules
 		$this->editor_url = 'https://github.com/RealRidrick/dolibarr_peppol-peppyrus';
 
 		// Possible values for version are: 'development', 'experimental', 'dolibarr', 'dolibarr_deprecated' or a version string like 'x.y.z'
-		$this->version = '2.10.1';
+		$this->version = '2.10.2';
 		// File with the latest version number (VERSION in the public repository), read by checkForUpdate()
 		$this->url_last_version = 'https://raw.githubusercontent.com/RealRidrick/dolibarr_peppol-peppyrus/main/VERSION';
 

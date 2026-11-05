@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 /**
  * \file    core/triggers/interface_99_modPeppol_PeppolTriggers.class.php

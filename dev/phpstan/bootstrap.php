@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Constants that main.inc.php of Dolibarr sets, so PHPStan can read the module without a running installation
  * (same approach as DoliCloud/DoliMods). DOLIBARR_HTDOCS points to the htdocs directory of a Dolibarr checkout.

@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Tests of class/peppolautosend.class.php: hours of sending (no network, no database).
  */

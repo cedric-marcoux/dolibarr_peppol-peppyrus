@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.10.2
+
+License made explicit, no change in behaviour:
+
+- Every source file of the module (PHP, JavaScript, SQL, shell) carries `SPDX-License-Identifier: GPL-3.0-or-later`, the license of the original module.
+- New file `NOTICE`: original author, the contributors of this fork, the license, and the included libraries with their own licenses.
+- `composer.json` states the license.
+- README: section License; the optional private checks are described as optional (the module does not use anything from another repository).
+- Comments that referred to a document that is not public now say what they mean.
+
+**After updating:** nothing; replacing the files is enough.
+
 ## 2.10.1
 
 About page (setup, tab "About") brought up to date:
