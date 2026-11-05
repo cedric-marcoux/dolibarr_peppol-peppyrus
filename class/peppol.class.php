@@ -64,6 +64,9 @@ class Peppol
 	private $_invoice;
 
 
+	/** Decimals of the unit price written in the XML (Dolibarr stores unit prices with up to 8 decimals) */
+	const PEPPOL_UNIT_PRICE_DECIMALS = 8;
+
 	const PEPPOL_CUSTOMER_INVOICE = 1;
 	const PEPPOL_SUPPLIER_INVOICE = 2;
 
@@ -331,6 +334,8 @@ class Peppol
 
 		// Create PEPPOL invoice instance
 		$inv = new Invoice(Presets\Peppol::class);
+		// Amounts with 2 decimals (preset), unit prices with the precision of Dolibarr (#15)
+		$inv->setRoundingMatrix(array('' => 2, 'line/price' => self::PEPPOL_UNIT_PRICE_DECIMALS));
 
 		if ($objFacture->type == \Facture::TYPE_CREDIT_NOTE) {
 			$inv->setType(Invoice::TYPE_CREDIT_NOTE);
@@ -664,9 +669,11 @@ class Peppol
 			}
 
 			//chez peppol il faut donner le montant * quantité, la division est faite de l'autre côté
-			// Fix PEPPOL-EN16931-R120: round unit price FIRST, then calculate subprice
-			$unitPrice = round(($line->subprice ? $line->subprice : 0.00), 2);
-			$subprice = round($unitPrice * $qty, 2); // Uses rounded unitPrice for consistency
+			// The unit price keeps the precision Dolibarr stores (EN 16931 allows more than 2 decimals for the
+			// item net price BT-146, see PEPPOL_UNIT_PRICE_DECIMALS): the line amount is then the Dolibarr line
+			// total to the cent, and PEPPOL-EN16931-R120 holds because the XML carries that same price (#15)
+			$unitPrice = round(($line->subprice ? $line->subprice : 0.00), self::PEPPOL_UNIT_PRICE_DECIMALS);
+			$subprice = round($unitPrice * $qty, 2);
 
 			//pour les remises (lignes négatives)
 			//cas particulier si dolibarr a quantité négative et montant positif on inverse

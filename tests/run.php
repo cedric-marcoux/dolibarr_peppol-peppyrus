@@ -469,6 +469,124 @@ peppolTest('BUG_013_send_button_hidden_without_rights', function () {
 });
 
 // ---------------------------------------------------------------------------------------------
+// SPEC-014 TASK-006: earlier fixes without a test until now
+// ---------------------------------------------------------------------------------------------
+
+peppolTest('BR_CL_10_seller_and_buyer_identifiers_use_valid_schemes', function () {
+	global $conf;
+	$conf->global->PEPPOL_AP_SENDER_ID = '0208:0000000097';
+	$inv = peppolTestInvoice('PEPPOLTEST-ID1', Facture::TYPE_STANDARD, Facture::STATUS_VALIDATED, array(array(1, 100, 21, 0)));
+	$xml = peppolTestMakeXml($inv, $warn);
+	check($xml !== null, 'no XML written (' . implode(' ; ', $warn) . ')');
+
+	// Seller electronic address = the configured Peppol ID (scheme 0208), not the VAT-based 9925
+	$sellerEndpoint = $xml->xpath('/*/cac:AccountingSupplierParty/cac:Party/cbc:EndpointID');
+	check(!empty($sellerEndpoint), 'seller EndpointID missing');
+	check((string) $sellerEndpoint[0]['schemeID'] === '0208', 'seller EndpointID schemeID is ' . $sellerEndpoint[0]['schemeID'] . ', expected 0208');
+	check((string) $sellerEndpoint[0] === '0000000097', 'seller EndpointID value is ' . $sellerEndpoint[0]);
+
+	// BR-CL-10: a PartyIdentification scheme must be an ICD code; VAT schemes (99xx) and empty schemes are invalid
+	foreach (array('AccountingSupplierParty', 'AccountingCustomerParty') as $party) {
+		foreach ($xml->xpath('/*/cac:' . $party . '/cac:Party/cac:PartyIdentification/cbc:ID') as $id) {
+			$scheme = (string) $id['schemeID'];
+			check($scheme === '' ? false : strpos($scheme, '99') !== 0, "$party PartyIdentification has invalid schemeID '$scheme'");
+		}
+	}
+
+	// Buyer electronic address = the Peppol ID stored on the third party (extrafield), scheme kept
+	$buyerEndpoint = $xml->xpath('/*/cac:AccountingCustomerParty/cac:Party/cbc:EndpointID');
+	check(!empty($buyerEndpoint), 'buyer EndpointID missing');
+	check((string) $buyerEndpoint[0]['schemeID'] === '0208', 'buyer EndpointID schemeID is ' . $buyerEndpoint[0]['schemeID'] . ', expected 0208');
+	check((string) $buyerEndpoint[0] === '0000000196', 'buyer EndpointID value is ' . $buyerEndpoint[0]);
+
+	// BR-CO-09: VAT identifiers start with an uppercase ISO country code
+	$sellerVat = $xml->xpath('/*/cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID');
+	check(!empty($sellerVat) && preg_match('/^[A-Z]{2}/', (string) $sellerVat[0]), 'seller VAT identifier must start with an uppercase country code');
+	$conf->global->PEPPOL_AP_SENDER_ID = '';
+});
+
+peppolTest('R120_line_amount_matches_quantity_price_and_discount', function () {
+	// PEPPOL-EN16931-R120: line net amount = quantity x (price / base quantity) + charges - allowances (slack 0.02)
+	// and it must equal the Dolibarr line total, whatever the rounding of price and discount
+	$cases = array(
+		array(3, 33.33, 21, 7.5),
+		array(7, 1.15, 6, 12),
+		array(1, 99.99, 21, 33),
+		array(13, 0.37, 21, 3),
+		array(2.5, 19.99, 12, 10),
+		// unit prices with more than 2 decimals: price entered VAT included, converted by Dolibarr
+		array(5, 55 / 1.21, 21, 5),
+		array(8, 18 / 1.21, 21, 5),
+		array(2, 119 / 1.21, 21, 5),
+		array(3, 10 / 1.06, 6, 0),
+		array(7, 3 / 1.21, 21, 0),
+	);
+	$inv = peppolTestInvoice('PEPPOLTEST-R120', Facture::TYPE_STANDARD, Facture::STATUS_VALIDATED, $cases);
+	$xml = peppolTestMakeXml($inv, $warn);
+	check($xml !== null, 'no XML written (' . implode(' ; ', $warn) . ')');
+	$lines = $xml->xpath('//cac:InvoiceLine');
+	check(count($lines) === count($cases), count($lines) . ' lines in the XML, expected ' . count($cases));
+	$sum = 0;
+	foreach ($lines as $i => $line) {
+		$line->registerXPathNamespace('cbc', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
+		$line->registerXPathNamespace('cac', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
+		$qty = (float) $line->xpath('cbc:InvoicedQuantity')[0];
+		$price = (float) $line->xpath('cac:Price/cbc:PriceAmount')[0];
+		$baseQty = $line->xpath('cac:Price/cbc:BaseQuantity');
+		$baseQty = empty($baseQty) ? 1.0 : (float) $baseQty[0];
+		$allowances = 0.0;
+		foreach ($line->xpath('cac:AllowanceCharge[cbc:ChargeIndicator="false"]/cbc:Amount') as $a) {
+			$allowances += (float) $a;
+		}
+		$charges = 0.0;
+		foreach ($line->xpath('cac:AllowanceCharge[cbc:ChargeIndicator="true"]/cbc:Amount') as $c) {
+			$charges += (float) $c;
+		}
+		$lineAmount = (float) $line->xpath('cbc:LineExtensionAmount')[0];
+		$expected = $qty * ($price / $baseQty) + $charges - $allowances;
+		check(abs($lineAmount - $expected) <= 0.02, 'line ' . ($i + 1) . " R120: LineExtensionAmount $lineAmount, quantity x price - allowances = " . round($expected, 4));
+		$sum += $lineAmount;
+	}
+	checkEquals(round($sum, 2), peppolTestValue($xml, '/*/cac:LegalMonetaryTotal/cbc:LineExtensionAmount'), 'document LineExtensionAmount = sum of lines');
+});
+
+peppolTest('BUG_015_xml_amounts_equal_dolibarr_totals', function () {
+	// Unit prices with more than 2 decimals (price entered VAT included): the XML line amounts and the
+	// document totals must be the amounts of the Dolibarr invoice (the PDF), to the cent
+	$cases = array(
+		array(3, 10 / 1.06, 6, 0),
+		array(7, 3 / 1.21, 21, 0),
+		array(5, 55 / 1.21, 21, 5),
+		array(8, 18 / 1.21, 21, 5),
+		array(11, 4.99 / 1.21, 21, 0),
+	);
+	foreach (array(Facture::TYPE_STANDARD => 'InvoiceLine', Facture::TYPE_CREDIT_NOTE => 'CreditNoteLine') as $type => $lineTag) {
+		$inv = peppolTestInvoice('PEPPOLTEST-TOT' . $type, $type, Facture::STATUS_VALIDATED, $cases);
+		$xml = peppolTestMakeXml($inv, $warn);
+		check($xml !== null, 'no XML written (' . implode(' ; ', $warn) . ')');
+		foreach ($xml->xpath('//cac:' . $lineTag) as $i => $line) {
+			$line->registerXPathNamespace('cbc', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
+			checkEquals(abs($inv->lines[$i]->total_ht), (float) $line->xpath('cbc:LineExtensionAmount')[0], "$lineTag " . ($i + 1) . ' LineExtensionAmount vs Dolibarr total_ht');
+		}
+		checkEquals(abs($inv->total_ht), peppolTestValue($xml, '/*/cac:LegalMonetaryTotal/cbc:TaxExclusiveAmount'), "$lineTag document TaxExclusiveAmount vs Dolibarr total_ht");
+		// VAT: EN 16931 BR-CO-17 computes it per rate on the taxable amount (Dolibarr sums the VAT of each
+		// line by default, so the VAT may differ by at most 1 cent per rate: imposed by the standard)
+		$taxable = array();
+		foreach ($inv->lines as $l) {
+			$rate = (string) (float) $l->tva_tx;
+			$taxable[$rate] = ($taxable[$rate] ?? 0) + abs($l->total_ht);
+		}
+		$vat = 0;
+		foreach ($taxable as $rate => $base) {
+			$vat += round($base * (float) $rate / 100, 2);
+		}
+		checkEquals(round($vat, 2), peppolTestValue($xml, '/*/cac:TaxTotal/cbc:TaxAmount'), "$lineTag VAT per rate (BR-CO-17)");
+		check(abs(abs($inv->total_tva) - $vat) <= 0.01 * count($taxable) + 0.0001, "$lineTag VAT differs from Dolibarr by more than 1 cent per rate");
+		checkEquals(abs($inv->total_ht) + round($vat, 2), peppolTestValue($xml, '/*/cac:LegalMonetaryTotal/cbc:PayableAmount'), "$lineTag PayableAmount");
+	}
+});
+
+// ---------------------------------------------------------------------------------------------
 // Run
 // ---------------------------------------------------------------------------------------------
 
