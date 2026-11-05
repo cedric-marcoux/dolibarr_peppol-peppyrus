@@ -243,7 +243,7 @@ class Peppol
 		dol_syslog("Peppol: thirdparty array_options after fetch_optionals = " . json_encode($objFacture->thirdparty->array_options));
 		if (!empty($objFacture->thirdparty->array_options['options_peppol_id'])) {
 			dol_syslog("Peppol: specific peppol id " . json_encode($objFacture->thirdparty->array_options['options_peppol_id']));
-			//9938:20225000264
+			//9938:00000000000
 			if (strpos($objFacture->thirdparty->array_options['options_peppol_id'], ':')) {
 				$code = explode(':', $objFacture->thirdparty->array_options['options_peppol_id']);
 				dol_syslog("Peppol: buyer Ident code is " . json_encode($code));

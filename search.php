@@ -118,7 +118,7 @@ if ($action == 'select') {
 		$schemeCode = $matches[1];
 	}
 
-	// Save as "schemeCode:participantId" (e.g., "0208:0475670182")
+	// Save as "schemeCode:participantId" (e.g., "0208:0000000097")
 	if (!empty($schemeCode) && !empty($participantid)) {
 		$thirdparty->array_options['options_peppol_id'] = $schemeCode . ':' . $participantid;
 	} else {
