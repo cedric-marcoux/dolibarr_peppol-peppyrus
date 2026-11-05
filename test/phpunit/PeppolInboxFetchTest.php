@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Tests of class/peppolinboxfetch.class.php (stubbed access point, no network, no database).
  */

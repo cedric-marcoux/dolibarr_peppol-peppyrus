@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Tests of class/peppolbooking.class.php: reading an e-invoice (made-up data only, no database).
  */

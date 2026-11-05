@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 /**
  * \file    peppol_search.php
@@ -100,7 +101,7 @@ if ($socid > 0) {
 $searchResults = null;
 $searchCriterion = '';
 if (($action == 'autosearch' && $thirdparty) || ($action == 'search' && $search_query !== '')) {
-	// Up to three requests to the Peppol directory: release the session meanwhile (STANDAARD.md 4.22)
+	// Up to three requests to the Peppol directory: release the session meanwhile (a long action must not block the browser)
 	peppol_sessie_los();
 }
 if ($action == 'autosearch' && $thirdparty) {

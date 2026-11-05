@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 require_once DOL_DOCUMENT_ROOT . '/core/lib/geturl.lib.php';
 
@@ -338,7 +339,7 @@ function peppolCandidatesButton($user)
 
 /**
  * Release the session before a long action (an external service, a loop over many third parties), so the other
- * pages of this user do not wait (STANDAARD.md 4.22). Call it after the checks of rights and token.
+ * pages of this user do not wait (a long action must not block the browser). Call it after the checks of rights and token.
  *
  * @return void
  */

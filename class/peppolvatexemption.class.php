@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: GPL-3.0-or-later
 namespace custom\peppolpeppyrus;
 
 require_once DOL_DOCUMENT_ROOT.'/compta/facture/class/facture.class.php';

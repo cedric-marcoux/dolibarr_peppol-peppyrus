@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: GPL-3.0-or-later
 -- BEGIN MODULEBUILDER INDEXES
 ALTER TABLE llx_peppol ADD INDEX idx_peppol_rowid (rowid);
 ALTER TABLE llx_peppol ADD INDEX idx_peppol_fk_object (fk_object);

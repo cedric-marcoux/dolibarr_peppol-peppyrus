@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: GPL-3.0-or-later
 -- Last check of a third party in the Peppol directory, so the weekly check does not repeat itself
 CREATE TABLE llx_peppol_lookup
 (

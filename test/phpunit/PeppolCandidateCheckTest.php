@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Tests of class/peppolcandidatecheck.class.php (made-up data only, no database).
  */

@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: GPL-3.0-or-later
 -- Peppol IDs found in the Peppol directory for third parties without a Peppol ID (weekly check)
 CREATE TABLE llx_peppol_candidate
 (

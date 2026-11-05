@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: GPL-3.0-or-later
 CREATE TABLE llx_peppol
 (
 	-- BEGIN MODULEBUILDER FIELDS
