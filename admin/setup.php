@@ -178,6 +178,7 @@ $apiUrl = $isProd ? 'https://api.peppyrus.be/v1/' : 'https://api.test.peppyrus.b
 $modeLabel = $isProd ? $langs->trans('peppolModeProduction') : $langs->trans('peppolModeTest');
 $modeClass = $isProd ? 'warning' : 'info';
 
+print peppolDolibarrRecommendedNotice();
 print '<div class="'.$modeClass.'" style="margin-bottom: 20px; padding: 15px;">';
 print '<i class="fas fa-'.($isProd ? 'exclamation-triangle' : 'info-circle').'"></i> ';
 print '<strong>' . $langs->trans('peppolCurrentMode') . ':</strong> ';

@@ -389,3 +389,6 @@ peppolAboutReactivate = Version activée : %s. Désactivez puis réactivez le mo
 peppolAboutChangelog = Nouveautés
 peppolAboutChangelogHelp = Les versions les plus récentes (en anglais) ; la liste complète est dans CHANGELOG.md du module.
 peppolAboutReadme = À propos du module
+
+# Recommended Dolibarr version
+peppolDolibarrRecommended = Dolibarr %s avec PHP %s : le module fonctionne, mais Dolibarr 22 ou plus récent est recommandé. Les versions plus anciennes ne reçoivent plus de mises à jour de sécurité et ne sont pas testées avec PHP 8.4 ou 8.5.

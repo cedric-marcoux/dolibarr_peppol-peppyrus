@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.10.3
+
+- **Dolibarr 22 or newer is recommended.** The minimum stays Dolibarr 18.0, so nothing stops working, but on Dolibarr 18 up to 21 the setup page and the About page show a notice: those versions get no security updates any more and are not tested with PHP 8.4 or 8.5.
+- The automatic checks also check the PHP syntax on PHP 8.5.
+- README: requirements with the recommended version.
+- Test of the version check.
+
+**After updating:** replace the module files and flush memcached; deactivating and reactivating is not needed.
+
 ## 2.10.2
 
 License made explicit, no change in behaviour:

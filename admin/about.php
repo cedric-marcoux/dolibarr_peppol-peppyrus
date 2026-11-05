@@ -81,6 +81,8 @@ dol_include_once('/peppolpeppyrus/core/modules/modPeppolpeppyrus.class.php');
 require_once DOL_DOCUMENT_ROOT . '/core/lib/parsemd.lib.php';
 $tmpmodule = new \modPeppolpeppyrus($db);
 
+print peppolDolibarrRecommendedNotice();
+
 // Version of the files and version activated in this entity (they differ until the module is reactivated)
 $activeVersion = getDolGlobalString('PEPPOL_MODULE_VERSION');
 print '<div class="info">';
