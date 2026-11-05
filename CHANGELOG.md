@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.10.1
+
+About page (setup, tab "About") brought up to date:
+
+- Shows the version of the module, with a warning when the activated version differs (module not reactivated after an update), and the link to the repository.
+- New section "What is new": the five most recent versions of this changelog.
+- The README below it lists the features added since 2.6 (receiving and booking, Peppol candidates, automatic sending, setup) in French, Dutch, German and English.
+- New function `peppolChangelogExcerpt()` with a test.
+
+**After updating:** replace the module files and flush memcached; deactivating and reactivating is not needed.
+
 ## 2.10.0
 
 More control on the setup page (gear icon), new block "Booking incoming invoices" and "Automatic tasks":

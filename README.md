@@ -14,6 +14,10 @@ Ce module permet d'envoyer des factures électroniques via le réseau PEPPOL en 
 - Suivi du statut de livraison des documents
 - Recherche dans l'annuaire PEPPOL
 - Détection automatique de l'identifiant PEPPOL par numéro de TVA
+- Réception : récupération quotidienne des documents entrants et comptabilisation en un clic comme facture fournisseur
+- Candidats Peppol : contrôle hebdomadaire des clients et fournisseurs dans l'annuaire Peppol
+- Envoi automatique des factures clients à heures fixes (désactivé par défaut)
+- Tout se règle dans la configuration du module (roue dentée)
 
 ### Liens :
 - Peppyrus : [https://www.peppyrus.be](https://www.peppyrus.be)
@@ -33,6 +37,10 @@ Deze module maakt het mogelijk om elektronische facturen te verzenden via het PE
 - Tracking van de leveringsstatus van documenten
 - Zoeken in de PEPPOL-directory
 - Automatische detectie van PEPPOL-ID op basis van BTW-nummer
+- Ontvangen: elke dag inkomende documenten ophalen en met één klik inboeken als inkoopfactuur
+- Peppol-kandidaten: wekelijkse controle van klanten en leveranciers in de Peppol-directory
+- Verkoopfacturen automatisch versturen op vaste tijdstippen (standaard uit)
+- Alles in te stellen in de instellingen van de module (tandwiel)
 
 ### Links:
 - Peppyrus: [https://www.peppyrus.be](https://www.peppyrus.be)
@@ -52,6 +60,10 @@ Dieses Modul ermöglicht das Versenden elektronischer Rechnungen über das PEPPO
 - Verfolgung des Lieferstatus von Dokumenten
 - Suche im PEPPOL-Verzeichnis
 - Automatische Erkennung der PEPPOL-ID anhand der USt-IdNr.
+- Empfang: tägliches Abholen eingehender Dokumente und Buchen als Lieferantenrechnung mit einem Klick
+- Peppol-Kandidaten: wöchentliche Prüfung von Kunden und Lieferanten im Peppol-Verzeichnis
+- Automatischer Versand von Kundenrechnungen zu festen Zeiten (standardmäßig aus)
+- Alles einstellbar in der Modulkonfiguration (Zahnrad)
 
 ### Links:
 - Peppyrus: [https://www.peppyrus.be](https://www.peppyrus.be)
@@ -71,6 +83,10 @@ This module allows sending electronic invoices via the PEPPOL network using the 
 - Tracking document delivery status
 - Search in the PEPPOL directory
 - Automatic PEPPOL ID detection by VAT number
+- Receiving: daily fetch of incoming documents, booked as supplier invoice in one click
+- Peppol candidates: weekly check of customers and suppliers in the Peppol directory
+- Automatic sending of customer invoices at set hours (off by default)
+- Everything set up on the setup page of the module (gear icon)
 
 ### Links:
 - Peppyrus: [https://www.peppyrus.be](https://www.peppyrus.be)

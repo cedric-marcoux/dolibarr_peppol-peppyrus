@@ -835,3 +835,22 @@ function peppolApplyCronSettings($db)
 		$db->query($sql);
 	}
 }
+
+/**
+ * The most recent versions of a changelog in Markdown ("## <version>" headings), for the About page
+ *
+ * @param	string	$markdown	Content of CHANGELOG.md
+ * @param	int		$count		Number of versions
+ * @return	string				Markdown of those versions, without the title of the file
+ */
+function peppolChangelogExcerpt($markdown, $count)
+{
+	$parts = preg_split('/^(?=## )/m', str_replace("\r\n", "\n", (string) $markdown));
+	$versions = array();
+	foreach ($parts as $part) {
+		if (strncmp($part, '## ', 3) === 0) {
+			$versions[] = rtrim($part) . "\n";
+		}
+	}
+	return implode("\n", array_slice($versions, 0, max(1, (int) $count)));
+}

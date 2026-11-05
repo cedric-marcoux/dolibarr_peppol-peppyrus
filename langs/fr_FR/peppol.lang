@@ -383,3 +383,9 @@ peppolBookSupplierUnknownNoCreate = Le fournisseur est inconnu et la création d
 peppolAutoSendNotNow = Pas une heure d'envoi : rien n'est envoyé.
 peppolAutoSendNoRight = L'utilisateur du travail planifié n'a pas le droit d'envoyer les factures (Peppol : écriture et créer des factures).
 peppolAutoSendResult = %s facture(s) envoyée(s), %s ignorée(s) (pas de fichier Peppol), %s en échec.
+
+# About page
+peppolAboutReactivate = Version activée : %s. Désactivez puis réactivez le module une fois pour terminer la mise à jour.
+peppolAboutChangelog = Nouveautés
+peppolAboutChangelogHelp = Les versions les plus récentes (en anglais) ; la liste complète est dans CHANGELOG.md du module.
+peppolAboutReadme = À propos du module
