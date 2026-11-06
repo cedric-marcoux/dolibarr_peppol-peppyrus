@@ -222,3 +222,5 @@ PeppolDisclaimerAcceptedBy = Akzeptiert von %s am %s
 PeppolDisclaimerNotAccepted = Ein Administrator muss den Haftungsausschluss in der Konfiguration des Peppol-Moduls akzeptieren, bevor Dokumente versendet oder das Modul aktualisiert werden können
 PeppolDisclaimerMustTick = Kreuzen Sie das Kästchen an, um den Haftungsausschluss zu akzeptieren
 PeppolUpdateStateNotSaved = Der Aktualisierungsstatus konnte nicht in %s gespeichert werden: prüfen Sie, ob der Webserver dort schreiben kann (der Schutz vor alten Aktualisierungsmanifesten hängt davon ab)
+PeppolDisclaimerNotAcceptedNotice = Der Versand über Peppol ist deaktiviert, bis ein Administrator den Haftungsausschluss des Peppol-Moduls akzeptiert (nach manchen Aktualisierungen erneut erforderlich).
+PeppolDisclaimerGoToSetup = Konfiguration des Peppol-Moduls öffnen

@@ -263,6 +263,24 @@ function peppolDisclaimerAcceptance()
 }
 
 /**
+ * Warning shown while the disclaimer is not accepted (#25): why sending is blocked, and for
+ * administrators a link to the module setup where it can be accepted.
+ *
+ * @param User      $user  Current user
+ * @param Translate $langs Translations
+ * @return string          HTML (text escaped)
+ */
+function peppolDisclaimerNotice($user, $langs)
+{
+	$langs->load('peppol@peppolpeppyrus');
+	$html = dol_escape_htmltag($langs->transnoentitiesnoconv('PeppolDisclaimerNotAcceptedNotice'));
+	if (!empty($user->admin)) {
+		$html .= ' <a href="' . dol_escape_htmltag(dol_buildpath('/peppolpeppyrus/admin/setup.php', 1)) . '">' . dol_escape_htmltag($langs->transnoentitiesnoconv('PeppolDisclaimerGoToSetup')) . '</a>';
+	}
+	return $html;
+}
+
+/**
  * Record that an administrator accepted the disclaimer (current record + append-only history).
  *
  * @param DoliDB $db   Database

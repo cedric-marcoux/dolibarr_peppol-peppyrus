@@ -250,3 +250,5 @@ PeppolDisclaimerAcceptedBy = Accepté par %s le %s
 PeppolDisclaimerNotAccepted = Un administrateur doit accepter l'avertissement dans la configuration du module Peppol avant que des documents puissent être envoyés ou le module mis à jour
 PeppolDisclaimerMustTick = Cochez la case pour accepter l'avertissement
 PeppolUpdateStateNotSaved = L'état des mises à jour n'a pas pu être enregistré dans %s : vérifiez que le serveur web peut y écrire (la protection contre les anciens manifestes en dépend)
+PeppolDisclaimerNotAcceptedNotice = L'envoi Peppol est désactivé tant qu'un administrateur n'a pas accepté l'avertissement du module Peppol (à accepter de nouveau après certaines mises à jour).
+PeppolDisclaimerGoToSetup = Ouvrir la configuration du module Peppol

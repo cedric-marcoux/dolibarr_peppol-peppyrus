@@ -247,3 +247,5 @@ PeppolDisclaimerAcceptedBy = Accepted by %s on %s
 PeppolDisclaimerNotAccepted = An administrator must accept the disclaimer in the setup of the Peppol module before documents can be sent or the module updated
 PeppolDisclaimerMustTick = Tick the box to accept the disclaimer
 PeppolUpdateStateNotSaved = The update state could not be saved in %s: check that the web server can write there (the protection against old update manifests depends on it)
+PeppolDisclaimerNotAcceptedNotice = Peppol sending is disabled until an administrator accepts the disclaimer of the Peppol module (required again after some updates).
+PeppolDisclaimerGoToSetup = Open the Peppol module setup

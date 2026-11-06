@@ -219,3 +219,5 @@ PeppolDisclaimerAcceptedBy = Aanvaard door %s op %s
 PeppolDisclaimerNotAccepted = Een beheerder moet de disclaimer aanvaarden in de instellingen van de Peppol-module voordat documenten kunnen worden verzonden of de module kan worden bijgewerkt
 PeppolDisclaimerMustTick = Vink het vakje aan om de disclaimer te aanvaarden
 PeppolUpdateStateNotSaved = De updatestatus kon niet worden opgeslagen in %s: controleer of de webserver daar kan schrijven (de bescherming tegen oude updatemanifesten hangt ervan af)
+PeppolDisclaimerNotAcceptedNotice = Verzenden via Peppol is uitgeschakeld tot een beheerder de disclaimer van de Peppol-module aanvaardt (na sommige updates opnieuw vereist).
+PeppolDisclaimerGoToSetup = De instellingen van de Peppol-module openen

@@ -458,6 +458,8 @@ class ActionsPeppolpeppyrus
 				// Shown disabled with the reason until an administrator accepted the disclaimer (#24)
 				$langs->load('peppol@peppolpeppyrus');
 				print '<div class="inline-block divButAction"><span class="butActionRefused classfortooltip" title="' . dol_escape_htmltag($langs->trans('PeppolDisclaimerNotAccepted')) . '">' . $langs->trans('peppolBtnSend') . '</span></div>';
+				// Visible explanation, not only a tooltip (#25)
+				setEventMessages(peppolDisclaimerNotice($user, $langs), null, 'warnings');
 			} elseif (peppolIsInvoiceStatusEligible($object) && peppolUserCanSend($user)) {
 				$classAction = "butAction";
 				if (!empty($object->array_options['options_peppol_id'])) {

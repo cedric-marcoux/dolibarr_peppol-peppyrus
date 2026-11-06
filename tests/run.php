@@ -925,6 +925,48 @@ peppolTest('SPEC_024_disclaimer_required_before_sending', function () {
 	check(preg_match('/function peppolSendToAccessPoint\([^)]*\)\s*\{[^}]*?if \(!peppolDisclaimerAcceptance\(\)\)/s', $lib) === 1, 'the access point call itself must check the acceptance');
 });
 
+peppolTest('BUG_025_disclaimer_notice_visible', function () {
+	global $langs, $conf;
+	$accepted = json_encode(array('version' => PEPPOL_DISCLAIMER_VERSION, 'user_id' => 1, 'login' => 'a', 'date' => 1));
+	$writer = peppolTestUser(array('peppolpeppyrus' => array('write' => 1)));
+	$admin = peppolTestUser(array());
+	$admin->admin = 1;
+	// Notice: explanation for everybody, link to the setup only for administrators, escaped
+	$n = peppolDisclaimerNotice($writer, $langs);
+	check($n !== '' && strpos($n, 'admin/setup.php') === false, 'notice for a non administrator');
+	check(strpos(peppolDisclaimerNotice($admin, $langs), 'peppolpeppyrus/admin/setup.php') !== false, 'setup link missing for administrators');
+	try {
+		peppolTestSetDisclaimer(null);
+		$inv = peppolTestInvoice('PEPPOLTEST-NOTICE', Facture::TYPE_STANDARD, Facture::STATUS_VALIDATED, array(array(1, 10, 21, 0)));
+		$inv->id = 999003;
+		$GLOBALS['user'] = $writer;
+		$_SESSION['dol_events'] = array();
+		$hooks = new ActionsPeppolpeppyrus($GLOBALS['db']);
+		$action = '';
+		ob_start();
+		$hooks->addMoreActionsButtons(array('context' => 'invoicecard'), $inv, $action, null);
+		ob_end_clean();
+		$warnings = isset($_SESSION['dol_events']['warnings']) ? implode(' ', $_SESSION['dol_events']['warnings']) : '';
+		check(strpos($warnings, dol_escape_htmltag($langs->transnoentitiesnoconv('PeppolDisclaimerNotAcceptedNotice'))) !== false, 'no visible warning on the invoice while the disclaimer is not accepted');
+		$_SESSION['dol_events'] = array();
+		peppolTestSetDisclaimer($accepted);
+		ob_start();
+		$hooks->addMoreActionsButtons(array('context' => 'invoicecard'), $inv, $action, null);
+		ob_end_clean();
+		check(empty($_SESSION['dol_events']['warnings']), 'warning shown although the disclaimer is accepted');
+	} finally {
+		peppolTestSetDisclaimer($accepted);
+		$_SESSION['dol_events'] = array();
+	}
+	$src = file_get_contents(dirname(__DIR__) . '/admin/update.php');
+	check(preg_match("/PeppolUpdateDone.*?if \(!peppolDisclaimerAcceptance\(\)\) \{\s*setEventMessages\(peppolDisclaimerNotice/s", $src) === 1, 'no warning after an update that requires a new acceptance');
+	check(strpos($src, "info_admin(peppolDisclaimerNotice(\$user, \$langs), 0, 0, 'warning')") !== false, 'no warning in the Updates tab');
+	foreach (array('en_US', 'fr_FR', 'nl_BE', 'de_DE') as $lang) {
+		$txt = file_get_contents(dirname(__DIR__) . '/langs/' . $lang . '/peppol.lang');
+		check(preg_match('/^PeppolDisclaimerNotAcceptedNotice = \S/m', $txt) && preg_match('/^PeppolDisclaimerGoToSetup = \S/m', $txt), 'notice translation missing in ' . $lang);
+	}
+});
+
 peppolTest('SPEC_022_release_choice_per_channel', function () {
 	$list = array(
 		peppolTestRelease('v2.3.0', false),

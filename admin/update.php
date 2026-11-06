@@ -155,6 +155,10 @@ if ($action == 'finalize') {
 	$result = $mod->init();
 	if ($result > 0) {
 		setEventMessages($langs->trans('PeppolUpdateDone', dol_escape_htmltag($installed)), null, 'mesgs');
+		// The new version may require a new acceptance of the disclaimer: say it, sending is blocked until then (#25)
+		if (!peppolDisclaimerAcceptance()) {
+			setEventMessages(peppolDisclaimerNotice($user, $langs), null, 'warnings');
+		}
 	} else {
 		setEventMessages($langs->trans('PeppolUpdateInitFailed'), $mod->errors, 'errors');
 	}
@@ -244,7 +248,10 @@ print '</table>';
 if (!empty($cache['not_saved'])) {
 	print '<br>' . info_admin($langs->trans('PeppolUpdateStateNotSaved', dol_escape_htmltag($workDir)), 0, 0, 'error');
 }
-if ($refusal !== '' && $available) {
+if (!peppolDisclaimerAcceptance()) {
+	print '<br>' . info_admin(peppolDisclaimerNotice($user, $langs), 0, 0, 'warning');
+}
+if ($refusal !== '' && $refusal !== 'PeppolDisclaimerNotAccepted' && $available) {
 	print '<br>' . info_admin($langs->trans($refusal), 0, 0, 'warning');
 }
 if ($pendingInit) {
