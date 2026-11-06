@@ -200,15 +200,15 @@ if ($id > 0 || !empty($ref)) {
 	print "<p>" . $langs->trans("PeppolTrackDocumentInAP") . "</p>";
 
 
-	$sql = "SELECT * FROM " . MAIN_DB_PREFIX . "peppol WHERE fk_object='" . $object->id . "' AND object_typeid=1 ORDER BY tms";
+	$sql = "SELECT * FROM " . MAIN_DB_PREFIX . "peppol WHERE fk_object = " . ((int) $object->id) . " AND object_typeid=1 ORDER BY tms";
 	$dupres = $db->query($sql);
 
 	while ($obj = $db->fetch_object($dupres)) {
-		print "<p>Etat : " . $obj->status . "</p>";
-		print "<p>Message : " . $obj->message . "</p>";
+		print "<p>Etat : " . dol_escape_htmltag($obj->status) . "</p>";
+		print "<p>Message : " . dol_escape_htmltag($obj->message) . "</p>";
 		$json_pretty = json_encode(json_decode($obj->fulldata), JSON_PRETTY_PRINT);
 
-		print "<p>Détails : <br /><pre>" . $json_pretty . "</pre></p>";
+		print "<p>Détails : <br /><pre>" . dol_escape_htmltag((string) $json_pretty) . "</pre></p>";
 
 		// Display delivery report from Access Point if available
 		$object->fetch_optionals();

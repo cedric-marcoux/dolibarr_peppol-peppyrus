@@ -174,3 +174,5 @@ peppolApiUrl = API URL
 peppolTestModeWarning = Waarschuwing: In TEST-modus moet je een Peppyrus test API-sleutel gebruiken. Als je alleen een productiesleutel hebt, schakel dan de productiemodus in via de configuratie.
 PeppolSendNotConfirmed = Verzending geannuleerd
 PeppolErrorStatusNotEligible = Alleen gevalideerde of betaalde facturen en creditnota's kunnen via Peppol worden verzonden
+PeppolApiKeyKeep = Sleutel opgeslagen - leeg laten om te behouden
+PeppolApiKeyClear = Sleutel wissen

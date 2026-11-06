@@ -202,3 +202,5 @@ peppolCheckErrorNoPeppolID = Third party Peppol ID is empty
 PeppolCheckErrorSenderPeppolID = Your company Peppol ID is not configured
 PeppolSendNotConfirmed = Sending cancelled
 PeppolErrorStatusNotEligible = Only validated or paid invoices and credit notes can be sent through Peppol
+PeppolApiKeyKeep = Key stored - leave empty to keep it
+PeppolApiKeyClear = Clear the key

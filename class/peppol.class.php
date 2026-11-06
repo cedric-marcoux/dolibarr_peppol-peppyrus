@@ -903,8 +903,8 @@ class Peppol
 			// }
 		} catch (ValidationException $e) {
 			dol_syslog(get_class($this) . '::executeHooks peppol error: ' . $e);
-			$baseErrors[] = $langs->trans("PeppolWarningAutoValidate", $e);
-			$this->errors[] = $langs->trans("PeppolWarningAutoValidate", $e);
+			$baseErrors[] = $langs->trans("PeppolWarningAutoValidate", dol_escape_htmltag($e->getMessage()));
+			$this->errors[] = $langs->trans("PeppolWarningAutoValidate", dol_escape_htmltag($e->getMessage()));
 		}
 
 		if (implode('', $baseErrors) != '') {

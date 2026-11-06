@@ -72,29 +72,11 @@ Note: vérification des droits associés et nécessaires:
 	- lire les services service->lire
 	.../...?
 */
-$otherModulesRights = [
-	$user->rights->societe->lire,
-	$user->rights->societe->creer,
-	$user->rights->societe->client->voir,
-	$user->rights->fournisseur->lire,
-	$user->rights->fournisseur->facture->lire,
-	$user->rights->fournisseur->facture->creer,
-	$user->rights->produit->lire,
-	$user->rights->service->lire
-];
 // Security check - Protection if external user
 if ($user->socid > 0) {
 	accessforbidden();
 }
-if ($user->socid > 0) {
-	$socid = $user->socid;
-}
 
-foreach ($otherModulesRights as $perm) {
-	if (empty($perm)) {
-		accessforbidden($langs->trans('PeppolNeedPerms'));
-	}
-}
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.formcompany.class.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/date.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/company.lib.php';
@@ -199,8 +181,10 @@ if ($user->socid > 0) {	// Protection if external user
 	//$socid = $user->socid;
 	accessforbidden();
 }
-//$result = restrictedArea($user, 'peppolpeppyrus', $id, '');
-//if (!$permissiontoread) accessforbidden();
+// The incoming documents need the module right "Import Peppol invoices (supplier)"
+if (!peppolUserCanImport($user)) {
+	accessforbidden();
+}
 
 function createTableHeader()
 {
@@ -240,7 +224,11 @@ if (!GETPOST('confirmmassaction', 'alpha') && $massaction != 'presend' && $massa
 	$massaction = '';
 }
 
-if($action == "refresh") {
+// Refresh downloads the pending documents and confirms them to the access point: token and write right required
+if ($action == "refresh") {
+	if (!$permissiontoadd || !peppolTokenIsValid(GETPOST('token', 'alpha'), currentToken())) {
+		accessforbidden();
+	}
 	peppolGetSupplierInvoicesList();
 }
 
@@ -278,6 +266,9 @@ if (empty($reshook)) {
 	$uploaddir = $conf->peppolpeppyrus->dir_output;
 	include DOL_DOCUMENT_ROOT.'/core/actions_massactions.inc.php';
 
+	if ($massaction == "analyze" && !$permissiontoadd) {
+		accessforbidden();
+	}
 	if ($massaction == "analyze") {
 		$importHtml = "<div class='div-table-responsive-no-min'><table class='PeppolStyled-table'>";
 		$importHtml .= "<thead>";
@@ -286,7 +277,10 @@ if (empty($reshook)) {
 		$importHtml .= "<tbody>";
 		$i = 0;
 		foreach ($toselect as $oid) {
-			$object->fetch($oid);
+			// Multicompany: ignore documents of other entities
+			if ($object->fetch($oid) <= 0 || !peppolObjectIsInUserEntities($object)) {
+				continue;
+			}
 			//Test si le fichier local existe encore ...
 			if ($object->fileExist()) {
 				// $res = $object->importNow();
@@ -506,9 +500,10 @@ if ($mesg) {
 }
 
 // List of mass actions available
-$arrayofmassactions = array(
-	'analyze'=>$langs->trans("AnalyzeNow"),
-);
+$arrayofmassactions = array();
+if ($permissiontoadd) {
+	$arrayofmassactions['analyze'] = $langs->trans("AnalyzeNow");
+}
 if (!empty($permissiontodelete)) {
 	$arrayofmassactions['predelete'] = img_picto('', 'delete', 'class="pictofixedwidth"').$langs->trans("Delete");
 }
@@ -614,7 +609,7 @@ $newcardbutton = '';
 //$newcardbutton .= dolGetButtonTitle($langs->trans('ViewList'), '', 'fa fa-bars imgforviewmode', $_SERVER["PHP_SELF"].'?mode=common'.preg_replace('/(&|\?)*mode=[^&]+/', '', $param), '', ((empty($mode) || $mode == 'common') ? 2 : 1), array('morecss'=>'reposition'));
 //$newcardbutton .= dolGetButtonTitle($langs->trans('ViewKanban'), '', 'fa fa-th-list imgforviewmode', $_SERVER["PHP_SELF"].'?mode=kanban'.preg_replace('/(&|\?)*mode=[^&]+/', '', $param), '', ($mode == 'kanban' ? 2 : 1), array('morecss'=>'reposition'));
 //$newcardbutton .= dolGetButtonTitleSeparator();
-$newcardbutton .= dolGetButtonTitle($langs->trans('Refresh'), '', 'fa fa-repeat fas fa-redo', dol_buildpath('/peppolpeppyrus/peppolimport_list.php?action=refresh', 1), '', $permissiontoadd);
+$newcardbutton .= dolGetButtonTitle($langs->trans('Refresh'), '', 'fa fa-repeat fas fa-redo', dol_buildpath('/peppolpeppyrus/peppolimport_list.php', 1) . '?action=refresh&token=' . newToken(), '', $permissiontoadd);
 
 print_barre_liste($title, $page, $_SERVER["PHP_SELF"], $param, $sortfield, $sortorder, $massactionbutton, $num, $nbtotalofrecords, 'object_'.$object->picto, 0, $newcardbutton, '', $limit, 0, 0, 1);
 

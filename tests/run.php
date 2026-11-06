@@ -623,6 +623,148 @@ peppolTest('BUG_016_peppol_id_built_from_directory_result', function () {
 });
 
 // ---------------------------------------------------------------------------------------------
+// Security hardening (SEC_*) and #18 #19 #20 #21
+// ---------------------------------------------------------------------------------------------
+
+peppolTest('SEC_001_unprotected_directory_page_removed', function () {
+	check(!file_exists(dirname(__DIR__) . '/peppol_search_directory.php'), 'peppol_search_directory.php must not be shipped (search.php replaces it)');
+});
+
+peppolTest('SEC_002_incoming_documents_need_import_right_and_token', function () {
+	check(function_exists('peppolUserCanImport') && function_exists('peppolTokenIsValid'), 'access helpers missing');
+	$importer = peppolTestUser(array('peppolpeppyrus' => array('import' => 1)));
+	$reader = peppolTestUser(array('peppolpeppyrus' => array('read' => 1), 'societe' => array('lire' => 1, 'creer' => 1)));
+	$external = peppolTestUser(array('peppolpeppyrus' => array('import' => 1)));
+	$external->socid = 12;
+	check(peppolUserCanImport($importer), 'user with the import right must be allowed');
+	check(!peppolUserCanImport($reader), 'user without the import right must be refused');
+	check(!peppolUserCanImport($external), 'external user must be refused');
+	check(peppolTokenIsValid('abc', 'abc') && !peppolTokenIsValid('', 'abc') && !peppolTokenIsValid('abc', '') && !peppolTokenIsValid('abd', 'abc'), 'token check');
+	$src = file_get_contents(dirname(__DIR__) . '/peppolimport_list.php');
+	check(strpos($src, "action=refresh', 1)") === false, 'refresh link without token');
+	check(preg_match('/\$action == "refresh"\) \{\s*if \(!\$permissiontoadd \|\| !peppolTokenIsValid/', $src) === 1, 'refresh action must check the write right and the token');
+});
+
+peppolTest('SEC_003_webhook_refuses_unauthenticated_requests', function () {
+	check(function_exists('peppolWebhookAuthRefusal'), 'peppolWebhookAuthRefusal() missing');
+	$body = '{"test":1}';
+	check(peppolWebhookAuthRefusal('', $body, '') !== '', 'no key configured: must refuse');
+	check(peppolWebhookAuthRefusal('secret', $body, '') !== '', 'no signature: must refuse');
+	check(peppolWebhookAuthRefusal('secret', $body, str_repeat('0', 64)) !== '', 'wrong signature: must refuse');
+	check(peppolWebhookAuthRefusal('secret', $body, hash_hmac('sha256', $body, 'secret')) === '', 'valid signature must be accepted');
+	foreach (array('', 'no signature', 'invalid signature') as $unused) {
+		check(strpos(peppolWebhookAuthRefusal('secret', $body, 'x'), 'secret') === false, 'refusal reason must not contain the key');
+	}
+	// Real HTTP request on the local web server, without signature (curl: allow_url_fopen is often disabled)
+	$url = getenv('PEPPOL_TEST_BASE_URL') ?: 'http://127.0.0.1';
+	if (function_exists('curl_init')) {
+		$ch = curl_init($url . '/custom/peppolpeppyrus/public/hook.php');
+		curl_setopt_array($ch, array(CURLOPT_POST => true, CURLOPT_POSTFIELDS => $body, CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 10,
+			CURLOPT_HTTPHEADER => array('Content-Type: application/json', 'X-Scrada-Topic: peppolInboundDocument/new')));
+		curl_exec($ch);
+		$code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+		curl_close($ch);
+		if ($code > 0) {
+			check($code === 403, "webhook over HTTP answered $code instead of 403");
+		} else {
+			echo "  note: webhook HTTP check not run ($url not reachable, set PEPPOL_TEST_BASE_URL)\n";
+		}
+	} else {
+		echo "  note: webhook HTTP check not run (no curl extension)\n";
+	}
+});
+
+peppolTest('SEC_004_incoming_document_entity_checked', function () {
+	global $conf;
+	check(function_exists('peppolObjectIsInUserEntities'), 'peppolObjectIsInUserEntities() missing');
+	$doc = new stdClass();
+	$doc->element = 'peppolimport';
+	$doc->entity = $conf->entity;
+	check(peppolObjectIsInUserEntities($doc), 'document of the current entity must be allowed');
+	$doc->entity = 987654;
+	check(!peppolObjectIsInUserEntities($doc), 'document of another entity must be refused');
+	$src = file_get_contents(dirname(__DIR__) . '/peppolimport_card.php');
+	check(strpos($src, 'peppolObjectIsInUserEntities($object)') !== false, 'card must check the entity');
+	check(preg_match('/\$action == \'analyze\'\) \{\s*(\/\/[^\n]*\n\s*)?if \(!\$permissiontoadd \|\| !peppolTokenIsValid/', $src) === 1, 'card analyze action must check the write right and the token');
+	check(strpos($src, "&action=analyze&token=") !== false, 'card analyze button without token');
+	$list = file_get_contents(dirname(__DIR__) . '/peppolimport_list.php');
+	check(strpos($list, '!peppolObjectIsInUserEntities($object)') !== false, 'analyze mass action must ignore documents of other entities');
+});
+
+peppolTest('SEC_005_zip_export_checks_each_invoice', function () {
+	global $db;
+	check(function_exists('peppolUserCanReadInvoice'), 'peppolUserCanReadInvoice() missing');
+	$res = $db->query("SELECT rowid FROM " . MAIN_DB_PREFIX . "facture ORDER BY rowid LIMIT 1");
+	$row = $res ? $db->fetch_object($res) : null;
+	$inv = new Facture($db);
+	$inv->id = $row ? (int) $row->rowid : 1;
+	$noRight = peppolTestUser(array('societe' => array('lire' => 1)));
+	check(!peppolUserCanReadInvoice($noRight, $inv), 'user without the invoice read right must be refused');
+	$salesRep = peppolTestUser(array('facture' => array('lire' => 1), 'societe' => array('lire' => 1)));
+	if ($row) {
+		ob_start();
+		$refused = !peppolUserCanReadInvoice($salesRep, $inv);
+		$printed = ob_get_clean();
+		check($refused, 'sales representative not linked to the customer must be refused');
+		check(trim(strip_tags($printed)) === '', 'access check printed an error: ' . trim(strip_tags($printed)));
+		$seeAll = peppolTestUser(array('facture' => array('lire' => 1), 'societe' => array('lire' => 1, 'client' => array('voir' => 1))));
+		check(peppolUserCanReadInvoice($seeAll, $inv), 'user who sees all customers must be allowed');
+	}
+	$src = file_get_contents(dirname(__DIR__) . '/class/actions_peppolpeppyrus.class.php');
+	check(strpos($src, 'peppolUserCanReadInvoice($user, $obj)') !== false, 'zip mass action must check each invoice');
+});
+
+peppolTest('BUG_018_send_log_is_written', function () {
+	global $db, $user;
+	$db->begin();
+	$ret = peppolAddLog('peppyrus', 999001, 1, '200', "Message with 'quote' and <b>tag</b>", '{"a":1}');
+	$res = $db->query("SELECT status, message, ap_name FROM " . MAIN_DB_PREFIX . "peppol WHERE fk_object = 999001 AND object_typeid = 1");
+	$row = $res ? $db->fetch_object($res) : null;
+	$db->rollback();
+	check($ret > 0 && $row, 'peppolAddLog() did not write the row (' . $db->lasterror() . ')');
+	check($row->message === "Message with 'quote' and <b>tag</b>" && $row->status === '200' && $row->ap_name === 'peppyrus', 'stored values differ');
+});
+
+peppolTest('SPEC_019_access_point_data_escaped', function () {
+	global $db;
+	check(function_exists('peppolSanitizeIdentifier'), 'peppolSanitizeIdentifier() missing');
+	check(peppolSanitizeIdentifier('0208:0000000097') === '0208:0000000097', 'valid identifier changed');
+	check(peppolSanitizeIdentifier('<script>alert(1)</script>0208:1') === 'scriptalert1script0208:1', 'markup must be removed from identifiers');
+	dol_include_once('/peppolpeppyrus/class/ap-peppyrus.class.php');
+	$ap = new \custom\peppolpeppyrus\Peppyrus($db);
+	$m = new ReflectionMethod($ap, 'parseValidationError');
+	$m->setAccessible(true);
+	$out = $m->invoke($ap, json_encode(array('message' => '<img src=x onerror=alert(1)>', 'errors' => array('<b>x</b>'))));
+	check(strpos($out, '<img') === false && strpos($out, '<b>') === false, 'validation error from the access point not escaped: ' . $out);
+	$src = file_get_contents(dirname(__DIR__) . '/peppol_tab.php');
+	check(strpos($src, '$obj->message . "') === false && strpos($src, 'dol_escape_htmltag($obj->message)') !== false, 'Peppol tab prints the log message without escaping');
+	$src = file_get_contents(dirname(__DIR__) . '/class/ap-peppyrus.class.php');
+	check(strpos($src, '"message/" . $pi->peppolid') === false, 'document id not encoded in the API URL');
+});
+
+peppolTest('SPEC_020_api_keys_not_sent_back_to_the_browser', function () {
+	$src = file_get_contents(dirname(__DIR__) . '/admin/setup.php');
+	check(strpos($src, "value=\"' . getDolGlobalString('PEPPOL_AP_API_KEY") === false, 'setup page prints an API key in the form');
+	check(substr_count($src, 'type="password"') >= 2, 'API key fields must be password fields');
+	$hook = file_get_contents(dirname(__DIR__) . '/public/hook.php');
+	check(strpos($hook, "'Expected: '") === false, 'webhook logs the expected signature');
+});
+
+peppolTest('BUG_021_send_only_invoice_peppol_xml', function () {
+	global $db;
+	$writer = peppolTestUser(array('peppolpeppyrus' => array('write' => 1)));
+	$soc = new PeppolTestThirdparty($db);
+	$soc->element = 'societe';
+	$soc->status = Facture::STATUS_VALIDATED;
+	check(peppolSendRefusalReason($writer, $soc, 'yes') !== '', 'send action must be refused for an object that is not a customer invoice');
+	$inv = peppolTestInvoice('PEPPOLTEST-XML1', Facture::TYPE_STANDARD, Facture::STATUS_VALIDATED, array(array(1, 1, 21, 0)));
+	$_GET['selectFilename'] = 'other-document.xml';
+	$ret = peppolFindFileToUse($inv, '');
+	unset($_GET['selectFilename']);
+	check($ret === -1, 'an XML file that is not the Peppol XML of the invoice was accepted');
+});
+
+// ---------------------------------------------------------------------------------------------
 // Run
 // ---------------------------------------------------------------------------------------------
 

@@ -127,16 +127,6 @@ Note: vérification des droits associés et nécessaires:
 	- lire les services service->lire
 	.../...?
 */
-$otherModulesRights = [
-	$user->rights->societe->lire,
-	$user->rights->societe->creer,
-	$user->rights->societe->client->voir,
-	$user->rights->fournisseur->lire,
-	$user->rights->fournisseur->facture->lire,
-	$user->rights->fournisseur->facture->creer,
-	$user->rights->produit->lire,
-	$user->rights->service->lire
-];
 // Security check - Protection if external user
 if ($user->socid > 0) {
 	accessforbidden();
@@ -146,7 +136,11 @@ if ($user->socid > 0) {
 }
 $isdraft = (($object->statut == $object::STATUS_DRAFT) ? 1 : 0);
 //$result = restrictedArea($user, 'peppolpeppyrus', $id, '');
-if (empty($permissiontoaccess)) {
+if (!peppolUserCanImport($user)) {
+	accessforbidden();
+}
+// Multicompany: the document must belong to one of the entities of the user
+if ($object->id > 0 && !peppolObjectIsInUserEntities($object)) {
 	accessforbidden();
 }
 
@@ -206,7 +200,11 @@ if (empty($reshook)) {
 	// include DOL_DOCUMENT_ROOT.'/core/actions_sendmails.inc.php';
 
 
-	if ($action == 'analyze') { // && $permissiontoadd)
+	// Analyze hands the document over to another module with a fresh token: write right and token required
+	if ($action == 'analyze') {
+		if (!$permissiontoadd || !peppolTokenIsValid(GETPOST('token', 'alpha'), currentToken())) {
+			accessforbidden();
+		}
 		$res = $object->importNow();
 	}
 }
@@ -564,7 +562,7 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 			}
 			*/
 			if (isModEnabled('scaninvoices')) {
-				print dolGetButtonAction($langs->trans('PeppolImportThanksToScanInvoices'), '', 'import', $_SERVER['PHP_SELF'] . '?id=' . $object->id . '&action=analyze', '', (int) ($permissiontoadd));
+				print dolGetButtonAction($langs->trans('PeppolImportThanksToScanInvoices'), '', 'import', $_SERVER['PHP_SELF'] . '?id=' . $object->id . '&action=analyze&token=' . newToken(), '', (int) ($permissiontoadd));
 			}
 
 			// Delete (need delete permission, or if draft, just need create/modify permission)

@@ -103,6 +103,12 @@ This module allows sending electronic invoices via the PEPPOL network using the 
 - **Force XML with VAT null**: Generate XML even for customers without VAT number
 - **Enable API trigger**: Automatically generate Peppol XML when creating invoices via Dolibarr API
 
+### Security notes
+- The API keys are never displayed again once saved; leave the field empty to keep the stored key.
+- Dolibarr writes the headers of outgoing HTTP requests (including the API key header) to `dolibarr.log` when the log level is INFO or DEBUG. Keep the log level at WARNING or above in production.
+- Rights: sending requires the module *write* right or the right to create or send customer invoices; incoming documents require the *Import Peppol invoices* right.
+- The webhook (`public/hook.php`) is disabled until the constant `PEPPOL_AP_WEBHOOK_KEY` is set (HMAC-SHA256 of the body).
+
 ## API Endpoints
 
 - **Test**: `https://api.test.peppyrus.be/v1/`
@@ -216,6 +222,13 @@ When ready to go live:
 - Fix: sending now requires the answer "Yes" in the confirmation dialog, the module write right or the right to create or send invoices, and an eligible document (validated or paid); the send button is shown only to users allowed to send (#13)
 - Fix: unit prices keep the precision stored by Dolibarr in the XML (up to 8 decimals, allowed by EN 16931 for the item net price), so the line amounts and the total without VAT are those of the invoice to the cent, e.g. for prices entered VAT included; rule R120 still holds (#15). The VAT is computed per rate as EN 16931 requires (BR-CO-17) and may differ by at most 1 cent per rate from the sum of the line VAT amounts shown by Dolibarr
 - Fix: the PeppolFinder button of the third-party card opens the search in the same window, without the redundant tooltip; the search page has a Back link, and storing a Peppol ID requires a valid token and the right to modify third parties (#16)
+- Security: access rights and CSRF protection hardened on the incoming documents pages, the Peppol ZIP export, the webhook (now disabled until a secret key is configured) and the Peppol ID search; an unused directory search page was removed. Details will be published in security advisories with the release
+- Fix: the Peppol log is written again (each sending and each confirmation of an incoming document), so the Peppol tab of the invoice shows the history (#18)
+- Fix: data received from the access point is escaped before display and encoded in URLs (#19)
+- Fix: API keys are no longer displayed on the setup page; leave the field empty to keep a key, tick "Clear the key" to remove it (#20)
+- Fix: the send action only handles customer invoices and their Peppol XML (#21)
+- Fix: incoming documents only require the module right "Import Peppol invoices" (no more rights of other modules, see #3)
+- Fix: webhook duplicate check used a wrong table name
 - Fix: PHP warnings in the XML generation (VAT summary, reverse-charge flag)
 - New: regression tests, command line only: `php htdocs/custom/peppolpeppyrus/tests/run.php`
 

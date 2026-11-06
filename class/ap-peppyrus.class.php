@@ -174,16 +174,16 @@ class Peppyrus extends PeppolAP
 
 		$json = json_decode($content);
 
+		// The texts come from the access point: escaped, only the line breaks added here are HTML
 		if ($json && isset($json->message)) {
-			$errorMsg = $json->message;
+			$errorMsg = dol_escape_htmltag((string) $json->message);
 			if (isset($json->errors) && is_array($json->errors)) {
 				foreach ($json->errors as $e) {
-					$errorMsg .= '<br>- ' . (is_string($e) ? $e : json_encode($e));
+					$errorMsg .= '<br>- ' . dol_escape_htmltag(is_string($e) ? $e : json_encode($e));
 				}
 			}
 		} elseif (!empty($content)) {
-			// Fallback: use raw content without HTML tags
-			$errorMsg = strip_tags($content);
+			$errorMsg = dol_escape_htmltag(strip_tags($content));
 		}
 
 		return $errorMsg;
@@ -305,12 +305,12 @@ class Peppyrus extends PeppolAP
 					$message .= ' - ' . $langs->trans('peppolAccessPointCheckInvoiceSuccessConfirmed');
 				}
 				if (isset($json->folder)) {
-					$message .= ' - folder: ' . $json->folder;
+					$message .= ' - folder: ' . dol_escape_htmltag((string) $json->folder);
 				}
 			} else {
 				$message = $langs->trans('peppolAccessPointCheckSuccess');
 				if (isset($json->name)) {
-					$message .= ' - Organization: ' . $json->name;
+					$message .= ' - Organization: ' . dol_escape_htmltag((string) $json->name);
 				}
 			}
 			setEventMessages($message, null, 'mesgs');
@@ -413,11 +413,21 @@ class Peppyrus extends PeppolAP
 		// Use centralized response handler
 		$response = $this->handleApiResponse($result, 'sendToAccessPoint');
 
+		// Keep a trace of every sending in the Peppol log, shown on the Peppol tab of the invoice (#18)
+		peppolAddLog(
+			'peppyrus',
+			$object->id,
+			1,
+			$result['http_code'] ?? 0,
+			$response['success'] ? $langs->trans('peppolSendSuccess') : strip_tags((string) $response['error_msg']),
+			json_encode(array('http_code' => $result['http_code'] ?? 0, 'response' => $response['success'] ? $response['data'] : ($result['content'] ?? '')))
+		);
+
 		if ($response['success']) {
 			$json = $response['data'];
 
 			if (isset($json->id)) {
-				$message = $langs->trans('peppolSendSuccess') . ' - Message ID: ' . $json->id;
+				$message = $langs->trans('peppolSendSuccess') . ' - Message ID: ' . dol_escape_htmltag((string) $json->id);
 				setEventMessages($message, null, 'mesgs');
 
 				// Store the message ID in the object for tracking
@@ -570,7 +580,7 @@ class Peppyrus extends PeppolAP
 		$message = $langs->trans('peppolInvoicesListSuccess') . ' - ' . $messageCount . ' message(s) found';
 
 		if (isset($json->meta)) {
-			$message .= ' (Page ' . $json->meta->currentPage . '/' . $json->meta->pages . ')';
+			$message .= ' (Page ' . ((int) $json->meta->currentPage) . '/' . ((int) $json->meta->pages) . ')';
 		}
 
 		setEventMessages($message, null, 'mesgs');
@@ -585,9 +595,9 @@ class Peppyrus extends PeppolAP
 			}
 
 			$pi->setValues([
-				"peppolid" => $entry->id,
-				"senderID" => $entry->sender,
-				"receiverID" => $entry->recipient,
+				"peppolid" => peppolSanitizeIdentifier($entry->id),
+				"senderID" => peppolSanitizeIdentifier($entry->sender),
+				"receiverID" => peppolSanitizeIdentifier($entry->recipient),
 			]);
 			$res = $pi->create($user);
 			if ($res > 0) {
@@ -638,7 +648,7 @@ class Peppyrus extends PeppolAP
 		}
 
 		// Get message details including content
-		$url = $this->getApiUrl() . "message/" . $pi->peppolid;
+		$url = $this->getApiUrl() . "message/" . rawurlencode((string) $pi->peppolid);
 
 		$headers = [];
 		$headers[] = 'X-Api-Key: ' . $apiKey;
@@ -678,10 +688,10 @@ class Peppyrus extends PeppolAP
 
 		// Add message details
 		if (isset($json->sender)) {
-			$message .= ' - Sender: ' . $json->sender;
+			$message .= ' - Sender: ' . dol_escape_htmltag((string) $json->sender);
 		}
 		if (isset($json->created)) {
-			$message .= ' - Date: ' . $json->created;
+			$message .= ' - Date: ' . dol_escape_htmltag((string) $json->created);
 		}
 
 		setEventMessages($message, null, 'mesgs');
@@ -737,7 +747,7 @@ class Peppyrus extends PeppolAP
 		}
 
 		// Confirm message reception
-		$url = $this->getApiUrl() . "message/" . $pi->peppolid . "/confirm";
+		$url = $this->getApiUrl() . "message/" . rawurlencode((string) $pi->peppolid) . "/confirm";
 
 		$headers = [];
 		$headers[] = 'X-Api-Key: ' . $apiKey;

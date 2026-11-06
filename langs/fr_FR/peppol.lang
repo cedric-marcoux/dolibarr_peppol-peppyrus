@@ -205,3 +205,5 @@ peppolCheckErrorNoPeppolID = L'identifiant Peppol du tiers est vide
 PeppolCheckErrorSenderPeppolID = L'identifiant Peppol de votre entreprise n'est pas configuré
 PeppolSendNotConfirmed = Envoi annulé
 PeppolErrorStatusNotEligible = Seules les factures et notes de crédit validées ou payées peuvent être envoyées via Peppol
+PeppolApiKeyKeep = Clé enregistrée - laisser vide pour la conserver
+PeppolApiKeyClear = Effacer la clé

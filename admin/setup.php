@@ -56,16 +56,24 @@ if ($action == 'update' && !empty($user->admin)) {
 
 	// Update PEPPOL_AP_API_KEY (Production)
 	// Use 'alphanohtml' to allow alphanumeric characters (API keys contain numbers)
-	$api_key = GETPOST('PEPPOL_AP_API_KEY', 'alphanohtml');
-	if (!dolibarr_set_const($db, 'PEPPOL_AP_API_KEY', $api_key, 'chaine', 0, '', $conf->entity)) {
+	// The key is never sent back to the browser: an empty field keeps the stored key (#20)
+	$api_key = trim(GETPOST('PEPPOL_AP_API_KEY', 'alphanohtml'));
+	if ($api_key !== '' && !dolibarr_set_const($db, 'PEPPOL_AP_API_KEY', $api_key, 'chaine', 0, '', $conf->entity)) {
 		$error++;
+	}
+	if ($api_key === '' && GETPOST('PEPPOL_AP_API_KEY_clear', 'int')) {
+		dolibarr_del_const($db, 'PEPPOL_AP_API_KEY', $conf->entity);
 	}
 
 	// Update PEPPOL_AP_API_KEY_DEV (Test/Development)
 	// Use 'alphanohtml' to allow alphanumeric characters (API keys contain numbers)
-	$api_key_dev = GETPOST('PEPPOL_AP_API_KEY_DEV', 'alphanohtml');
-	if (!dolibarr_set_const($db, 'PEPPOL_AP_API_KEY_DEV', $api_key_dev, 'chaine', 0, '', $conf->entity)) {
+	// The key is never sent back to the browser: an empty field keeps the stored key (#20)
+	$api_key_dev = trim(GETPOST('PEPPOL_AP_API_KEY_DEV', 'alphanohtml'));
+	if ($api_key_dev !== '' && !dolibarr_set_const($db, 'PEPPOL_AP_API_KEY_DEV', $api_key_dev, 'chaine', 0, '', $conf->entity)) {
 		$error++;
+	}
+	if ($api_key_dev === '' && GETPOST('PEPPOL_AP_API_KEY_DEV_clear', 'int')) {
+		dolibarr_del_const($db, 'PEPPOL_AP_API_KEY_DEV', $conf->entity);
 	}
 
 	// Update PEPPOL_PROD
@@ -157,21 +165,21 @@ if ($action == 'edit') {
 	print '<tr class="oddeven">';
 	print '<td><label for="PEPPOL_AP_SENDER_ID">' . $langs->trans("PEPPOL_AP_SENDER_ID") . '</label>';
 	print '<br><span class="opacitymedium small">' . $langs->trans("PEPPOL_AP_SENDER_IDTooltip") . '</span></td>';
-	print '<td><input type="text" name="PEPPOL_AP_SENDER_ID" id="PEPPOL_AP_SENDER_ID" class="flat minwidth400" value="' . getDolGlobalString('PEPPOL_AP_SENDER_ID', '') . '" placeholder="0208:0000000097"></td>';
+	print '<td><input type="text" name="PEPPOL_AP_SENDER_ID" id="PEPPOL_AP_SENDER_ID" class="flat minwidth400" value="' . dol_escape_htmltag(getDolGlobalString('PEPPOL_AP_SENDER_ID', '')) . '" placeholder="0208:0000000097"></td>';
 	print '</tr>';
 
 	// PEPPOL_AP_API_KEY (Production)
 	print '<tr class="oddeven">';
 	print '<td><label for="PEPPOL_AP_API_KEY">' . $langs->trans("PEPPOL_AP_API_KEY") . '</label>';
 	print '<br><span class="opacitymedium small">' . $langs->trans("PEPPOL_AP_API_KEYTooltip") . '</span></td>';
-	print '<td><input type="text" name="PEPPOL_AP_API_KEY" id="PEPPOL_AP_API_KEY" class="flat minwidth400" value="' . getDolGlobalString('PEPPOL_AP_API_KEY', '') . '"></td>';
+	print '<td><input type="password" autocomplete="new-password" name="PEPPOL_AP_API_KEY" id="PEPPOL_AP_API_KEY" class="flat minwidth400" value="" placeholder="' . dol_escape_htmltag(getDolGlobalString('PEPPOL_AP_API_KEY') !== '' ? $langs->trans('PeppolApiKeyKeep') : '') . '">' . (getDolGlobalString('PEPPOL_AP_API_KEY') !== '' ? ' <label class="nowraponall"><input type="checkbox" name="PEPPOL_AP_API_KEY_clear" value="1"> ' . $langs->trans('PeppolApiKeyClear') . '</label>' : '') . '</td>';
 	print '</tr>';
 
 	// PEPPOL_AP_API_KEY_DEV (Test/Development)
 	print '<tr class="oddeven">';
 	print '<td><label for="PEPPOL_AP_API_KEY_DEV">' . $langs->trans("PEPPOL_AP_API_KEY_DEV") . '</label>';
 	print '<br><span class="opacitymedium small">' . $langs->trans("PEPPOL_AP_API_KEY_DEVTooltip") . '</span></td>';
-	print '<td><input type="text" name="PEPPOL_AP_API_KEY_DEV" id="PEPPOL_AP_API_KEY_DEV" class="flat minwidth400" value="' . getDolGlobalString('PEPPOL_AP_API_KEY_DEV', '') . '"></td>';
+	print '<td><input type="password" autocomplete="new-password" name="PEPPOL_AP_API_KEY_DEV" id="PEPPOL_AP_API_KEY_DEV" class="flat minwidth400" value="" placeholder="' . dol_escape_htmltag(getDolGlobalString('PEPPOL_AP_API_KEY_DEV') !== '' ? $langs->trans('PeppolApiKeyKeep') : '') . '">' . (getDolGlobalString('PEPPOL_AP_API_KEY_DEV') !== '' ? ' <label class="nowraponall"><input type="checkbox" name="PEPPOL_AP_API_KEY_DEV_clear" value="1"> ' . $langs->trans('PeppolApiKeyClear') . '</label>' : '') . '</td>';
 	print '</tr>';
 
 	// PEPPOL_PROD

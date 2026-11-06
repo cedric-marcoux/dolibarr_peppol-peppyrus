@@ -65,37 +65,23 @@ dol_include_once('/peppolpeppyrus/lib/peppol.lib.php');
 
 // Get raw POST data
 $rawPayload = file_get_contents('php://input');
-$headers = getallheaders();
+$headers = array_change_key_case(function_exists('getallheaders') ? (getallheaders() ?: array()) : array(), CASE_LOWER);
 
-dol_syslog('Peppol webhook received - Headers: ' . json_encode($headers), LOG_DEBUG);
+dol_syslog('Peppol webhook received - Header names: ' . implode(',', array_keys($headers)), LOG_DEBUG);
 dol_syslog('Peppol webhook received - Payload length: ' . strlen($rawPayload), LOG_DEBUG);
 
-// Verify HMAC signature
+// Authentication: the webhook is disabled until a secret key is configured, and every request
+// must carry the HMAC-SHA256 of its body computed with that key
 $secretKey = getDolGlobalString('PEPPOL_AP_WEBHOOK_KEY');
-if (!empty($secretKey)) {
-	$hmacReceived = isset($headers['x-scrada-hmac-sha256']) ? $headers['x-scrada-hmac-sha256'] : '';
-
-	if (empty($hmacReceived)) {
-		dol_syslog('Peppol webhook error: No HMAC signature provided', LOG_ERR);
-		http_response_code(403);
-		echo json_encode(['error' => 'No HMAC signature']);
-		exit;
-	}
-
-	$hmacCalculated = hash_hmac('sha256', $rawPayload, $secretKey);
-
-	if (!hash_equals($hmacCalculated, $hmacReceived)) {
-		dol_syslog('Peppol webhook error: HMAC verification failed', LOG_ERR);
-		dol_syslog('Expected: ' . $hmacCalculated . ' Got: ' . $hmacReceived, LOG_DEBUG);
-		http_response_code(403);
-		echo json_encode(['error' => 'Invalid HMAC signature']);
-		exit;
-	}
-
-	dol_syslog('Peppol webhook: HMAC verification successful', LOG_DEBUG);
-} else {
-	dol_syslog('Peppol webhook warning: No secret key configured, skipping HMAC verification', LOG_WARNING);
+$hmacReceived = isset($headers['x-scrada-hmac-sha256']) ? $headers['x-scrada-hmac-sha256'] : '';
+$refusal = peppolWebhookAuthRefusal($secretKey, $rawPayload, $hmacReceived);
+if ($refusal !== '') {
+	dol_syslog('Peppol webhook refused: ' . $refusal, LOG_WARNING);
+	http_response_code(403);
+	echo json_encode(['error' => 'Forbidden']);
+	exit;
 }
+dol_syslog('Peppol webhook: HMAC verification successful', LOG_DEBUG);
 
 // Extract webhook metadata from headers
 $topic = isset($headers['x-scrada-topic']) ? $headers['x-scrada-topic'] : '';
@@ -146,7 +132,7 @@ try {
 } catch (\Exception $e) {
 	dol_syslog('Peppol webhook error: ' . $e->getMessage(), LOG_ERR);
 	http_response_code(500);
-	echo json_encode(['error' => $e->getMessage()]);
+	echo json_encode(['error' => 'Internal error']);
 }
 
 /**
@@ -188,7 +174,7 @@ function handleInboundDocument($db, $headers, $xml)
 	$pi = new Peppolimport($db);
 
 	// Try to load by peppolid
-	$sql = "SELECT rowid FROM " . MAIN_DB_PREFIX . "peppol_import WHERE peppolid = '" . $db->escape($documentId) . "'";
+	$sql = "SELECT rowid FROM " . MAIN_DB_PREFIX . "peppol_peppolimport WHERE peppolid = '" . $db->escape($documentId) . "'";
 	$resql = $db->query($sql);
 	if ($resql) {
 		if ($db->num_rows($resql) > 0) {

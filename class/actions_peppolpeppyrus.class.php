@@ -133,7 +133,8 @@ class ActionsPeppolpeppyrus
 				if ($zip->open($zipname, ZipArchive::CREATE | ZipArchive::OVERWRITE)) {
 					dol_syslog(get_class($this) . '::doMassActions zip destination is ' . $zipname);
 					foreach ($parameters['toselect'] as $objectid) {
-						if ($obj->fetch($objectid) > 0) {
+						// Each invoice must be visible to the user (own customers, entity, external users)
+						if ($obj->fetch($objectid) > 0 && peppolUserCanReadInvoice($user, $obj)) {
 							$fic = $conf->facture->dir_output . '/' . $obj->ref . "/" . $obj->ref . "_peppol.xml";
 							if (file_exists($fic)) {
 								$zip->addFile($fic, basename($fic));

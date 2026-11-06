@@ -177,3 +177,5 @@ peppolApiUrl = API-URL
 peppolTestModeWarning = Achtung: Im TEST-Modus müssen Sie einen Peppyrus Test-API-Schlüssel verwenden. Wenn Sie nur einen Produktionsschlüssel haben, aktivieren Sie den Produktionsmodus in der Konfiguration.
 PeppolSendNotConfirmed = Versand abgebrochen
 PeppolErrorStatusNotEligible = Nur freigegebene oder bezahlte Rechnungen und Gutschriften können über Peppol gesendet werden
+PeppolApiKeyKeep = Schlüssel gespeichert - leer lassen, um ihn zu behalten
+PeppolApiKeyClear = Schlüssel löschen
