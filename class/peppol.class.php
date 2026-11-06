@@ -599,7 +599,8 @@ class Peppol
 
 				$meansCodeAndLabel = dolibarrToPeppolMeansCode($objFacture->mode_reglement_code);
 				if (is_array($meansCodeAndLabel) && $meansCodeAndLabel['code'] != '' && $meansCodeAndLabel['label'] != "") {
-					$payment->setId($objFacture->ref); //référence du virement
+					// Payment reference of the transfer, as on the PDF and in the QR code (#6)
+					$payment->setId(peppolPaymentReference($objFacture));
 					$payment->setTerms($paymentTerms);
 					$payment->setMeansCode($meansCodeAndLabel['code']); //dol_print_date($objFacture->date_lim_reglement, "dayrfc")
 					$payment->setMeansText($meansCodeAndLabel['label']);

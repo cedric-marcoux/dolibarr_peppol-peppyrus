@@ -90,6 +90,51 @@ function peppolAmountToFloat($str)
 }
 
 /**
+ * Payment reference written as remittance information (cbc:PaymentID, BT-83), the same as on
+ * the PDF and in the EPC QR code (#6): the payment reference stored on the invoice (newer
+ * Dolibarr versions), otherwise the Belgian structured communication when the Dolibarr option
+ * INVOICE_PAYMENT_ENABLE_STRUCTURED_COMMUNICATION is on, otherwise the invoice reference.
+ *
+ * @param  Facture $invoice Invoice
+ * @return string           Payment reference
+ */
+function peppolPaymentReference($invoice)
+{
+	if (!empty($invoice->payment_reference)) {
+		return (string) $invoice->payment_reference;
+	}
+	if (getDolGlobalString('INVOICE_PAYMENT_ENABLE_STRUCTURED_COMMUNICATION')) {
+		return peppolBEStructuredCommunication($invoice->ref, $invoice->type);
+	}
+	return (string) $invoice->ref;
+}
+
+/**
+ * Belgian structured communication (+++123/4567/89012+++) of an invoice, as computed by
+ * dolBECalculateStructuredCommunication() of Dolibarr 21 and later: invoice type prefix,
+ * last 8 digits of the reference, modulo 97 check digits. Dolibarr's function is used when it
+ * exists, the same computation otherwise (older Dolibarr versions).
+ *
+ * @param  string     $ref  Invoice reference
+ * @param  int|string $type Invoice type (Facture::TYPE_*)
+ * @return string           Structured communication
+ */
+function peppolBEStructuredCommunication($ref, $type)
+{
+	if (!function_exists('dolBECalculateStructuredCommunication') && is_readable(DOL_DOCUMENT_ROOT . '/core/lib/functions_be.lib.php')) {
+		include_once DOL_DOCUMENT_ROOT . '/core/lib/functions_be.lib.php';
+	}
+	if (function_exists('dolBECalculateStructuredCommunication')) {
+		return dolBECalculateStructuredCommunication((string) $ref, $type);
+	}
+	$prefixes = array('0' => '20', '1' => '30', '2' => '40', '3' => '21', '5' => '20');
+	$number = (isset($prefixes[(string) $type]) ? $prefixes[(string) $type] : '00') . substr('00000000' . preg_replace('/[^0-9]/', '', (string) $ref), -8);
+	$check = ((int) $number) % 97;
+	$number .= sprintf('%02d', $check === 0 ? 97 : $check);
+	return '+++' . substr($number, 0, 3) . '/' . substr($number, 3, 4) . '/' . substr($number, 7, 5) . '+++';
+}
+
+/**
  * Convert Dolibarr payment codes to UNCL4461 codes
  *
  * @param   string  $search  Dolibarr payment code

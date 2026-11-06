@@ -967,6 +967,86 @@ peppolTest('BUG_025_disclaimer_notice_visible', function () {
 	}
 });
 
+// ---------------------------------------------------------------------------------------------
+// SPEC-006 structured communication as remittance information (#6)
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * cbc:PaymentID of the Peppol XML of an invoice paid by bank transfer to a test bank account.
+ *
+ * @param PeppolTestInvoice $inv Invoice
+ * @return string|null           PaymentID, null when the XML has none
+ */
+function peppolTestPaymentId($inv)
+{
+	global $db, $user, $mysoc;
+	static $accountId = 0;
+	if (!$accountId) {
+		// Created in the test transaction, rolled back at the end
+		$account = new Account($db);
+		$account->ref = 'PEPPOLTEST';
+		$account->label = 'Peppol test account';
+		$account->bank = 'Test Bank';
+		$account->iban = 'BE68539007547034';
+		$account->bic = 'GKCCBEBB';
+		$account->currency_code = 'EUR';
+		$account->country_id = $mysoc->country_id ? $mysoc->country_id : 2;
+		$account->type = Account::TYPE_CURRENT;
+		$account->date_solde = dol_now();
+		$accountId = $account->create($user);
+		check($accountId > 0, 'test bank account not created: ' . $account->error);
+	}
+	$inv->fk_account = $accountId;
+	$inv->mode_reglement_code = 'VIR';
+	$xml = peppolTestMakeXml($inv, $warn);
+	check($xml !== null, 'no XML written (' . implode(' ; ', $warn) . ')');
+	$r = $xml->xpath('/*/cac:PaymentMeans/cbc:PaymentID');
+	return ($r === false || !isset($r[0])) ? null : (string) $r[0];
+}
+
+peppolTest('SPEC_006_structured_communication_as_payment_id', function () {
+	global $conf;
+	$saved = getDolGlobalString('INVOICE_PAYMENT_ENABLE_STRUCTURED_COMMUNICATION');
+	try {
+		// Option off: the invoice reference, as before
+		$conf->global->INVOICE_PAYMENT_ENABLE_STRUCTURED_COMMUNICATION = 0;
+		$inv = peppolTestInvoice('PEPPOLTEST-FA2611-0042', Facture::TYPE_STANDARD, Facture::STATUS_VALIDATED, array(array(1, 100, 21, 0)));
+		checkEquals('PEPPOLTEST-FA2611-0042', peppolTestPaymentId($inv), 'PaymentID without structured communication');
+
+		// Option on (Dolibarr 21+): the structured communication printed on the PDF and in the QR code
+		$conf->global->INVOICE_PAYMENT_ENABLE_STRUCTURED_COMMUNICATION = 1;
+		checkEquals('+++202/6110/04238+++', peppolTestPaymentId($inv), 'PaymentID of an invoice');
+		$cn = peppolTestInvoice('PEPPOLTEST-AV2611-0042', Facture::TYPE_CREDIT_NOTE, Facture::STATUS_VALIDATED, array(array(1, 100, 21, 0)));
+		checkEquals('+++402/6110/04209+++', peppolTestPaymentId($cn), 'PaymentID of a credit note');
+
+		// A payment reference stored on the invoice (newer Dolibarr) wins
+		$inv->payment_reference = 'RF18539007547034';
+		checkEquals('RF18539007547034', peppolTestPaymentId($inv), 'PaymentID with a stored payment reference');
+		$conf->global->INVOICE_PAYMENT_ENABLE_STRUCTURED_COMMUNICATION = 0;
+		checkEquals('RF18539007547034', peppolTestPaymentId($inv), 'stored payment reference without the option');
+	} finally {
+		$conf->global->INVOICE_PAYMENT_ENABLE_STRUCTURED_COMMUNICATION = $saved;
+	}
+});
+
+peppolTest('SPEC_006_structured_communication_algorithm', function () {
+	// Same result as dolBECalculateStructuredCommunication() of Dolibarr 21+ (also on older versions)
+	checkEquals('+++202/6110/04238+++', peppolBEStructuredCommunication('FA2611-0042', 0), 'standard invoice');
+	checkEquals('+++302/6110/04272+++', peppolBEStructuredCommunication('FA2611-0042', 1), 'replacement invoice');
+	checkEquals('+++402/6110/04209+++', peppolBEStructuredCommunication('AV2611-0042', 2), 'credit note');
+	checkEquals('+++210/0000/00759+++', peppolBEStructuredCommunication('AC7', 3), 'deposit, padded with zeros');
+	checkEquals('+++200/0000/02997+++', peppolBEStructuredCommunication('FA29', 0), 'remainder 0 gives check digits 97');
+	checkEquals('+++202/6110/04238+++', peppolBEStructuredCommunication('FA12-2611-0042', 0), 'only the last 8 digits are used');
+	if (is_readable(DOL_DOCUMENT_ROOT . '/core/lib/functions_be.lib.php')) {
+		include_once DOL_DOCUMENT_ROOT . '/core/lib/functions_be.lib.php';
+	}
+	if (function_exists('dolBECalculateStructuredCommunication')) {
+		foreach (array(array('FA2611-0042', 0), array('AV1', 2), array('FA29', 5), array('X', 9)) as $c) {
+			checkEquals(dolBECalculateStructuredCommunication($c[0], $c[1]), peppolBEStructuredCommunication($c[0], $c[1]), 'same as Dolibarr for ' . $c[0]);
+		}
+	}
+});
+
 peppolTest('SPEC_022_release_choice_per_channel', function () {
 	$list = array(
 		peppolTestRelease('v2.3.0', false),
