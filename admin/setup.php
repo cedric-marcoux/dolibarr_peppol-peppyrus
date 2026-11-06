@@ -107,6 +107,22 @@ if ($action == 'update' && !empty($user->admin)) {
 	exit;
 }
 
+// Acceptance of the disclaimer (#24)
+if ($action == 'acceptdisclaimer') {
+	if (!peppolTokenIsValid(GETPOST('token', 'alpha'), currentToken())) {
+		accessforbidden();
+	}
+	if (!GETPOST('peppol_disclaimer_accept', 'int')) {
+		setEventMessages($langs->trans('PeppolDisclaimerMustTick'), null, 'errors');
+	} elseif (peppolDisclaimerAccept($db, $user)) {
+		setEventMessages($langs->trans('SetupSaved'), null, 'mesgs');
+	} else {
+		setEventMessages($langs->trans('Error'), null, 'errors');
+	}
+	header("Location: " . $_SERVER["PHP_SELF"]);
+	exit;
+}
+
 // Test connection action
 if ($action == 'check') {
 	$fact = new Facture($db);
@@ -129,6 +145,30 @@ print load_fiche_titre($langs->trans($page_name), $linkback, 'title_setup');
 // Configuration header
 $head = peppolAdminPrepareHead();
 print dol_get_fiche_head($head, 'settings', $langs->trans($page_name), -1, "peppol@peppolpeppyrus");
+
+// Disclaimer (#24): always shown, acceptance required before sending and updating
+$acceptance = peppolDisclaimerAcceptance();
+print '<div class="' . ($acceptance ? 'info' : 'warning') . '" style="margin-bottom: 20px; padding: 15px;">';
+print '<strong>' . $langs->trans('PeppolDisclaimerTitle') . '</strong><br><br>';
+print dol_escape_htmltag($langs->transnoentitiesnoconv('PeppolDisclaimerIntro')) . '<ul>';
+foreach (array(1, 2, 3, 4) as $n) {
+	print '<li>' . dol_escape_htmltag($langs->transnoentitiesnoconv('PeppolDisclaimerItem' . $n)) . '</li>';
+}
+print '</ul>' . dol_escape_htmltag($langs->transnoentitiesnoconv('PeppolDisclaimerLiability')) . '<br>';
+print dol_escape_htmltag($langs->transnoentitiesnoconv('PeppolDisclaimerLaw'));
+if ($acceptance) {
+	$by = new User($db);
+	$byName = ($by->fetch((int) $acceptance['user_id']) > 0) ? $by->getFullName($langs) : (string) $acceptance['login'];
+	print '<br><br><span class="opacitymedium">' . $langs->trans('PeppolDisclaimerAcceptedBy', dol_escape_htmltag($byName), dol_print_date((int) $acceptance['date'], 'dayhour', 'tzuser')) . '</span>';
+} else {
+	print '<form method="POST" action="' . $_SERVER["PHP_SELF"] . '" style="margin-top: 15px;">';
+	print '<input type="hidden" name="token" value="' . newToken() . '">';
+	print '<input type="hidden" name="action" value="acceptdisclaimer">';
+	print '<label><input type="checkbox" name="peppol_disclaimer_accept" value="1"> ' . dol_escape_htmltag($langs->transnoentitiesnoconv('PeppolDisclaimerAcceptLabel')) . '</label> ';
+	print '<input type="submit" class="button smallpaddingimp" value="' . dol_escape_htmltag($langs->transnoentitiesnoconv('PeppolDisclaimerAcceptButton')) . '">';
+	print '</form>';
+}
+print '</div>';
 
 // Current mode info box
 $isProd = getDolGlobalString('PEPPOL_PROD', '');

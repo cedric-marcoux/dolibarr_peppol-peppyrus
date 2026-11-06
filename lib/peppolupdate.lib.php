@@ -30,6 +30,88 @@ define('PEPPOL_UPDATE_MAX_API_BYTES', 2 * 1024 * 1024);
 define('PEPPOL_UPDATE_MAX_FILES', 5000);
 define('PEPPOL_UPDATE_MAX_UNCOMPRESSED_BYTES', 200 * 1024 * 1024);
 define('PEPPOL_UPDATE_CACHE_SECONDS', 86400);
+define('PEPPOL_UPDATE_MAX_MANIFEST_BYTES', 4096);
+define('PEPPOL_UPDATE_MANIFEST_MAX_VALIDITY', 8 * 86400);
+define('PEPPOL_UPDATE_CHECK_BUDGET', 40);
+
+/**
+ * Read the updater state (channel, cache, newest manifest seen).
+ *
+ * Kept in a private file of the data directory rather than in Dolibarr constants: no Dolibarr
+ * screen can write it, so an administrator of another entity cannot change it (multicompany).
+ *
+ * @param string $workDir Private work folder (DOL_DATA_ROOT/peppolpeppyrus_update)
+ * @return array          [beta => 0|1, cache => array|null, manifest_issued => int]
+ */
+function peppolUpdateLoadState($workDir)
+{
+	$state = array('beta' => 0, 'cache' => null, 'manifest_issued' => 0);
+	$file = $workDir . '/state.json';
+	if (is_file($file) && !is_link($file)) {
+		$data = json_decode((string) @file_get_contents($file), true);
+		if (is_array($data)) {
+			$state['beta'] = empty($data['beta']) ? 0 : 1;
+			$state['cache'] = (isset($data['cache']) && is_array($data['cache'])) ? $data['cache'] : null;
+			$state['manifest_issued'] = (int) ($data['manifest_issued'] ?? 0);
+		}
+	}
+	return $state;
+}
+
+/**
+ * Change the updater state under a lock; the newest manifest seen never goes back.
+ *
+ * @param string   $workDir Private work folder
+ * @param callable $change  function (array $state): array
+ * @return bool             False when the state could not be saved
+ */
+function peppolUpdateChangeState($workDir, $change)
+{
+	if (!is_dir($workDir) && !@mkdir($workDir, 0700, true)) {
+		return false;
+	}
+	$lock = @fopen($workDir . '/state.lock', 'c');
+	if (!$lock || !flock($lock, LOCK_EX)) {
+		return false;
+	}
+	try {
+		$old = peppolUpdateLoadState($workDir);
+		$new = $change($old);
+		$new['manifest_issued'] = max((int) $old['manifest_issued'], (int) ($new['manifest_issued'] ?? 0));
+		return peppolUpdateSaveState($workDir, $new);
+	} finally {
+		flock($lock, LOCK_UN);
+		fclose($lock);
+	}
+}
+
+/**
+ * Write the updater state atomically (file readable by the web server user only).
+ *
+ * @param string $workDir Private work folder
+ * @param array  $state   State
+ * @return bool
+ */
+function peppolUpdateSaveState($workDir, $state)
+{
+	if (!is_dir($workDir) && !@mkdir($workDir, 0700, true)) {
+		return false;
+	}
+	$tmp = $workDir . '/state-' . bin2hex(random_bytes(8)) . '.tmp';
+	$fh = @fopen($tmp, 'xb');
+	if (!$fh) {
+		return false;
+	}
+	$json = json_encode(array('beta' => empty($state['beta']) ? 0 : 1, 'cache' => $state['cache'] ?? null, 'manifest_issued' => (int) ($state['manifest_issued'] ?? 0)));
+	$ok = fwrite($fh, $json) === strlen($json);
+	$ok = fclose($fh) && $ok;
+	@chmod($tmp, 0600);
+	if (!$ok || !@rename($tmp, $workDir . '/state.json')) {
+		@unlink($tmp);
+		return false;
+	}
+	return true;
+}
 
 /**
  * Tell whether a URL may be fetched by the updater: HTTPS on a GitHub host, nothing else.
@@ -63,16 +145,23 @@ function peppolUpdateUrlAllowed($url)
  * @param int    $maxBytes Maximum size of the body
  * @param string $accept   Accept header
  * @param string $error    Error text (out)
+ * @param int    $timeout  Total time allowed for one request, in seconds
  * @return string|false    Body, or false on error
  */
-function peppolUpdateHttpGet($url, $maxBytes, $accept, &$error)
+function peppolUpdateHttpGet($url, $maxBytes, $accept, &$error, $timeout = 15)
 {
 	$error = '';
 	if (!function_exists('curl_init')) {
 		$error = 'curl missing';
 		return false;
 	}
+	$end = time() + max(1, (int) $timeout);
 	for ($hop = 0; $hop < 6; $hop++) {
+		$left = $end - time();
+		if ($left <= 0) {
+			$error = 'Timeout';
+			return false;
+		}
 		if (!peppolUpdateUrlAllowed($url)) {
 			$error = 'URL not allowed';
 			return false;
@@ -83,8 +172,8 @@ function peppolUpdateHttpGet($url, $maxBytes, $accept, &$error)
 		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 15);
-		curl_setopt($ch, CURLOPT_TIMEOUT, 180);
+		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+		curl_setopt($ch, CURLOPT_TIMEOUT, $left);
 		curl_setopt($ch, CURLOPT_USERAGENT, 'peppolpeppyrus-updater');
 		curl_setopt($ch, CURLOPT_HTTPHEADER, array('Accept: ' . $accept));
 		if (defined('CURLOPT_PROTOCOLS')) {
@@ -175,13 +264,18 @@ function peppolUpdateIsNewer($candidate, $installed)
  *
  * Only releases with a well-formed tag, a module ZIP and its signature on this repository are kept.
  *
- * @param array $releases    Decoded JSON of GET /repos/{repo}/releases
- * @param bool  $includeBeta Also consider pre-releases
- * @return array|null        [version, tag, prerelease, zip_name, zip_url, sig_url, html_url] or null
+ * With a manifest (see peppolUpdateParseManifest), only the exact version it names for the
+ * channel is returned: an older signed release offered while the newest one is hidden is refused.
+ *
+ * @param array      $releases    Decoded JSON of GET /repos/{repo}/releases
+ * @param bool       $includeBeta Also consider pre-releases
+ * @param array|null $manifest    Verified manifest
+ * @return array|null             [version, tag, prerelease, zip_name, zip_url, sig_url, html_url] or null
  */
-function peppolUpdatePickRelease($releases, $includeBeta)
+function peppolUpdatePickRelease($releases, $includeBeta, $manifest = null)
 {
 	$best = null;
+	$byVersion = array();
 	if (!is_array($releases)) {
 		return null;
 	}
@@ -223,6 +317,16 @@ function peppolUpdatePickRelease($releases, $includeBeta)
 			continue;
 		}
 		$htmlUrl = 'https://github.com/' . PEPPOL_UPDATE_REPO . '/releases/tag/' . $tag;
+		$candidate = array(
+			'version' => $version,
+			'tag' => $tag,
+			'prerelease' => ($pre || $isBeta),
+			'zip_name' => $zip['name'],
+			'zip_url' => $zip['url'],
+			'sig_url' => $sig,
+			'html_url' => $htmlUrl,
+		);
+		$byVersion[$version] = $candidate;
 		if ($best === null || version_compare($version, $best['version'], '>')) {
 			$best = array(
 				'version' => $version,
@@ -235,7 +339,131 @@ function peppolUpdatePickRelease($releases, $includeBeta)
 			);
 		}
 	}
+	if ($manifest !== null) {
+		$target = peppolUpdateManifestTarget($manifest, $includeBeta);
+		if ($target === '' || !isset($byVersion[$target])) {
+			return null;
+		}
+		$byVersion[$target]['sha256'] = ($target === $manifest['stable']) ? $manifest['stable_sha256'] : $manifest['beta_sha256'];
+		return $byVersion[$target];
+	}
 	return $best;
+}
+
+/**
+ * Version the manifest names for a channel.
+ *
+ * @param array $manifest    Verified manifest
+ * @param bool  $includeBeta Beta channel
+ * @return string            Version, '' if none
+ */
+function peppolUpdateManifestTarget($manifest, $includeBeta)
+{
+	$target = (string) $manifest['stable'];
+	if ($includeBeta && $manifest['beta'] !== '' && ($target === '' || version_compare($manifest['beta'], $target, '>'))) {
+		$target = (string) $manifest['beta'];
+	}
+	return $target;
+}
+
+/**
+ * Message signed for an update manifest.
+ *
+ * @param string $json Manifest content, as published
+ * @return string
+ */
+function peppolUpdateManifestMessage($json)
+{
+	return PEPPOL_UPDATE_MODULE . '-manifest|' . $json;
+}
+
+/**
+ * Verify and decode an update manifest.
+ *
+ * The manifest names the latest stable and beta versions, is signed with the release key and
+ * expires after a few days (it is signed again every week): a release hidden or replaced by an
+ * older one on GitHub is detected instead of being installed.
+ *
+ * @param string $json         Content of update-manifest.json
+ * @param string $signatureB64 Content of update-manifest.json.sig (base64)
+ * @param int    $now          Current time
+ * @param string $error        Error text (out)
+ * @param string $publicKeyB64 Public key (base64)
+ * @return array|null          [module, issued, expires, stable, beta] or null
+ */
+function peppolUpdateParseManifest($json, $signatureB64, $now, &$error, $publicKeyB64 = PEPPOL_UPDATE_PUBLIC_KEY)
+{
+	$error = 'Invalid update manifest';
+	if (!is_string($json) || strlen($json) > PEPPOL_UPDATE_MAX_MANIFEST_BYTES || !function_exists('sodium_crypto_sign_verify_detached')) {
+		return null;
+	}
+	$sig = base64_decode(trim((string) $signatureB64), true);
+	$pk = base64_decode((string) $publicKeyB64, true);
+	if ($sig === false || $pk === false || strlen($sig) !== SODIUM_CRYPTO_SIGN_BYTES || strlen($pk) !== SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES) {
+		return null;
+	}
+	try {
+		if (!sodium_crypto_sign_verify_detached($sig, peppolUpdateManifestMessage($json), $pk)) {
+			return null;
+		}
+	} catch (Throwable $e) {
+		return null;
+	}
+	$m = json_decode($json, true);
+	if (!is_array($m) || ($m['module'] ?? '') !== PEPPOL_UPDATE_MODULE || !is_int($m['issued'] ?? null) || !is_int($m['expires'] ?? null)
+		|| !is_string($m['stable'] ?? null) || !is_string($m['beta'] ?? null)
+		|| !is_string($m['stable_sha256'] ?? null) || !is_string($m['beta_sha256'] ?? null)) {
+		return null;
+	}
+	foreach (array('stable' => '/^\d+\.\d+\.\d+$/', 'beta' => '/^\d+\.\d+\.\d+-beta\.\d+$/') as $k => $re) {
+		if ($m[$k] !== '' && !preg_match($re, $m[$k])) {
+			return null;
+		}
+		// Each version is pinned to the exact ZIP built and signed by the maintainer
+		if (($m[$k] === '') !== ($m[$k . '_sha256'] === '') || ($m[$k] !== '' && !preg_match('/^[0-9a-f]{64}$/', $m[$k . '_sha256']))) {
+			return null;
+		}
+	}
+	if ($m['stable'] === '' && $m['beta'] === '') {
+		return null;
+	}
+	if ($m['expires'] <= $m['issued'] || $m['expires'] - $m['issued'] > PEPPOL_UPDATE_MANIFEST_MAX_VALIDITY || $m['issued'] > $now + 3600) {
+		return null;
+	}
+	if ($m['expires'] < $now) {
+		$error = 'Update manifest expired';
+		return null;
+	}
+	$error = '';
+	return array('module' => $m['module'], 'issued' => $m['issued'], 'expires' => $m['expires'], 'stable' => $m['stable'], 'beta' => $m['beta'],
+		'stable_sha256' => $m['stable_sha256'], 'beta_sha256' => $m['beta_sha256']);
+}
+
+/**
+ * Manifest assets attached to the releases.
+ *
+ * @param array $releases Decoded JSON of GET /repos/{repo}/releases
+ * @return array          List of [json_url, sig_url]
+ */
+function peppolUpdateManifestAssets($releases)
+{
+	$found = array();
+	foreach (is_array($releases) ? $releases : array() as $rel) {
+		if (!is_array($rel) || !empty($rel['draft']) || !isset($rel['tag_name']) || peppolUpdateVersionFromTag((string) $rel['tag_name']) === '') {
+			continue;
+		}
+		$prefix = 'https://github.com/' . PEPPOL_UPDATE_REPO . '/releases/download/' . $rel['tag_name'] . '/';
+		$urls = array();
+		foreach ((isset($rel['assets']) && is_array($rel['assets'])) ? $rel['assets'] : array() as $asset) {
+			if (isset($asset['name'], $asset['browser_download_url']) && $asset['browser_download_url'] === $prefix . $asset['name']) {
+				$urls[$asset['name']] = $asset['browser_download_url'];
+			}
+		}
+		if (isset($urls['update-manifest.json'], $urls['update-manifest.json.sig'])) {
+			$found[] = array($urls['update-manifest.json'], $urls['update-manifest.json.sig']);
+		}
+	}
+	return $found;
 }
 
 /**
@@ -431,10 +659,16 @@ function peppolUpdateExtract($zipPath, $destDir, &$error)
 			$error = 'Cannot extract ' . basename($name);
 			return false;
 		}
+		$written = 0;
+		$expected = (int) $zip->statName($name)['size'];
 		while (!feof($in)) {
 			$chunk = fread($in, 65536);
 			if ($chunk === false) {
-				break;
+				fclose($in);
+				fclose($out);
+				$zip->close();
+				$error = 'Cannot extract ' . basename($name);
+				return false;
 			}
 			$total += strlen($chunk);
 			if ($total > PEPPOL_UPDATE_MAX_UNCOMPRESSED_BYTES) {
@@ -444,10 +678,21 @@ function peppolUpdateExtract($zipPath, $destDir, &$error)
 				$error = 'ZIP content too large';
 				return false;
 			}
-			fwrite($out, $chunk);
+			if (fwrite($out, $chunk) !== strlen($chunk)) {
+				fclose($in);
+				fclose($out);
+				$zip->close();
+				$error = 'Cannot write ' . basename($name) . ' (disk full?)';
+				return false;
+			}
+			$written += strlen($chunk);
 		}
 		fclose($in);
-		fclose($out);
+		if (!fclose($out) || $written !== $expected) {
+			$zip->close();
+			$error = 'Incomplete extraction of ' . basename($name);
+			return false;
+		}
 		@chmod($target, $fileMode);
 	}
 	$zip->close();
@@ -644,13 +889,23 @@ function peppolUpdateDescriptorVersion($file)
 /**
  * Ask GitHub for the newest release of the chosen channel.
  *
- * @param bool   $includeBeta Include pre-releases
- * @param string $error       Error text (out)
- * @return array|null         See peppolUpdatePickRelease(), null when none or on error
+ * Only the version named by the newest valid signed manifest is returned.
+ *
+ * @param bool     $includeBeta    Include pre-releases
+ * @param string   $error          Error text (out)
+ * @param int      $minIssued      Issue time of the newest manifest already seen (replay protection)
+ * @param int      $manifestIssued Issue time of the manifest used (out)
+ * @param callable $fetch          Transport (tests)
+ * @param int|null $now            Current time (tests)
+ * @param string   $publicKey      Public key (tests)
+ * @return array|null              See peppolUpdatePickRelease(), null when none or on error
  */
-function peppolUpdateFetchLatest($includeBeta, &$error)
+function peppolUpdateFetchLatest($includeBeta, &$error, $minIssued = 0, &$manifestIssued = 0, $fetch = 'peppolUpdateHttpGet', $now = null, $publicKey = PEPPOL_UPDATE_PUBLIC_KEY)
 {
-	$body = peppolUpdateHttpGet('https://api.github.com/repos/' . PEPPOL_UPDATE_REPO . '/releases?per_page=30', PEPPOL_UPDATE_MAX_API_BYTES, 'application/vnd.github+json', $error);
+	$error = '';
+	$now = ($now === null) ? time() : (int) $now;
+	$deadline = time() + PEPPOL_UPDATE_CHECK_BUDGET;
+	$body = $fetch('https://api.github.com/repos/' . PEPPOL_UPDATE_REPO . '/releases?per_page=100', PEPPOL_UPDATE_MAX_API_BYTES, 'application/vnd.github+json', $error);
 	if ($body === false) {
 		return null;
 	}
@@ -659,7 +914,47 @@ function peppolUpdateFetchLatest($includeBeta, &$error)
 		$error = 'Invalid answer from GitHub';
 		return null;
 	}
-	return peppolUpdatePickRelease($list, $includeBeta);
+	$assets = peppolUpdateManifestAssets($list);
+	if (count($assets) > 1) {
+		// The maintainer publishes exactly one manifest: copies are an attempt to hide the real one
+		$error = 'Several update manifests found';
+		return null;
+	}
+	if (!$assets) {
+		// Every version with this updater is published with a manifest: its absence is an error
+		// (removed or hidden on GitHub), never a silent "nothing new"
+		$error = 'No update manifest found';
+		return null;
+	}
+	$manifest = null;
+	$lastError = 'Invalid update manifest';
+	foreach ($assets as $pair) {
+		$json = $fetch($pair[0], PEPPOL_UPDATE_MAX_MANIFEST_BYTES, 'application/octet-stream', $e, max(1, $deadline - time()));
+		$sig = ($json === false) ? false : $fetch($pair[1], PEPPOL_UPDATE_MAX_SIG_BYTES, 'application/octet-stream', $e, max(1, $deadline - time()));
+		$m = ($sig === false) ? null : peppolUpdateParseManifest($json, $sig, $now, $e, $publicKey);
+		if ($m === null) {
+			$lastError = $e ?: $lastError;
+			continue;
+		}
+		if ($manifest === null || $m['issued'] > $manifest['issued']) {
+			$manifest = $m;
+		}
+	}
+	if ($manifest === null) {
+		$error = $lastError;
+		return null;
+	}
+	if ($manifest['issued'] < (int) $minIssued) {
+		$error = 'Update manifest older than the last one seen';
+		return null;
+	}
+	$manifestIssued = $manifest['issued'];
+	$target = peppolUpdateManifestTarget($manifest, $includeBeta);
+	$release = peppolUpdatePickRelease($list, $includeBeta, $manifest);
+	if ($target !== '' && $release === null) {
+		$error = 'The latest version (' . $target . ') is not available';
+	}
+	return $release;
 }
 
 /**
@@ -671,9 +966,11 @@ function peppolUpdateFetchLatest($includeBeta, &$error)
  * @param string $moduleDir Installed module folder
  * @param string $workDir   Private work folder in the data directory (backups)
  * @param string $error     Error text (out)
+ * @param callable $fetch    Transport (tests)
+ * @param string $publicKey Public key (tests)
  * @return bool
  */
-function peppolUpdateInstall($release, $installed, $moduleDir, $workDir, &$error)
+function peppolUpdateInstall($release, $installed, $moduleDir, $workDir, &$error, $fetch = 'peppolUpdateHttpGet', $publicKey = PEPPOL_UPDATE_PUBLIC_KEY)
 {
 	$error = '';
 	if (!is_array($release) || !peppolUpdateIsNewer($release['version'], $installed)) {
@@ -686,15 +983,20 @@ function peppolUpdateInstall($release, $installed, $moduleDir, $workDir, &$error
 			return false;
 		}
 	}
-	$sig = peppolUpdateHttpGet($release['sig_url'], PEPPOL_UPDATE_MAX_SIG_BYTES, 'application/octet-stream', $error);
+	// A release chosen by peppolUpdateFetchLatest() is the one named by the signed manifest
+	$sig = $fetch($release['sig_url'], PEPPOL_UPDATE_MAX_SIG_BYTES, 'application/octet-stream', $error);
 	if ($sig === false) {
 		return false;
 	}
-	$data = peppolUpdateHttpGet($release['zip_url'], PEPPOL_UPDATE_MAX_ZIP_BYTES, 'application/octet-stream', $error);
+	$data = $fetch($release['zip_url'], PEPPOL_UPDATE_MAX_ZIP_BYTES, 'application/octet-stream', $error, 180);
 	if ($data === false) {
 		return false;
 	}
-	return peppolUpdateInstallData($release['tag'], $data, $sig, $installed, $moduleDir, $workDir, $error);
+	if (empty($release['sha256']) || !hash_equals((string) $release['sha256'], hash('sha256', $data))) {
+		$error = 'The ZIP is not the one named by the update manifest';
+		return false;
+	}
+	return peppolUpdateInstallData($release['tag'], $data, $sig, $installed, $moduleDir, $workDir, $error, $publicKey);
 }
 
 /**

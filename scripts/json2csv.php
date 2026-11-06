@@ -1,4 +1,9 @@
 <?php
+// Developer tool, command line only: never run from the web
+if (PHP_SAPI !== 'cli') {
+	http_response_code(403);
+	exit;
+}
 
 //convertisseur rapide du fichier json en CSV pour avoir les codes pays
 

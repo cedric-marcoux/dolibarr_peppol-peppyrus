@@ -78,6 +78,20 @@ This module allows sending electronic invoices via the PEPPOL network using the 
 
 ---
 
+## Avertissement / Disclaimer / Haftungsausschluss
+
+**FR** — Ce module est un logiciel libre fourni « tel quel », sans aucune garantie (licence GPL v3, articles 15 et 16). Son auteur n'a aucun lien avec Peppyrus, OpenPeppol ni aucune administration. Vous restez seul responsable de vos documents, de leurs montants et de la TVA, et de la vérification de leur envoi et de leur réception ; testez d'abord et sauvegardez vos données. Dans les limites permises par la loi, l'auteur et les contributeurs déclinent toute responsabilité pour tout dommage direct ou indirect (perte financière, pénalités, documents rejetés ou perdus, perte de données…). Un administrateur doit accepter cet avertissement dans la configuration du module avant tout envoi ou mise à jour.
+
+**NL** — Deze module is vrije software die "zoals ze is" wordt geleverd, zonder enige garantie (GPL v3, artikelen 15 en 16). De auteur is niet verbonden aan Peppyrus, OpenPeppol of enige administratie. U blijft als enige verantwoordelijk voor uw documenten, hun bedragen en btw, en voor de controle van hun verzending en ontvangst; test eerst en maak back-ups. Voor zover wettelijk toegestaan aanvaarden de auteur en bijdragers geen aansprakelijkheid voor directe of indirecte schade (financieel verlies, boetes, geweigerde of verloren documenten, gegevensverlies…). Een beheerder moet deze disclaimer in de module-instellingen aanvaarden vóór elke verzending of update.
+
+**DE** — Dieses Modul ist freie Software und wird „wie besehen“ ohne jede Gewährleistung bereitgestellt (GPL v3, Abschnitte 15 und 16). Der Autor steht in keiner Verbindung zu Peppyrus, OpenPeppol oder einer Verwaltung. Sie bleiben allein verantwortlich für Ihre Dokumente, deren Beträge und Mehrwertsteuer sowie für die Prüfung von Versand und Empfang; testen Sie zuerst und sichern Sie Ihre Daten. Soweit gesetzlich zulässig, übernehmen der Autor und die Mitwirkenden keine Haftung für direkte oder indirekte Schäden (finanzielle Verluste, Strafen, abgelehnte oder verlorene Dokumente, Datenverlust…). Ein Administrator muss diesen Hinweis in der Modulkonfiguration akzeptieren, bevor Dokumente versendet oder das Modul aktualisiert wird.
+
+**EN** — This module is free software provided "as is", without any warranty (GPL v3, sections 15 and 16). Its author is not affiliated with Peppyrus, OpenPeppol or any administration. You remain solely responsible for your documents, their amounts and VAT, and for checking that they are sent and received; test first and keep backups. To the extent permitted by law, the author and contributors accept no liability for any direct or indirect damage (financial loss, penalties, rejected or lost documents, data loss...). An administrator must accept this disclaimer in the module setup before anything is sent or the module is updated.
+
+Nothing in this notice excludes or limits a liability that cannot be excluded or limited by law.
+
+---
+
 # Technical Documentation
 
 ## Requirements
@@ -116,7 +130,9 @@ The **Updates** tab of the module setup shows the installed version and the late
 - Every release ZIP is signed with the maintainer's Ed25519 key (asset `<zip>.sig`, message `peppolpeppyrus|<tag>|<sha256 of the zip>`). The public key is embedded in the module and published in `release-signing-key.pub`. An unsigned or wrongly signed ZIP, a ZIP with unsafe paths or links, or an older version is refused.
 - The installed version is backed up in `documents/peppolpeppyrus_update/` (not reachable from the web) and restored automatically if the installation fails.
 - Not available when the module folder is a git checkout, when `installmodules.lock` exists in the Dolibarr data directory, or when the web server cannot write in the module folder. Releases published before 2.3.0 are not signed: install the first signed version by hand.
-- Known limit: the signature proves that a version comes from the maintainer, not that it is the newest one. Someone controlling the GitHub repository could hide a newer release; check the release page when in doubt.
+- Signed manifest: `update-manifest.json` (+ `.sig`), attached to the newest release, names the latest stable and beta versions with the SHA-256 of their exact ZIP, and expires after 14 days (it is signed again every week from the maintainer's local records, never from what GitHub shows). Only the exact ZIP it names is installed; a missing or expired manifest, or one older than a manifest already seen, is reported as an error. Hiding the newest release or offering an older signed one therefore blocks the update instead of installing an outdated version.
+- The settings of the updater are global (entity 0): with multicompany, only the superadministrator can change them.
+- Self-update requires the web server to be able to write in the module folder (as Dolibarr's own module installer does). If you prefer read-only code, keep the folder read-only and install the ZIP by hand: the tab then only reports new versions.
 - Verify a release by hand:
   ```sh
   printf 'peppolpeppyrus|%s|%s' vX.Y.Z "$(sha256sum module_peppolpeppyrus-X.Y.Z.zip | cut -c1-64)" > msg
@@ -246,6 +262,7 @@ When ready to go live:
 - Fix: webhook duplicate check used a wrong table name
 - Fix: PHP warnings in the XML generation (VAT summary, reverse-charge flag)
 - New: **Updates** tab: check and install new versions (stable, or beta when ticked) from signed GitHub releases, with backup and automatic restore; nothing is checked during normal use (#22)
+- Fix: the developer scripts of the `scripts` folder refuse to run from the web (#23)
 - New: regression tests, command line only: `php htdocs/custom/peppolpeppyrus/tests/run.php`
 
 ## Version 2.2.3

@@ -1,4 +1,9 @@
 <?php
+// Developer tool, command line only: never run from the web
+if (PHP_SAPI !== 'cli') {
+	http_response_code(403);
+	exit;
+}
 $matches  = preg_grep('/Restler\/AutoLoader.php/i', get_included_files());
 dol_syslog("Peppol matches test for restler is (1) " . json_encode($matches));
 if (count($matches) == 0) {

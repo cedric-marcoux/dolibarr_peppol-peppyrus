@@ -51,33 +51,34 @@ $moduleDir = dirname(__DIR__);
 $workDir = DOL_DATA_ROOT . '/peppolpeppyrus_update';
 $mod = new modPeppolpeppyrus($db);
 $installed = $mod->version;
-$includeBeta = getDolGlobalInt('PEPPOL_UPDATE_BETA') ? true : false;
+$state = peppolUpdateLoadState($workDir);
+$includeBeta = !empty($state['beta']);
 $refusal = peppolUpdateInstallRefusal($user, $moduleDir, DOL_DATA_ROOT);
-
-/**
- * Read the cached result of the last check.
- *
- * @return array|null
- */
-function peppolUpdateReadCache()
-{
-	$cache = json_decode(getDolGlobalString('PEPPOL_UPDATE_CACHE'), true);
-	return is_array($cache) && isset($cache['time']) ? $cache : null;
+if ($refusal === '' && !peppolDisclaimerAcceptance()) {
+	$refusal = 'PeppolDisclaimerNotAccepted';
 }
 
 /**
- * Check GitHub and store the result.
+ * Check GitHub and store the result in the private state file.
  *
- * @param bool $includeBeta Channel
- * @return array            Cache content
+ * @param string $workDir     Private work folder
+ * @param bool   $includeBeta Channel
+ * @return array              Cache content
  */
-function peppolUpdateRefreshCache($includeBeta)
+function peppolUpdateRefreshCache($workDir, $includeBeta)
 {
-	global $db;
+	$state = peppolUpdateLoadState($workDir);
 	$error = '';
-	$release = peppolUpdateFetchLatest($includeBeta, $error);
+	$issued = 0;
+	$release = peppolUpdateFetchLatest($includeBeta, $error, $state['manifest_issued'], $issued);
 	$cache = array('time' => dol_now(), 'beta' => $includeBeta ? 1 : 0, 'release' => $release, 'error' => $error);
-	dolibarr_set_const($db, 'PEPPOL_UPDATE_CACHE', json_encode($cache), 'chaine', 0, '', 0);
+	$saved = peppolUpdateChangeState($workDir, function ($st) use ($issued, $includeBeta, $cache) {
+		$st['manifest_issued'] = (int) $issued;
+		$st['beta'] = $includeBeta ? 1 : 0;
+		$st['cache'] = $cache;
+		return $st;
+	});
+	$cache['not_saved'] = !$saved;
 	return $cache;
 }
 
@@ -92,15 +93,14 @@ if (in_array($action, array('setchannel', 'check', 'confirm_install', 'finalize'
 
 if ($action == 'setchannel') {
 	$includeBeta = GETPOST('PEPPOL_UPDATE_BETA', 'int') ? true : false;
-	dolibarr_set_const($db, 'PEPPOL_UPDATE_BETA', $includeBeta ? 1 : 0, 'chaine', 0, '', 0);
-	peppolUpdateRefreshCache($includeBeta);
+	peppolUpdateRefreshCache($workDir, $includeBeta);
 	setEventMessages($langs->trans('SetupSaved'), null, 'mesgs');
 	header('Location: ' . $_SERVER['PHP_SELF']);
 	exit;
 }
 
 if ($action == 'check') {
-	$cache = peppolUpdateRefreshCache($includeBeta);
+	$cache = peppolUpdateRefreshCache($workDir, $includeBeta);
 	if (!empty($cache['error'])) {
 		setEventMessages($langs->trans('PeppolUpdateCheckFailed'), null, 'errors');
 	}
@@ -119,7 +119,12 @@ if ($action == 'confirm_install' && $confirm == 'yes') {
 	ignore_user_abort(true);
 	$error = '';
 	// Never trust the cached data for the installation: ask GitHub again
-	$release = peppolUpdateFetchLatest($includeBeta, $error);
+	$issued = 0;
+	$release = peppolUpdateFetchLatest($includeBeta, $error, $state['manifest_issued'], $issued);
+	peppolUpdateChangeState($workDir, function ($st) use ($issued) {
+		$st['manifest_issued'] = (int) $issued;
+		return $st;
+	});
 	$wantedTag = GETPOST('tag', 'alphanohtml');
 	if (!$release || $release['tag'] !== $wantedTag) {
 		setEventMessages($langs->trans('PeppolUpdateReleaseChanged'), null, 'errors');
@@ -136,7 +141,10 @@ if ($action == 'confirm_install' && $confirm == 'yes') {
 	if ($error !== '') {
 		setEventMessages(dol_escape_htmltag($error), null, 'warnings');
 	}
-	dolibarr_del_const($db, 'PEPPOL_UPDATE_CACHE', 0);
+	peppolUpdateChangeState($workDir, function ($st) {
+		$st['cache'] = null;
+		return $st;
+	});
 	// The new code is on disk: run its initialisation in a new request
 	header('Location: ' . $_SERVER['PHP_SELF'] . '?action=finalize&token=' . newToken());
 	exit;
@@ -179,9 +187,9 @@ if (is_dir($workDir)) {
 	}
 }
 
-$cache = peppolUpdateReadCache();
-if ($cache === null || ((int) $cache['time'] + PEPPOL_UPDATE_CACHE_SECONDS) < dol_now() || (int) $cache['beta'] !== ($includeBeta ? 1 : 0)) {
-	$cache = peppolUpdateRefreshCache($includeBeta);
+$cache = (is_array($state['cache']) && isset($state['cache']['time'])) ? $state['cache'] : null;
+if ($cache === null || (int) $cache['time'] > dol_now() || ((int) $cache['time'] + PEPPOL_UPDATE_CACHE_SECONDS) < dol_now() || (int) $cache['beta'] !== ($includeBeta ? 1 : 0)) {
+	$cache = peppolUpdateRefreshCache($workDir, $includeBeta);
 }
 $release = (isset($cache['release']) && is_array($cache['release'])) ? $cache['release'] : null;
 $available = $release && peppolUpdateIsNewer((string) $release['version'], $installed);
@@ -233,6 +241,9 @@ print '<br><span class="opacitymedium small">' . $langs->trans('PeppolUpdateLast
 print '</td></tr>';
 print '</table>';
 
+if (!empty($cache['not_saved'])) {
+	print '<br>' . info_admin($langs->trans('PeppolUpdateStateNotSaved', dol_escape_htmltag($workDir)), 0, 0, 'error');
+}
 if ($refusal !== '' && $available) {
 	print '<br>' . info_admin($langs->trans($refusal), 0, 0, 'warning');
 }

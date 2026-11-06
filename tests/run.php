@@ -246,7 +246,13 @@ function check($cond, $message)
 
 function checkEquals($expected, $actual, $label)
 {
-	if ($expected === null || $actual === null || abs((float) $expected - (float) $actual) > 0.001) {
+	// Numbers are compared with a tolerance, anything else (text, arrays) must be identical
+	if (is_numeric($expected) && is_numeric($actual)) {
+		$differs = abs((float) $expected - (float) $actual) > 0.001;
+	} else {
+		$differs = ($expected !== $actual);
+	}
+	if ($expected === null || $actual === null || $differs) {
 		throw new Exception("$label: expected " . var_export($expected, true) . ', got ' . var_export($actual, true));
 	}
 }
@@ -820,6 +826,82 @@ function peppolTestModuleEntries($version, array $extra = array())
 	), $extra);
 }
 
+peppolTest('BUG_023_developer_scripts_command_line_only', function () {
+	foreach (array('json2csv.php', 'validate.php') as $script) {
+		$src = file_get_contents(dirname(__DIR__) . '/scripts/' . $script);
+		check(strpos($src, "if (PHP_SAPI !== 'cli') {") !== false && strpos($src, "if (PHP_SAPI !== 'cli') {") < 80, $script . ' must refuse to run from the web');
+		if (function_exists('curl_init')) {
+			$ch = curl_init('http://127.0.0.1/custom/peppolpeppyrus/scripts/' . $script);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+			curl_exec($ch);
+			$code = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+			curl_close($ch);
+			if ($code !== 0) {
+				checkEquals(403, $code, $script . ' over HTTP');
+			}
+		}
+	}
+});
+
+/**
+ * Set or remove the disclaimer acceptance of the current entity (inside the test transaction).
+ */
+function peppolTestSetDisclaimer($value, $entity = null)
+{
+	global $db, $conf;
+	$entity = ($entity === null) ? (int) $conf->entity : (int) $entity;
+	$db->query("DELETE FROM " . MAIN_DB_PREFIX . "const WHERE name = 'PEPPOL_DISCLAIMER_ACCEPTED' AND entity = " . $entity);
+	if ($value !== null) {
+		$db->query("INSERT INTO " . MAIN_DB_PREFIX . "const (name, entity, value, type, visible) VALUES ('PEPPOL_DISCLAIMER_ACCEPTED', " . $entity . ", '" . $db->escape($value) . "', 'chaine', 0)");
+	}
+}
+
+peppolTest('SPEC_024_disclaimer_required_before_sending', function () {
+	global $conf, $langs;
+	$accepted = json_encode(array('version' => PEPPOL_DISCLAIMER_VERSION, 'user_id' => 1, 'login' => 'a', 'date' => 1));
+	$writer = peppolTestUser(array('peppolpeppyrus' => array('write' => 1)));
+	$inv = peppolTestInvoice('PEPPOLTEST-DISC', Facture::TYPE_STANDARD, Facture::STATUS_VALIDATED, array(array(1, 10, 21, 0)));
+	try {
+		peppolTestSetDisclaimer(null);
+		check(peppolDisclaimerAcceptance() === null, 'disclaimer seen as accepted without acceptance');
+		checkEquals('PeppolDisclaimerNotAccepted', peppolSendRefusalReason($writer, $inv, 'yes'), 'send refused before acceptance');
+		// A value of another entity or of the global entity 0 does not count
+		peppolTestSetDisclaimer($accepted, 0);
+		$conf->global->PEPPOL_DISCLAIMER_ACCEPTED = $accepted;
+		check(peppolDisclaimerAcceptance() === null, 'acceptance of entity 0 counted for the current entity');
+		peppolTestSetDisclaimer(null, 0);
+		unset($conf->global->PEPPOL_DISCLAIMER_ACCEPTED);
+		peppolTestSetDisclaimer(json_encode(array('version' => PEPPOL_DISCLAIMER_VERSION - 1, 'user_id' => 1, 'login' => 'a', 'date' => 1)));
+		check(peppolDisclaimerAcceptance() === null, 'acceptance of an older text accepted');
+		// Send button shown disabled with the reason
+		$hooks = new ActionsPeppolpeppyrus($GLOBALS['db']);
+		$inv->id = 999002;
+		$action = '';
+		$GLOBALS['user'] = $writer;
+		ob_start();
+		$hooks->addMoreActionsButtons(array('context' => 'invoicecard'), $inv, $action, null);
+		$html = ob_get_clean();
+		check(strpos($html, 'action=peppolSendFile') === false && strpos($html, 'butActionRefused') !== false, 'send link shown before acceptance');
+		// Non administrators cannot accept
+		check(!peppolDisclaimerAccept($GLOBALS['db'], $writer), 'non administrator accepted the disclaimer');
+		peppolTestSetDisclaimer($accepted);
+		checkEquals('', peppolSendRefusalReason($writer, $inv, 'yes'), 'send allowed after acceptance');
+	} finally {
+		peppolTestSetDisclaimer($accepted);
+	}
+	$src = file_get_contents(dirname(__DIR__) . '/admin/setup.php');
+	check(strpos($src, "if (\$action == 'acceptdisclaimer') {\n\tif (!peppolTokenIsValid(") !== false, 'acceptance must check the CSRF token');
+	foreach (array('en_US', 'fr_FR', 'nl_BE', 'de_DE') as $lang) {
+		$txt = file_get_contents(dirname(__DIR__) . '/langs/' . $lang . '/peppol.lang');
+		foreach (array('Title', 'Intro', 'Item1', 'Item2', 'Item3', 'Item4', 'Liability', 'Law', 'AcceptLabel', 'NotAccepted') as $k) {
+			check(preg_match('/^PeppolDisclaimer' . $k . ' = \S/m', $txt) === 1, 'PeppolDisclaimer' . $k . ' missing in ' . $lang);
+		}
+	}
+	$lib = file_get_contents(dirname(__DIR__) . '/lib/peppol.lib.php');
+	check(preg_match('/function peppolSendToAccessPoint\([^)]*\)\s*\{[^}]*?if \(!peppolDisclaimerAcceptance\(\)\)/s', $lib) === 1, 'the access point call itself must check the acceptance');
+});
+
 peppolTest('SPEC_022_release_choice_per_channel', function () {
 	$list = array(
 		peppolTestRelease('v2.3.0', false),
@@ -969,6 +1051,179 @@ peppolTest('SPEC_022_install_swap_backup_and_rollback', function () {
 	check(is_file($dir . '/lib/new.php'), 'module lost after a failed swap');
 });
 
+/**
+ * Sign a manifest with a test key.
+ */
+function peppolTestManifest($kp, array $fields)
+{
+	$base = array('module' => 'peppolpeppyrus', 'issued' => 1000000, 'expires' => 1000000 + 7 * 86400, 'stable' => '', 'stable_sha256' => '', 'beta' => '', 'beta_sha256' => '');
+	foreach (array('stable', 'beta') as $k) {
+		if (!empty($fields[$k]) && !isset($fields[$k . '_sha256'])) {
+			$fields[$k . '_sha256'] = hash('sha256', $fields[$k]);
+		}
+	}
+	$json = json_encode(array_merge($base, $fields));
+	return array($json, base64_encode(sodium_crypto_sign_detached(peppolUpdateManifestMessage($json), sodium_crypto_sign_secretkey($kp))));
+}
+
+peppolTest('SPEC_022_signed_manifest_blocks_hidden_or_old_releases', function () {
+	$kp = sodium_crypto_sign_keypair();
+	$pub = base64_encode(sodium_crypto_sign_publickey($kp));
+	$now = 1000000 + 86400;
+	$err = '';
+	list($json, $sig) = peppolTestManifest($kp, array('stable' => '2.4.1', 'beta' => '2.5.0-beta.1'));
+	$m = peppolUpdateParseManifest($json, $sig, $now, $err, $pub);
+	check(is_array($m), 'valid manifest refused: ' . $err);
+	check(peppolUpdateParseManifest($json, $sig, $now, $err) === null, 'manifest signed with another key accepted');
+	check(peppolUpdateParseManifest(str_replace('2.4.1', '2.4.0', $json), $sig, $now, $err, $pub) === null, 'modified manifest accepted');
+	check(peppolUpdateParseManifest($json, $sig, 1000000 + 8 * 86400, $err, $pub) === null && $err === 'Update manifest expired', 'expired manifest accepted');
+	list($j2, $s2) = peppolTestManifest($kp, array('stable' => '2.4.1', 'expires' => 1000000 + 400 * 86400));
+	check(peppolUpdateParseManifest($j2, $s2, $now, $err, $pub) === null, 'manifest valid for more than a month accepted');
+	list($j3, $s3) = peppolTestManifest($kp, array('stable' => '2.4.1; x'));
+	check(peppolUpdateParseManifest($j3, $s3, $now, $err, $pub) === null, 'malformed version accepted');
+	list($j5, $s5) = peppolTestManifest($kp, array());
+	check(peppolUpdateParseManifest($j5, $s5, $now, $err, $pub) === null, 'manifest naming no version accepted');
+	list($j4, $s4) = peppolTestManifest($kp, array('stable' => '2.4.1', 'stable_sha256' => ''));
+	check(peppolUpdateParseManifest($j4, $s4, $now, $err, $pub) === null, 'version without ZIP hash accepted');
+
+	// The newest release v2.4.1 is hidden on GitHub: the older signed v2.4.0 must not be offered
+	$hidden = array(peppolTestRelease('v2.4.0', false), peppolTestRelease('v2.3.0', false));
+	check(peppolUpdatePickRelease($hidden, false, $m) === null, 'older release offered while the manifest names a newer one');
+	checkEquals('2.4.0', peppolUpdatePickRelease($hidden, false)['version'], 'without manifest the newest visible release is taken');
+	$all = array(peppolTestRelease('v2.5.0-beta.1', true), peppolTestRelease('v2.4.1', false), peppolTestRelease('v2.4.0', false), peppolTestRelease('v2.6.0', false));
+	checkEquals('2.4.1', peppolUpdatePickRelease($all, false, $m)['version'], 'stable channel follows the manifest');
+	checkEquals(hash('sha256', '2.4.1'), peppolUpdatePickRelease($all, false, $m)['sha256'], 'ZIP hash pinned by the manifest');
+	checkEquals('2.5.0-beta.1', peppolUpdatePickRelease($all, true, $m)['version'], 'beta channel follows the manifest');
+});
+
+peppolTest('SPEC_022_fetch_uses_newest_valid_manifest_and_refuses_replay', function () {
+	$kp = sodium_crypto_sign_keypair();
+	$pub = base64_encode(sodium_crypto_sign_publickey($kp));
+	// The production key is embedded: test the whole fetch with a manifest signed by a test key
+	// through a fake transport, then check that it is refused with the embedded key
+	list($json, $sig) = peppolTestManifest($kp, array('issued' => 2000000, 'expires' => 2000000 + 7 * 86400, 'stable' => '2.4.1'));
+	$rel = peppolTestRelease('v2.4.1', false);
+	$base = 'https://github.com/' . PEPPOL_UPDATE_REPO . '/releases/download/v2.4.1/';
+	$rel['assets'][] = array('name' => 'update-manifest.json', 'browser_download_url' => $base . 'update-manifest.json');
+	$rel['assets'][] = array('name' => 'update-manifest.json.sig', 'browser_download_url' => $base . 'update-manifest.json.sig');
+	$files = array(
+		'https://api.github.com/repos/' . PEPPOL_UPDATE_REPO . '/releases?per_page=100' => json_encode(array($rel, peppolTestRelease('v2.4.0', false))),
+		$base . 'update-manifest.json' => $json,
+		$base . 'update-manifest.json.sig' => $sig,
+	);
+	$GLOBALS['peppolTestFiles'] = $files;
+	$fetch = function ($url, $max, $accept, &$error) {
+		$error = '';
+		return $GLOBALS['peppolTestFiles'][$url] ?? false;
+	};
+	$err = '';
+	$issued = 0;
+	$r = peppolUpdateFetchLatest(false, $err, 0, $issued, $fetch, 2000000 + 3600);
+	check($r === null && $err !== '', 'manifest signed with a key other than the embedded one accepted');
+	// Same flow with the key that signed the manifest
+	$r = peppolUpdateFetchLatest(false, $err, 0, $issued, $fetch, 2000000 + 3600, $pub);
+	checkEquals('2.4.1', $r['version'] ?? null, 'release named by the manifest: ' . $err);
+	checkEquals(2000000, $issued, 'manifest issue time returned');
+	// Replay: a valid manifest older than the last one seen is refused
+	$r = peppolUpdateFetchLatest(false, $err, 3000000, $issued, $fetch, 2000000 + 3600, $pub);
+	check($r === null && $err === 'Update manifest older than the last one seen', 'replayed manifest accepted');
+	// Newest release hidden: manifest names 2.4.1 but only 2.4.0 is listed
+	$GLOBALS['peppolTestFiles']['https://api.github.com/repos/' . PEPPOL_UPDATE_REPO . '/releases?per_page=100'] = json_encode(array(
+		array_merge(peppolTestRelease('v2.4.0', false), array('assets' => array_merge(peppolTestRelease('v2.4.0', false)['assets'], array(
+			array('name' => 'update-manifest.json', 'browser_download_url' => 'https://github.com/' . PEPPOL_UPDATE_REPO . '/releases/download/v2.4.0/update-manifest.json'),
+			array('name' => 'update-manifest.json.sig', 'browser_download_url' => 'https://github.com/' . PEPPOL_UPDATE_REPO . '/releases/download/v2.4.0/update-manifest.json.sig'),
+		)))),
+	));
+	$GLOBALS['peppolTestFiles']['https://github.com/' . PEPPOL_UPDATE_REPO . '/releases/download/v2.4.0/update-manifest.json'] = $json;
+	$GLOBALS['peppolTestFiles']['https://github.com/' . PEPPOL_UPDATE_REPO . '/releases/download/v2.4.0/update-manifest.json.sig'] = $sig;
+	$r = peppolUpdateFetchLatest(false, $err, 0, $issued, $fetch, 2000000 + 3600, $pub);
+	check($r === null && strpos($err, 'is not available') !== false, 'older release offered while the newest is hidden');
+	// Several manifests (older copies added to hide the real one): refused
+	$two = json_decode($GLOBALS['peppolTestFiles']['https://api.github.com/repos/' . PEPPOL_UPDATE_REPO . '/releases?per_page=100'], true);
+	$copy = $two[0];
+	$copy['tag_name'] = 'v2.3.9';
+	foreach ($copy['assets'] as &$a) {
+		$a['browser_download_url'] = str_replace('/v2.4.0/', '/v2.3.9/', $a['browser_download_url']);
+	}
+	unset($a);
+	$saved = $GLOBALS['peppolTestFiles']['https://api.github.com/repos/' . PEPPOL_UPDATE_REPO . '/releases?per_page=100'];
+	$GLOBALS['peppolTestFiles']['https://api.github.com/repos/' . PEPPOL_UPDATE_REPO . '/releases?per_page=100'] = json_encode(array($two[0], $copy));
+	$r = peppolUpdateFetchLatest(false, $err, 0, $issued, $fetch, 2000000 + 3600, $pub);
+	check($r === null && $err === 'Several update manifests found', 'several manifests accepted');
+	$GLOBALS['peppolTestFiles']['https://api.github.com/repos/' . PEPPOL_UPDATE_REPO . '/releases?per_page=100'] = $saved;
+	// Expired manifest (signing stopped or old copy re-published): nothing offered
+	$r = peppolUpdateFetchLatest(false, $err, 0, $issued, $fetch, 2000000 + 20 * 86400, $pub);
+	check($r === null && $err === 'Update manifest expired', 'expired manifest accepted');
+	// No manifest at all (removed or hidden): visible error, nothing offered
+	$GLOBALS['peppolTestFiles']['https://api.github.com/repos/' . PEPPOL_UPDATE_REPO . '/releases?per_page=100'] = json_encode(array(peppolTestRelease('v2.4.0', false)));
+	$r = peppolUpdateFetchLatest(false, $err, 0, $issued, $fetch, 2000000 + 3600);
+	check($r === null && $err === 'No update manifest found', 'missing manifest not reported');
+	unset($GLOBALS['peppolTestFiles']);
+});
+
+peppolTest('SPEC_022_end_to_end_check_and_install', function () {
+	global $tmpRoot;
+	$kp = sodium_crypto_sign_keypair();
+	$pub = base64_encode(sodium_crypto_sign_publickey($kp));
+	$root = $tmpRoot . '/e2e-' . bin2hex(random_bytes(4));
+	$dir = $root . '/custom/peppolpeppyrus';
+	mkdir($dir . '/core/modules', 0775, true);
+	file_put_contents($dir . '/core/modules/modPeppolpeppyrus.class.php', "<?php\n\$this->version = '2.3.0';\n");
+	$zip = file_get_contents(peppolTestZip(peppolTestModuleEntries('2.4.1')));
+	$tag = 'v2.4.1';
+	$base = 'https://github.com/' . PEPPOL_UPDATE_REPO . '/releases/download/' . $tag . '/';
+	list($json, $msig) = peppolTestManifest($kp, array('issued' => 5000000, 'expires' => 5000000 + 7 * 86400, 'stable' => '2.4.1', 'stable_sha256' => hash('sha256', $zip)));
+	$rel = peppolTestRelease($tag, false);
+	$rel['assets'][] = array('name' => 'update-manifest.json', 'browser_download_url' => $base . 'update-manifest.json');
+	$rel['assets'][] = array('name' => 'update-manifest.json.sig', 'browser_download_url' => $base . 'update-manifest.json.sig');
+	$GLOBALS['peppolTestFiles'] = array(
+		'https://api.github.com/repos/' . PEPPOL_UPDATE_REPO . '/releases?per_page=100' => json_encode(array($rel)),
+		$base . 'update-manifest.json' => $json,
+		$base . 'update-manifest.json.sig' => $msig,
+		$base . 'module_peppolpeppyrus-2.4.1.zip' => $zip,
+		$base . 'module_peppolpeppyrus-2.4.1.zip.sig' => base64_encode(sodium_crypto_sign_detached(peppolUpdateSignedMessage($tag, hash('sha256', $zip)), sodium_crypto_sign_secretkey($kp))),
+	);
+	$fetch = function ($url, $max, $accept, &$error, $timeout = 15) {
+		$error = '';
+		$body = $GLOBALS['peppolTestFiles'][$url] ?? false;
+		return ($body !== false && strlen($body) > $max) ? false : $body;
+	};
+	$err = '';
+	$issued = 0;
+	$release = peppolUpdateFetchLatest(false, $err, 0, $issued, $fetch, 5000000 + 60, $pub);
+	checkEquals('2.4.1', $release['version'] ?? null, 'release found: ' . $err);
+	// A ZIP rebuilt and signed again for the same tag, but not the one pinned by the manifest
+	$other = file_get_contents(peppolTestZip(peppolTestModuleEntries('2.4.1', array('peppolpeppyrus/extra.php' => 'x'))));
+	$saved = $GLOBALS['peppolTestFiles'];
+	$GLOBALS['peppolTestFiles'][$base . 'module_peppolpeppyrus-2.4.1.zip'] = $other;
+	$GLOBALS['peppolTestFiles'][$base . 'module_peppolpeppyrus-2.4.1.zip.sig'] = base64_encode(sodium_crypto_sign_detached(peppolUpdateSignedMessage($tag, hash('sha256', $other)), sodium_crypto_sign_secretkey($kp)));
+	check(!peppolUpdateInstall($release, '2.3.0', $dir, $root . '/work', $err, $fetch, $pub), 'ZIP not pinned by the manifest installed');
+	$GLOBALS['peppolTestFiles'] = $saved;
+	check(peppolUpdateInstall($release, '2.3.0', $dir, $root . '/work', $err, $fetch, $pub), 'end-to-end install failed: ' . $err);
+	checkEquals('2.4.1', peppolUpdateDescriptorVersion($dir . '/core/modules/modPeppolpeppyrus.class.php'), 'installed version');
+	check(!peppolUpdateInstall($release, '2.4.1', $dir, $root . '/work', $err, $fetch, $pub), 'same version installed twice');
+	unset($GLOBALS['peppolTestFiles']);
+});
+
+peppolTest('SPEC_022_settings_kept_out_of_dolibarr_constants', function () {
+	global $tmpRoot;
+	$src = file_get_contents(dirname(__DIR__) . '/admin/update.php');
+	check(!preg_match("/(getDolGlobal(String|Int)|dolibarr_set_const\(\$db), ?'PEPPOL_UPDATE_/", $src), 'updater setting stored in Dolibarr constants (writable by any entity administrator)');
+	$work = $tmpRoot . '/state-' . bin2hex(random_bytes(4));
+	$st = peppolUpdateLoadState($work);
+	check($st['beta'] === 0 && $st['manifest_issued'] === 0 && $st['cache'] === null, 'default state');
+	check(peppolUpdateSaveState($work, array('beta' => 1, 'cache' => array('time' => 5), 'manifest_issued' => 42)), 'state not saved');
+	checkEquals(array('beta' => 1, 'cache' => array('time' => 5), 'manifest_issued' => 42), peppolUpdateLoadState($work), 'state read back');
+	checkEquals('600', substr(sprintf('%o', fileperms($work . '/state.json')), -3), 'state file permissions');
+	checkEquals('700', substr(sprintf('%o', fileperms($work)), -3), 'work folder permissions');
+	// The newest manifest seen never goes back, even if a concurrent check saves an older value
+	check(peppolUpdateChangeState($work, function ($st) {
+		$st['manifest_issued'] = 10;
+		return $st;
+	}), 'state change failed');
+	checkEquals(42, peppolUpdateLoadState($work)['manifest_issued'], 'replay counter lowered');
+});
+
 peppolTest('SPEC_022_downloads_restricted_to_github_https', function () {
 	check(peppolUpdateUrlAllowed('https://api.github.com/repos/x/y/releases'), 'GitHub API refused');
 	check(peppolUpdateUrlAllowed('https://objects.githubusercontent.com/a/b'), 'GitHub asset host refused');
@@ -998,7 +1253,8 @@ peppolTest('SPEC_022_version_file_and_update_page', function () {
 	$src = file_get_contents(dirname(__DIR__) . '/admin/update.php');
 	check(strpos($src, "array('setchannel', 'check', 'confirm_install', 'finalize'), true) && !\$tokenOk") !== false, 'update actions must check the CSRF token');
 	check(strpos($src, "if (empty(\$user->admin) || !empty(\$user->socid)") !== false, 'update page must be restricted to administrators');
-	check(strpos($src, 'peppolUpdateFetchLatest($includeBeta, $error);') !== false, 'installation must not trust the cached release');
+	check(substr_count($src, "peppolUpdateFetchLatest(\$includeBeta, \$error, \$state['manifest_issued'], \$issued);") === 2, 'check and installation must use the signed manifest and refuse an older one');
+	check(strpos($src, "\$refusal = 'PeppolDisclaimerNotAccepted';") !== false, 'installation must require the accepted disclaimer');
 });
 
 // ---------------------------------------------------------------------------------------------
@@ -1018,6 +1274,12 @@ $realOutput = $conf->facture->dir_output;
 $conf->facture->dir_output = $tmpRoot;
 $conf->global->FACTURE_RIB_NUMBER = 0;
 
+// Everything written to the database by the tests is rolled back at the end (also if the run dies:
+// the transaction is never committed)
+$db->begin();
+// The other tests describe the behaviour once the disclaimer is accepted (#24)
+peppolTestSetDisclaimer(json_encode(array('version' => PEPPOL_DISCLAIMER_VERSION, 'user_id' => 1, 'login' => 'test', 'date' => 1)));
+
 $passed = $failed = 0;
 foreach ($peppolTests as $name => $fn) {
 	if ($filter !== '' && strpos($name, $filter) === false) {
@@ -1033,6 +1295,7 @@ foreach ($peppolTests as $name => $fn) {
 	}
 }
 
+$db->rollback();
 $conf->facture->dir_output = $realOutput;
 if ($tmpRoot && strpos($tmpRoot, realpath(sys_get_temp_dir()) . '/peppolpeppyrus-tests-') === 0 && !is_link($tmpRoot)) {
 	dol_delete_dir_recursive($tmpRoot);

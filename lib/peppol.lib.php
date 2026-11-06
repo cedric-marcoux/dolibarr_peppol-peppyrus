@@ -201,10 +201,63 @@ function peppolSendRefusalReason($user, $invoice, $confirm)
 	if (!peppolUserCanSend($user)) {
 		return 'NotEnoughPermissions';
 	}
+	if (!peppolDisclaimerAcceptance()) {
+		return 'PeppolDisclaimerNotAccepted';
+	}
 	if (!peppolIsInvoiceStatusEligible($invoice)) {
 		return 'PeppolErrorStatusNotEligible';
 	}
 	return '';
+}
+
+/**
+ * Version of the disclaimer text: increase it when the text changes, a new acceptance is then required.
+ */
+if (!defined('PEPPOL_DISCLAIMER_VERSION')) {
+	define('PEPPOL_DISCLAIMER_VERSION', 1);
+}
+
+/**
+ * Acceptance of the current disclaimer in the current entity (#24).
+ *
+ * @return array|null  [version, user_id, login, date] or null when not accepted
+ */
+function peppolDisclaimerAcceptance()
+{
+	global $db, $conf;
+	// Read the row of the current entity only: a value of another entity (or of the global entity 0)
+	// must not count as the acceptance of this one
+	$raw = '';
+	$sql = "SELECT value FROM " . MAIN_DB_PREFIX . "const WHERE name = 'PEPPOL_DISCLAIMER_ACCEPTED' AND entity = " . ((int) $conf->entity);
+	$res = $db->query($sql);
+	if ($res && ($obj = $db->fetch_object($res))) {
+		$raw = (string) $obj->value;
+	}
+	$data = json_decode($raw, true);
+	if (!is_array($data) || (int) ($data['version'] ?? 0) !== PEPPOL_DISCLAIMER_VERSION || empty($data['user_id']) || empty($data['date'])) {
+		return null;
+	}
+	return $data;
+}
+
+/**
+ * Record that an administrator accepted the disclaimer.
+ *
+ * @param DoliDB $db   Database
+ * @param User   $user Administrator
+ * @return bool
+ */
+function peppolDisclaimerAccept($db, $user)
+{
+	global $conf;
+	require_once DOL_DOCUMENT_ROOT . '/core/lib/admin.lib.php';
+	if (empty($user->admin) || !empty($user->socid)) {
+		return false;
+	}
+	$data = array('version' => PEPPOL_DISCLAIMER_VERSION, 'user_id' => (int) $user->id, 'login' => (string) $user->login, 'date' => dol_now());
+	$ok = dolibarr_set_const($db, 'PEPPOL_DISCLAIMER_ACCEPTED', json_encode($data), 'chaine', 0, 'Disclaimer accepted', $conf->entity) > 0;
+	dol_syslog('peppolpeppyrus disclaimer version ' . PEPPOL_DISCLAIMER_VERSION . ' accepted by user ' . ((int) $user->id) . ' in entity ' . ((int) $conf->entity) . ($ok ? '' : ' (not saved)'), LOG_NOTICE);
+	return $ok;
 }
 
 /**
@@ -440,6 +493,12 @@ function peppolGetAPObject()
 function peppolSendToAccessPoint($filename, $invoice)
 {
 	global $langs, $conf, $user, $db;
+	// Nothing is sent before an administrator accepted the disclaimer (#24)
+	if (!peppolDisclaimerAcceptance()) {
+		$langs->load('peppol@peppolpeppyrus');
+		setEventMessages($langs->trans('PeppolDisclaimerNotAccepted'), null, 'errors');
+		return;
+	}
 	$obj = peppolGetAPObject();
 	if ($obj) {
 		$obj->sendToAccessPoint($filename, $invoice);
