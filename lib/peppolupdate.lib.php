@@ -30,6 +30,8 @@ define('PEPPOL_UPDATE_MAX_API_BYTES', 2 * 1024 * 1024);
 define('PEPPOL_UPDATE_MAX_FILES', 5000);
 define('PEPPOL_UPDATE_MAX_UNCOMPRESSED_BYTES', 200 * 1024 * 1024);
 define('PEPPOL_UPDATE_CACHE_SECONDS', 86400);
+define('PEPPOL_UPDATE_ERROR_CACHE_SECONDS', 900);
+define('PEPPOL_UPDATE_KEEP_BACKUPS', 3);
 define('PEPPOL_UPDATE_MAX_MANIFEST_BYTES', 4096);
 define('PEPPOL_UPDATE_MANIFEST_MAX_VALIDITY', 8 * 86400);
 define('PEPPOL_UPDATE_CHECK_BUDGET', 40);
@@ -715,6 +717,10 @@ function peppolUpdateDeleteTree($dir)
 	if (is_link($dir) || is_file($dir)) {
 		return @unlink($dir);
 	}
+	// A folder made unreadable after a failed deletion (peppolUpdateSwap) is readable again for us
+	if (is_dir($dir) && !is_readable($dir)) {
+		@chmod($dir, 0700);
+	}
 	if (!is_dir($dir)) {
 		return true;
 	}
@@ -767,6 +773,27 @@ function peppolUpdateBackup($moduleDir, $backupFile)
 }
 
 /**
+ * Keep only the newest backups.
+ *
+ * @param string $workDir Private work folder
+ * @param int    $keep    Number of backups kept
+ * @return void
+ */
+function peppolUpdatePruneBackups($workDir, $keep)
+{
+	$files = array();
+	foreach ((array) glob($workDir . '/backup-*.zip', GLOB_NOSORT) as $f) {
+		if ($f && is_file($f) && !is_link($f)) {
+			$files[$f] = filemtime($f);
+		}
+	}
+	arsort($files);
+	foreach (array_slice(array_keys($files), (int) $keep) as $f) {
+		@unlink($f);
+	}
+}
+
+/**
  * Replace the module folder by the new one, restore it on failure.
  *
  * Both folders must be on the same file system (they are siblings).
@@ -804,7 +831,9 @@ function peppolUpdateSwap($newModuleDir, $moduleDir, &$error)
 	}
 	// The previous code must not stay reachable from the web
 	if (!peppolUpdateDeleteTree($old)) {
-		// Removed at the next update or when the Updates tab is opened (peppolUpdateCleanLeftovers)
+		// What is left must not be served: make it unreadable, it is removed at the next update or
+		// when the Updates tab is opened (peppolUpdateCleanLeftovers)
+		@chmod($old, 0);
 		$error = 'Previous version could not be fully removed';
 	}
 	return true;
@@ -905,7 +934,7 @@ function peppolUpdateFetchLatest($includeBeta, &$error, $minIssued = 0, &$manife
 	$error = '';
 	$now = ($now === null) ? time() : (int) $now;
 	$deadline = time() + PEPPOL_UPDATE_CHECK_BUDGET;
-	$body = $fetch('https://api.github.com/repos/' . PEPPOL_UPDATE_REPO . '/releases?per_page=100', PEPPOL_UPDATE_MAX_API_BYTES, 'application/vnd.github+json', $error);
+	$body = $fetch('https://api.github.com/repos/' . PEPPOL_UPDATE_REPO . '/releases', PEPPOL_UPDATE_MAX_API_BYTES, 'application/vnd.github+json', $error);
 	if ($body === false) {
 		return null;
 	}
@@ -1068,6 +1097,7 @@ function peppolUpdateInstallData($tag, $data, $sig, $installed, $moduleDir, $wor
 			$error = 'Cannot back up the installed version';
 			return false;
 		}
+		peppolUpdatePruneBackups($workDir, PEPPOL_UPDATE_KEEP_BACKUPS);
 		return peppolUpdateSwap($staging . '/' . PEPPOL_UPDATE_MODULE, $moduleDir, $error);
 	} finally {
 		if (is_file($zipFile)) {

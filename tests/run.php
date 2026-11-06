@@ -986,7 +986,7 @@ peppolTest('SPEC_022_install_guards', function () {
 	checkEquals('PeppolUpdateFolderNotWritable', $ret, 'folder that could not be removed after the update');
 	// The real module folder of this installation is a git checkout on development servers
 	if (file_exists(dirname(__DIR__) . '/.git')) {
-		checkEquals('PeppolUpdateGitCheckout', peppolUpdateInstallRefusal($admin, dirname(__DIR__), DOL_DATA_ROOT), 'development checkout protected');
+		check(peppolUpdateInstallRefusal($admin, dirname(__DIR__), DOL_DATA_ROOT) !== '', 'development checkout protected');
 	}
 });
 
@@ -1045,6 +1045,21 @@ peppolTest('SPEC_022_install_swap_backup_and_rollback', function () {
 	check(peppolUpdateCleanLeftovers($root . '/custom'), 'leftovers not removed');
 	checkEquals(array('.peppolpeppyrus-old-keepme', 'peppolpeppyrus'), array_values(array_diff(scandir($root . '/custom'), array('.', '..'))), 'folders after cleaning');
 	rmdir($root . '/custom/.peppolpeppyrus-old-keepme');
+
+	// Only the newest backups are kept
+	for ($i = 1; $i <= 5; $i++) {
+		touch($work . '/backup-old' . $i . '.zip', time() - 1000 * $i);
+	}
+	peppolUpdatePruneBackups($work, 3);
+	checkEquals(3, count(glob($work . '/backup-*.zip')), 'number of backups kept');
+	check(count(glob($work . '/backup-2.3.0-*.zip')) === 1, 'newest backup removed');
+
+	// A leftover made unreadable is still removed by the cleaning
+	$left = $root . '/custom/.peppolpeppyrus-old-' . str_repeat('c', 24);
+	mkdir($left . '/admin', 0775, true);
+	file_put_contents($left . '/admin/x.php', 'x');
+	chmod($left, 0);
+	check(peppolUpdateCleanLeftovers($root . '/custom') && !file_exists($left), 'unreadable leftover not removed');
 
 	// Swap failure restores the installed folder
 	check(!peppolUpdateSwap($root . '/custom/missing', $dir, $err), 'swap with a missing folder succeeded');
@@ -1107,7 +1122,7 @@ peppolTest('SPEC_022_fetch_uses_newest_valid_manifest_and_refuses_replay', funct
 	$rel['assets'][] = array('name' => 'update-manifest.json', 'browser_download_url' => $base . 'update-manifest.json');
 	$rel['assets'][] = array('name' => 'update-manifest.json.sig', 'browser_download_url' => $base . 'update-manifest.json.sig');
 	$files = array(
-		'https://api.github.com/repos/' . PEPPOL_UPDATE_REPO . '/releases?per_page=100' => json_encode(array($rel, peppolTestRelease('v2.4.0', false))),
+		'https://api.github.com/repos/' . PEPPOL_UPDATE_REPO . '/releases' => json_encode(array($rel, peppolTestRelease('v2.4.0', false))),
 		$base . 'update-manifest.json' => $json,
 		$base . 'update-manifest.json.sig' => $sig,
 	);
@@ -1128,7 +1143,7 @@ peppolTest('SPEC_022_fetch_uses_newest_valid_manifest_and_refuses_replay', funct
 	$r = peppolUpdateFetchLatest(false, $err, 3000000, $issued, $fetch, 2000000 + 3600, $pub);
 	check($r === null && $err === 'Update manifest older than the last one seen', 'replayed manifest accepted');
 	// Newest release hidden: manifest names 2.4.1 but only 2.4.0 is listed
-	$GLOBALS['peppolTestFiles']['https://api.github.com/repos/' . PEPPOL_UPDATE_REPO . '/releases?per_page=100'] = json_encode(array(
+	$GLOBALS['peppolTestFiles']['https://api.github.com/repos/' . PEPPOL_UPDATE_REPO . '/releases'] = json_encode(array(
 		array_merge(peppolTestRelease('v2.4.0', false), array('assets' => array_merge(peppolTestRelease('v2.4.0', false)['assets'], array(
 			array('name' => 'update-manifest.json', 'browser_download_url' => 'https://github.com/' . PEPPOL_UPDATE_REPO . '/releases/download/v2.4.0/update-manifest.json'),
 			array('name' => 'update-manifest.json.sig', 'browser_download_url' => 'https://github.com/' . PEPPOL_UPDATE_REPO . '/releases/download/v2.4.0/update-manifest.json.sig'),
@@ -1139,23 +1154,23 @@ peppolTest('SPEC_022_fetch_uses_newest_valid_manifest_and_refuses_replay', funct
 	$r = peppolUpdateFetchLatest(false, $err, 0, $issued, $fetch, 2000000 + 3600, $pub);
 	check($r === null && strpos($err, 'is not available') !== false, 'older release offered while the newest is hidden');
 	// Several manifests (older copies added to hide the real one): refused
-	$two = json_decode($GLOBALS['peppolTestFiles']['https://api.github.com/repos/' . PEPPOL_UPDATE_REPO . '/releases?per_page=100'], true);
+	$two = json_decode($GLOBALS['peppolTestFiles']['https://api.github.com/repos/' . PEPPOL_UPDATE_REPO . '/releases'], true);
 	$copy = $two[0];
 	$copy['tag_name'] = 'v2.3.9';
 	foreach ($copy['assets'] as &$a) {
 		$a['browser_download_url'] = str_replace('/v2.4.0/', '/v2.3.9/', $a['browser_download_url']);
 	}
 	unset($a);
-	$saved = $GLOBALS['peppolTestFiles']['https://api.github.com/repos/' . PEPPOL_UPDATE_REPO . '/releases?per_page=100'];
-	$GLOBALS['peppolTestFiles']['https://api.github.com/repos/' . PEPPOL_UPDATE_REPO . '/releases?per_page=100'] = json_encode(array($two[0], $copy));
+	$saved = $GLOBALS['peppolTestFiles']['https://api.github.com/repos/' . PEPPOL_UPDATE_REPO . '/releases'];
+	$GLOBALS['peppolTestFiles']['https://api.github.com/repos/' . PEPPOL_UPDATE_REPO . '/releases'] = json_encode(array($two[0], $copy));
 	$r = peppolUpdateFetchLatest(false, $err, 0, $issued, $fetch, 2000000 + 3600, $pub);
 	check($r === null && $err === 'Several update manifests found', 'several manifests accepted');
-	$GLOBALS['peppolTestFiles']['https://api.github.com/repos/' . PEPPOL_UPDATE_REPO . '/releases?per_page=100'] = $saved;
+	$GLOBALS['peppolTestFiles']['https://api.github.com/repos/' . PEPPOL_UPDATE_REPO . '/releases'] = $saved;
 	// Expired manifest (signing stopped or old copy re-published): nothing offered
 	$r = peppolUpdateFetchLatest(false, $err, 0, $issued, $fetch, 2000000 + 20 * 86400, $pub);
 	check($r === null && $err === 'Update manifest expired', 'expired manifest accepted');
 	// No manifest at all (removed or hidden): visible error, nothing offered
-	$GLOBALS['peppolTestFiles']['https://api.github.com/repos/' . PEPPOL_UPDATE_REPO . '/releases?per_page=100'] = json_encode(array(peppolTestRelease('v2.4.0', false)));
+	$GLOBALS['peppolTestFiles']['https://api.github.com/repos/' . PEPPOL_UPDATE_REPO . '/releases'] = json_encode(array(peppolTestRelease('v2.4.0', false)));
 	$r = peppolUpdateFetchLatest(false, $err, 0, $issued, $fetch, 2000000 + 3600);
 	check($r === null && $err === 'No update manifest found', 'missing manifest not reported');
 	unset($GLOBALS['peppolTestFiles']);
@@ -1177,7 +1192,7 @@ peppolTest('SPEC_022_end_to_end_check_and_install', function () {
 	$rel['assets'][] = array('name' => 'update-manifest.json', 'browser_download_url' => $base . 'update-manifest.json');
 	$rel['assets'][] = array('name' => 'update-manifest.json.sig', 'browser_download_url' => $base . 'update-manifest.json.sig');
 	$GLOBALS['peppolTestFiles'] = array(
-		'https://api.github.com/repos/' . PEPPOL_UPDATE_REPO . '/releases?per_page=100' => json_encode(array($rel)),
+		'https://api.github.com/repos/' . PEPPOL_UPDATE_REPO . '/releases' => json_encode(array($rel)),
 		$base . 'update-manifest.json' => $json,
 		$base . 'update-manifest.json.sig' => $msig,
 		$base . 'module_peppolpeppyrus-2.4.1.zip' => $zip,

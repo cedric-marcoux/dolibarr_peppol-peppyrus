@@ -188,7 +188,7 @@ if (is_dir($workDir)) {
 }
 
 $cache = (is_array($state['cache']) && isset($state['cache']['time'])) ? $state['cache'] : null;
-if ($cache === null || (int) $cache['time'] > dol_now() || ((int) $cache['time'] + PEPPOL_UPDATE_CACHE_SECONDS) < dol_now() || (int) $cache['beta'] !== ($includeBeta ? 1 : 0)) {
+if ($cache === null || (int) $cache['time'] > dol_now() || ((int) $cache['time'] + (empty($cache['error']) ? PEPPOL_UPDATE_CACHE_SECONDS : PEPPOL_UPDATE_ERROR_CACHE_SECONDS)) < dol_now() || (int) $cache['beta'] !== ($includeBeta ? 1 : 0)) {
 	$cache = peppolUpdateRefreshCache($workDir, $includeBeta);
 }
 $release = (isset($cache['release']) && is_array($cache['release'])) ? $cache['release'] : null;
