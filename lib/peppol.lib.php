@@ -200,6 +200,41 @@ function peppolSendRefusalReason($user, $invoice, $confirm)
 }
 
 /**
+ * Peppol ID stored on a third party, from a directory search result.
+ *
+ * @param   string  $peppolScheme   Scheme of the directory, e.g. "iso6523-actorid-upis::0208"
+ * @param   string  $participantId  Participant identifier, e.g. "0000000097"
+ * @return  string                  "schemeCode:participantId" (e.g. "0208:0000000097"), or the participant id alone when the scheme is unknown
+ */
+function peppolBuildThirdpartyPeppolId($peppolScheme, $participantId)
+{
+	$participantId = trim((string) $participantId);
+	if (preg_match('/::(\d+)$/', (string) $peppolScheme, $m) && $participantId !== '') {
+		return $m[1] . ':' . $participantId;
+	}
+	return $participantId;
+}
+
+/**
+ * Checks before storing a Peppol ID on a third party from the search page.
+ *
+ * @param   User    $user           User
+ * @param   string  $tokenGiven     Token received with the request
+ * @param   string  $tokenExpected  Token of the session (currentToken())
+ * @return  string                  '' when allowed, otherwise the translation key of the reason
+ */
+function peppolSetThirdpartyIdRefusalReason($user, $tokenGiven, $tokenExpected)
+{
+	if ($tokenGiven === '' || $tokenExpected === '' || !hash_equals((string) $tokenExpected, (string) $tokenGiven)) {
+		return 'ErrorBadValueForParameter';
+	}
+	if (!is_object($user) || (empty($user->admin) && empty($user->rights->societe->creer))) {
+		return 'NotEnoughPermissions';
+	}
+	return '';
+}
+
+/**
  * Get list of files linked to object
  *
  * @param   CommonObject  $obj  Object

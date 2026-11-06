@@ -587,6 +587,42 @@ peppolTest('BUG_015_xml_amounts_equal_dolibarr_totals', function () {
 });
 
 // ---------------------------------------------------------------------------------------------
+// BUG-016 peppolfinder-same-window (#16)
+// ---------------------------------------------------------------------------------------------
+
+peppolTest('BUG_016_thirdparty_button_opens_search_in_same_window', function () {
+	global $db, $user;
+	$savedUser = $user;
+	$user = peppolTestUser(array('societe' => array('lire' => 1, 'creer' => 1)));
+	$soc = new PeppolTestThirdparty($db);
+	$soc->id = 999001;
+	$actions = new ActionsPeppolpeppyrus($db);
+	$action = '';
+	ob_start();
+	$actions->addMoreActionsButtons(array('context' => 'thirdpartycard'), $soc, $action, null);
+	$html = ob_get_clean();
+	$user = $savedUser;
+	check(strpos($html, '/peppolpeppyrus/search.php?socid=999001') !== false, 'PeppolFinder button missing: ' . $html);
+	check(strpos($html, '_blank') === false, 'PeppolFinder still opens a new window');
+	check(strpos($html, 'classfortooltip') === false, 'PeppolFinder still has the redundant tooltip');
+});
+
+peppolTest('BUG_016_storing_peppol_id_requires_token_and_right', function () {
+	$editor = peppolTestUser(array('societe' => array('lire' => 1, 'creer' => 1)));
+	$reader = peppolTestUser(array('societe' => array('lire' => 1)));
+	check(peppolSetThirdpartyIdRefusalReason($editor, 'abc', 'abc') === '', 'editor with the right token must be allowed');
+	check(peppolSetThirdpartyIdRefusalReason($editor, '', 'abc') !== '', 'missing token must be refused');
+	check(peppolSetThirdpartyIdRefusalReason($editor, 'xyz', 'abc') !== '', 'wrong token must be refused');
+	check(peppolSetThirdpartyIdRefusalReason($reader, 'abc', 'abc') === 'NotEnoughPermissions', 'user without the right to modify third parties must be refused');
+});
+
+peppolTest('BUG_016_peppol_id_built_from_directory_result', function () {
+	check(peppolBuildThirdpartyPeppolId('iso6523-actorid-upis::0208', '0000000097') === '0208:0000000097', 'scheme code + participant');
+	check(peppolBuildThirdpartyPeppolId('', '0208:0000000097') === '0208:0000000097', 'already prefixed id kept as is');
+	check(peppolBuildThirdpartyPeppolId('iso6523-actorid-upis::9925', ' BE0000000097 ') === '9925:BE0000000097', 'participant trimmed');
+});
+
+// ---------------------------------------------------------------------------------------------
 // Run
 // ---------------------------------------------------------------------------------------------
 

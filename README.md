@@ -215,6 +215,7 @@ When ready to go live:
 - Fix: the "Send via Peppol" and "Check" links carry the CSRF token, required by Dolibarr 24 (MAIN_SECURITY_CSRF_WITH_TOKEN = 3) (#5)
 - Fix: sending now requires the answer "Yes" in the confirmation dialog, the module write right or the right to create or send invoices, and an eligible document (validated or paid); the send button is shown only to users allowed to send (#13)
 - Fix: unit prices keep the precision stored by Dolibarr in the XML (up to 8 decimals, allowed by EN 16931 for the item net price), so the line amounts and the total without VAT are those of the invoice to the cent, e.g. for prices entered VAT included; rule R120 still holds (#15). The VAT is computed per rate as EN 16931 requires (BR-CO-17) and may differ by at most 1 cent per rate from the sum of the line VAT amounts shown by Dolibarr
+- Fix: the PeppolFinder button of the third-party card opens the search in the same window, without the redundant tooltip; the search page has a Back link, and storing a Peppol ID requires a valid token and the right to modify third parties (#16)
 - Fix: PHP warnings in the XML generation (VAT summary, reverse-charge flag)
 - New: regression tests, command line only: `php htdocs/custom/peppolpeppyrus/tests/run.php`
 

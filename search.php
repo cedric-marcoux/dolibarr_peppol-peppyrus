@@ -108,29 +108,22 @@ if ($action == 'autodetect' && $socid > 0 && $thirdparty) {
 	}
 }
 
-if ($action == 'select') {
-	$participantid = GETPOST('participantid');
-	$peppol_scheme = GETPOST('peppol_scheme');
-
-	// Extract ICD scheme code from full scheme identifier (e.g., "iso6523-actorid-upis::0208" -> "0208")
-	$schemeCode = '';
-	if (preg_match('/::(\d+)$/', $peppol_scheme, $matches)) {
-		$schemeCode = $matches[1];
+if ($action == 'select' && $socid > 0 && $thirdparty) {
+	$cardUrl = dol_buildpath('/societe/card.php', 1) . '?id=' . ((int) $socid);
+	$refusal = peppolSetThirdpartyIdRefusalReason($user, GETPOST('token', 'alpha'), currentToken());
+	if ($refusal !== '') {
+		setEventMessages($langs->trans($refusal), null, 'errors');
+		header('Location: ' . $cardUrl);
+		exit;
 	}
-
-	// Save as "schemeCode:participantId" (e.g., "0208:0000000097")
-	if (!empty($schemeCode) && !empty($participantid)) {
-		$thirdparty->array_options['options_peppol_id'] = $schemeCode . ':' . $participantid;
-	} else {
-		// Fallback: save participantid as-is if scheme extraction failed
-		$thirdparty->array_options['options_peppol_id'] = $participantid;
+	$peppolId = peppolBuildThirdpartyPeppolId(GETPOST('peppol_scheme', 'alphanohtml'), GETPOST('participantid', 'alphanohtml'));
+	if ($peppolId !== '') {
+		$thirdparty->array_options['options_peppol_id'] = $peppolId;
+		// Save extrafield - update() alone doesn't save extrafields in Dolibarr!
+		$thirdparty->insertExtraFields();
+		setEventMessages($langs->trans('peppolIdSet'), null, 'mesgs');
 	}
-
-	// Save extrafield - update() alone doesn't save extrafields in Dolibarr!
-	$thirdparty->insertExtraFields();
-	setEventMessage($langs->trans('peppolIdSet'));
-	print "<script>window.top.location.href = \"" . dol_buildpath('/societe/card.php?id='.$socid, 1) . "\";</script>";
-	// header('Location: '.dol_buildpath('/societe/card.php?id='.$socid, 1));
+	header('Location: ' . $cardUrl);
 	exit;
 }
 
@@ -142,13 +135,7 @@ $form = new Form($db);
 
 $title = $langs->trans("PeppolSearch");
 $help_url = '';
-$arrayofjs = ["	$(\"*[id*='idfordialog']\").each(function() {
-		$(this).on('dialogclose', function(event) {
-			location.reload();
-		});
-	});
-"];
-llxHeader('', $title, $help_url,'',0,0,$arrayofjs);
+llxHeader('', $title, $help_url);
 
 print '<form method="POST" action="' . $_SERVER["PHP_SELF"] . '">';
 print '<input type="hidden" name="token" value="' . newToken() . '">';
@@ -159,7 +146,8 @@ if ($socid > 0) {
 
 // Show title with thirdparty name if available
 if ($thirdparty && $thirdparty->id > 0) {
-	print load_fiche_titre($langs->trans("peppolFindPeppolIDPopupTitle") . ' - ' . dol_escape_htmltag($thirdparty->name), '', 'peppol@peppolpeppyrus');
+	$backLink = '<a href="' . dol_buildpath('/societe/card.php', 1) . '?id=' . ((int) $thirdparty->id) . '">' . img_previous() . ' ' . $langs->trans('Back') . '</a>';
+	print load_fiche_titre($langs->trans("peppolFindPeppolIDPopupTitle") . ' - ' . dol_escape_htmltag($thirdparty->name), $backLink, 'peppol@peppolpeppyrus');
 } else {
 	print load_fiche_titre($title, '', 'peppol@peppolpeppyrus');
 	// Only show search form if no thirdparty context
@@ -182,7 +170,7 @@ if (!empty($autoDetectedId)) {
 	print '<div class="info">';
 	print '<strong>' . $langs->trans("peppolBestMatchSuccess") . ':</strong> ' . dol_escape_htmltag($autoDetectedId);
 	print '<br><br>';
-	print '<a class="button" href="' . $_SERVER["PHP_SELF"] . '?socid=' . $socid . '&action=select&participantid=' . urlencode($autoDetectedId) . '">';
+	print '<a class="button" href="' . $_SERVER["PHP_SELF"] . '?socid=' . $socid . '&action=select&token=' . newToken() . '&participantid=' . urlencode($autoDetectedId) . '">';
 	print $langs->trans("PeppolApplyPeppolID");
 	print '</a>';
 	print '</div>';
@@ -211,7 +199,7 @@ if (!empty($searchResults)) {
 					print '<p style="color: #666;">' . dol_escape_htmltag($name) . '</p>';
 				}
 				print '<br>';
-				print '<a class="button" href="' . $_SERVER["PHP_SELF"] . '?socid=' . $socid . '&action=select&peppol_scheme=' . urlencode($scheme) . '&participantid=' . urlencode($participantId) . '">';
+				print '<a class="button" href="' . $_SERVER["PHP_SELF"] . '?socid=' . $socid . '&action=select&token=' . newToken() . '&peppol_scheme=' . urlencode($scheme) . '&participantid=' . urlencode($participantId) . '">';
 				print $langs->trans("PeppolApplyPeppolID");
 				print '</a>';
 				print '</div>';
@@ -241,7 +229,7 @@ if (!empty($searchResults)) {
 					print '<td>' . dol_escape_htmltag($countryCode) . '</td>';
 					if ($socid > 0) {
 						print '<td>';
-						print '<a class="button smallpaddingimp" href="' . $_SERVER["PHP_SELF"] . '?socid=' . $socid . '&action=select&peppol_scheme=' . urlencode($scheme) . '&participantid=' . urlencode($participantId) . '">';
+						print '<a class="button smallpaddingimp" href="' . $_SERVER["PHP_SELF"] . '?socid=' . $socid . '&action=select&token=' . newToken() . '&peppol_scheme=' . urlencode($scheme) . '&participantid=' . urlencode($participantId) . '">';
 						print $langs->trans("PeppolApplyPeppolID");
 						print '</a>';
 						print '</td>';

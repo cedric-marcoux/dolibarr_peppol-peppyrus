@@ -465,7 +465,8 @@ class ActionsPeppolpeppyrus
 		if (in_array('thirdpartycard', $contextArray)) {
 			$langs->load("peppol@peppolpeppyrus");
 			$urlto = dol_buildpath("/peppolpeppyrus/search.php", 1) . "?socid=" . $object->id;
-			print '<div class="inline-block divButAction"><a class="butAction classfortooltip" title="' . $langs->trans("peppolFindPeppolIDPopupTitle") . '" href="' . $urlto . '" target="_blank">' . $langs->trans("peppolBtnFindPeppolID") . '</a></div>';
+			// Same window, no tooltip: the search page is a normal Dolibarr page with a way back to the card (#16)
+			print '<div class="inline-block divButAction"><a class="butAction" href="' . $urlto . '">' . $langs->trans("peppolBtnFindPeppolID") . '</a></div>';
 		}
 
 		if (! $error) {
