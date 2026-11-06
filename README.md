@@ -243,6 +243,9 @@ When ready to go live:
 
 # Changelog
 
+## Version 2.3.2-beta.1 (pre-release, branch dev)
+- New: the payment reference of the Peppol invoice (remittance information, PaymentID) is the one of the PDF and the QR code: the payment reference stored on the invoice when Dolibarr has one, otherwise the Belgian structured communication (+++123/4567/89012+++) when the Dolibarr option INVOICE_PAYMENT_ENABLE_STRUCTURED_COMMUNICATION is on, otherwise the invoice reference as before (#6)
+
 ## Version 2.3.1
 - Fix: a warning is shown after an update, in the Updates tab and on the invoice, when sending via Peppol stays disabled until an administrator completes the module setup (#25)
 - Updates tab hardened: errors of a check are retried after 15 minutes, only the 3 newest backups are kept, a previous version that cannot be removed is made unreadable (#22)
