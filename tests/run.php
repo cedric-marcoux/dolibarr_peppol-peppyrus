@@ -765,6 +765,243 @@ peppolTest('BUG_021_send_only_invoice_peppol_xml', function () {
 });
 
 // ---------------------------------------------------------------------------------------------
+// SPEC-022: update from signed GitHub releases
+// ---------------------------------------------------------------------------------------------
+
+dol_include_once('/peppolpeppyrus/lib/peppolupdate.lib.php');
+
+/**
+ * Release as returned by the GitHub API.
+ */
+function peppolTestRelease($tag, $pre, $signed = true, $draft = false, $repo = PEPPOL_UPDATE_REPO)
+{
+	$zip = 'module_peppolpeppyrus-' . preg_replace('/^v|-beta\.\d+$/', '', $tag) . '.zip';
+	$base = 'https://github.com/' . $repo . '/releases/download/' . $tag . '/';
+	$assets = array(array('name' => $zip, 'browser_download_url' => $base . $zip));
+	if ($signed) {
+		$assets[] = array('name' => $zip . '.sig', 'browser_download_url' => $base . $zip . '.sig');
+	}
+	return array('tag_name' => $tag, 'prerelease' => $pre, 'draft' => $draft, 'assets' => $assets);
+}
+
+/**
+ * Build a ZIP in the test directory.
+ *
+ * @param array $entries  name => content (null for a directory)
+ * @param array $symlinks names stored as symbolic links
+ */
+function peppolTestZip(array $entries, array $symlinks = array())
+{
+	global $tmpRoot;
+	$path = $tmpRoot . '/zip-' . bin2hex(random_bytes(6)) . '.zip';
+	$zip = new ZipArchive();
+	$zip->open($path, ZipArchive::CREATE);
+	foreach ($entries as $name => $content) {
+		if ($content === null) {
+			$zip->addEmptyDir($name);
+		} else {
+			$zip->addFromString($name, $content);
+		}
+	}
+	foreach ($symlinks as $name) {
+		$zip->addFromString($name, '/etc/passwd');
+		$zip->setExternalAttributesName($name, ZipArchive::OPSYS_UNIX, 0120777 << 16);
+	}
+	$zip->close();
+	return $path;
+}
+
+function peppolTestModuleEntries($version, array $extra = array())
+{
+	return array_merge(array(
+		'peppolpeppyrus/' => null,
+		'peppolpeppyrus/core/modules/modPeppolpeppyrus.class.php' => "<?php\nclass modPeppolpeppyrusTest {\n\tfunction __construct() {\n\t\t\$this->version = '" . $version . "';\n\t}\n}\n",
+		'peppolpeppyrus/lib/new.php' => "<?php\n// new\n",
+	), $extra);
+}
+
+peppolTest('SPEC_022_release_choice_per_channel', function () {
+	$list = array(
+		peppolTestRelease('v2.3.0', false),
+		peppolTestRelease('v2.4.0-beta.1', true),
+		peppolTestRelease('v2.5.0', false, true, true),                        // draft
+		peppolTestRelease('v9.0.0', false, false),                             // no signature
+		peppolTestRelease('v8.0.0', false, true, false, 'someone/forked-repo'), // other repository
+		peppolTestRelease('latest', false),                                    // not a version tag
+		peppolTestRelease('v7.0.0-beta.1', false),                             // beta tag published as stable
+	);
+	$stable = peppolUpdatePickRelease($list, false);
+	checkEquals('2.3.0', $stable['version'] ?? null, 'stable channel');
+	checkEquals('https://github.com/' . PEPPOL_UPDATE_REPO . '/releases/download/v2.3.0/module_peppolpeppyrus-2.3.0.zip.sig', $stable['sig_url'], 'signature URL');
+	$beta = peppolUpdatePickRelease($list, true);
+	checkEquals('7.0.0-beta.1', $beta['version'] ?? null, 'beta channel takes the newest signed beta');
+	check(peppolUpdatePickRelease(array(peppolTestRelease('v9.0.0', false, false)), true) === null, 'an unsigned release was offered');
+	check(peppolUpdatePickRelease('not a list', true) === null, 'invalid API answer accepted');
+});
+
+peppolTest('SPEC_022_only_newer_versions', function () {
+	check(peppolUpdateIsNewer('2.3.0', '2.3.0-beta.1'), 'final after beta');
+	check(peppolUpdateIsNewer('2.3.0-beta.2', '2.3.0-beta.1'), 'beta.2 after beta.1');
+	check(peppolUpdateIsNewer('2.3.0-beta.10', '2.3.0-beta.9'), 'beta.10 after beta.9');
+	check(!peppolUpdateIsNewer('2.3.0-beta.1', '2.3.0'), 'downgrade to a beta accepted');
+	check(!peppolUpdateIsNewer('2.3.0', '2.3.0'), 'same version accepted');
+	check(!peppolUpdateIsNewer('2.2.9', '2.3.0-beta.1'), 'older version accepted');
+	check(!peppolUpdateIsNewer('9.0.0; rm', '1.0.0'), 'malformed version accepted');
+});
+
+peppolTest('SPEC_022_signature_verification', function () {
+	$pk = base64_decode(PEPPOL_UPDATE_PUBLIC_KEY, true);
+	check($pk !== false && strlen($pk) === SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES, 'embedded public key is not a valid Ed25519 key');
+	$kp = sodium_crypto_sign_keypair();
+	$pub = base64_encode(sodium_crypto_sign_publickey($kp));
+	$hash = hash('sha256', 'zip content');
+	$sig = base64_encode(sodium_crypto_sign_detached(peppolUpdateSignedMessage('v2.4.0', $hash), sodium_crypto_sign_secretkey($kp)));
+	check(peppolUpdateVerifySignature('v2.4.0', $hash, $sig . "\n", $pub), 'valid signature refused');
+	check(!peppolUpdateVerifySignature('v9.9.9', $hash, $sig, $pub), 'signature accepted for another tag');
+	check(!peppolUpdateVerifySignature('v2.4.0', hash('sha256', 'other'), $sig, $pub), 'signature accepted for another ZIP');
+	check(!peppolUpdateVerifySignature('v2.4.0', $hash, $sig), 'signature from another key accepted');
+	check(!peppolUpdateVerifySignature('v2.4.0', $hash, substr($sig, 0, 40), $pub), 'truncated signature accepted');
+	check(!peppolUpdateVerifySignature('v2.4.0', $hash, '!!not base64!!', $pub), 'garbage signature accepted');
+});
+
+peppolTest('SPEC_022_zip_content_checked', function () {
+	$err = '';
+	check(peppolUpdateCheckZip(peppolTestZip(peppolTestModuleEntries('2.4.0')), '2.4.0', $err), 'valid ZIP refused: ' . $err);
+	check(!peppolUpdateCheckZip(peppolTestZip(peppolTestModuleEntries('2.4.0')), '2.5.0', $err), 'ZIP of another version accepted');
+	check(!peppolUpdateCheckZip(peppolTestZip(peppolTestModuleEntries('2.4.0', array('peppolpeppyrus/../evil.php' => 'x'))), '2.4.0', $err), 'path traversal accepted');
+	check(!peppolUpdateCheckZip(peppolTestZip(peppolTestModuleEntries('2.4.0', array('othermodule/evil.php' => 'x'))), '2.4.0', $err), 'file outside the module folder accepted');
+	check(!peppolUpdateCheckZip(peppolTestZip(peppolTestModuleEntries('2.4.0', array('peppolpeppyrus/.git/config' => 'x'))), '2.4.0', $err), '.git content accepted');
+	check(!peppolUpdateCheckZip(peppolTestZip(peppolTestModuleEntries('2.4.0', array('peppolpeppyrus\\evil.php' => 'x'))), '2.4.0', $err), 'backslash path accepted');
+	check(!peppolUpdateCheckZip(peppolTestZip(peppolTestModuleEntries('2.4.0'), array('peppolpeppyrus/link.php')), '2.4.0', $err), 'symbolic link accepted');
+	check(!peppolUpdateCheckZip(peppolTestZip(array('peppolpeppyrus/readme.txt' => 'x')), '2.4.0', $err), 'ZIP without module descriptor accepted');
+	check(!peppolUpdateEntryNameValid('/peppolpeppyrus/x') && !peppolUpdateEntryNameValid('peppolpeppyrus//x') && !peppolUpdateEntryNameValid("peppolpeppyrus/a\0b"), 'unsafe entry names accepted');
+});
+
+peppolTest('SPEC_022_install_guards', function () {
+	global $tmpRoot;
+	$root = $tmpRoot . '/guards-' . bin2hex(random_bytes(4));
+	mkdir($root . '/data', 0700, true);
+	mkdir($root . '/custom/peppolpeppyrus', 0775, true);
+	$dir = $root . '/custom/peppolpeppyrus';
+	$admin = peppolTestUser(array());
+	$admin->admin = 1;
+	checkEquals('', peppolUpdateInstallRefusal($admin, $dir, $root . '/data'), 'allowed case');
+	checkEquals('NotEnoughPermissions', peppolUpdateInstallRefusal(peppolTestUser(array('peppolpeppyrus' => array('write' => 1))), $dir, $root . '/data'), 'non administrator');
+	$external = peppolTestUser(array());
+	$external->admin = 1;
+	$external->socid = 12;
+	checkEquals('NotEnoughPermissions', peppolUpdateInstallRefusal($external, $dir, $root . '/data'), 'external user');
+	touch($root . '/data/installmodules.lock');
+	checkEquals('PeppolUpdateLocked', peppolUpdateInstallRefusal($admin, $dir, $root . '/data'), 'installmodules.lock');
+	unlink($root . '/data/installmodules.lock');
+	mkdir($dir . '/.git');
+	checkEquals('PeppolUpdateGitCheckout', peppolUpdateInstallRefusal($admin, $dir, $root . '/data'), 'git checkout');
+	rmdir($dir . '/.git');
+	mkdir($dir . '/sub/locked', 0775, true);
+	chmod($dir . '/sub/locked', 0555);
+	$ret = peppolUpdateInstallRefusal($admin, $dir, $root . '/data');
+	chmod($dir . '/sub/locked', 0775);
+	checkEquals('PeppolUpdateFolderNotWritable', $ret, 'folder that could not be removed after the update');
+	// The real module folder of this installation is a git checkout on development servers
+	if (file_exists(dirname(__DIR__) . '/.git')) {
+		checkEquals('PeppolUpdateGitCheckout', peppolUpdateInstallRefusal($admin, dirname(__DIR__), DOL_DATA_ROOT), 'development checkout protected');
+	}
+});
+
+peppolTest('SPEC_022_install_swap_backup_and_rollback', function () {
+	global $tmpRoot;
+	$root = $tmpRoot . '/install-' . bin2hex(random_bytes(4));
+	$dir = $root . '/custom/peppolpeppyrus';
+	$work = $root . '/data/peppolpeppyrus_update';
+	mkdir($dir . '/core/modules', 0775, true);
+	file_put_contents($dir . '/core/modules/modPeppolpeppyrus.class.php', "<?php\n\$this->version = '2.3.0';\n");
+	file_put_contents($dir . '/old-only.php', "<?php\n");
+	$kp = sodium_crypto_sign_keypair();
+	$pub = base64_encode(sodium_crypto_sign_publickey($kp));
+	$sign = function ($tag, $data) use ($kp) {
+		return base64_encode(sodium_crypto_sign_detached(peppolUpdateSignedMessage($tag, hash('sha256', $data)), sodium_crypto_sign_secretkey($kp)));
+	};
+	$err = '';
+
+	// Wrong signature: nothing changes
+	$good = file_get_contents(peppolTestZip(peppolTestModuleEntries('2.4.0')));
+	check(!peppolUpdateInstallData('v2.4.0', $good, $sign('v2.4.1', $good), '2.3.0', $dir, $work, $err, $pub), 'bad signature installed');
+	check(is_file($dir . '/old-only.php'), 'module changed after a refused update');
+
+	// Signed but unsafe ZIP: refused, no staging folder left
+	$evil = file_get_contents(peppolTestZip(peppolTestModuleEntries('2.4.0', array('peppolpeppyrus/../../evil.php' => 'x'))));
+	check(!peppolUpdateInstallData('v2.4.0', $evil, $sign('v2.4.0', $evil), '2.3.0', $dir, $work, $err, $pub), 'unsafe ZIP installed');
+	check(!file_exists($root . '/evil.php') && !file_exists($root . '/custom/evil.php'), 'file written outside the module');
+
+	// Downgrade refused even when signed
+	$old = file_get_contents(peppolTestZip(peppolTestModuleEntries('2.2.0')));
+	check(!peppolUpdateInstallData('v2.2.0', $old, $sign('v2.2.0', $old), '2.3.0', $dir, $work, $err, $pub), 'downgrade installed');
+
+	// Valid update
+	check(peppolUpdateInstallData('v2.4.0', $good, $sign('v2.4.0', $good), '2.3.0', $dir, $work, $err, $pub), 'valid update refused: ' . $err);
+	checkEquals('', $err, 'warning after a valid update');
+	check(is_file($dir . '/lib/new.php') && !is_file($dir . '/old-only.php'), 'module folder not replaced');
+	check(strpos(file_get_contents($dir . '/core/modules/modPeppolpeppyrus.class.php'), "'2.4.0'") !== false, 'new descriptor missing');
+	$backups = glob($work . '/backup-2.3.0-*.zip');
+	check(count($backups) === 1, 'backup of the previous version missing');
+	$z = new ZipArchive();
+	$z->open($backups[0]);
+	check($z->locateName('peppolpeppyrus/old-only.php') !== false, 'backup does not contain the previous files');
+	$z->close();
+	checkEquals(array('peppolpeppyrus'), array_values(array_diff(scandir($root . '/custom'), array('.', '..'))), 'folders left next to the module');
+	check(!glob($work . '/download-*'), 'download left in the work folder');
+
+	// Installed version changed meanwhile (another administrator): refused
+	$next = file_get_contents(peppolTestZip(peppolTestModuleEntries('2.5.0')));
+	check(!peppolUpdateInstallData('v2.5.0', $next, $sign('v2.5.0', $next), '2.3.0', $dir, $work, $err, $pub), 'update installed over a version changed meanwhile');
+	checkEquals('2.4.0', peppolUpdateDescriptorVersion($dir . '/core/modules/modPeppolpeppyrus.class.php'), 'descriptor version read from disk');
+
+	// Leftovers of an interrupted update are removed, other folders are kept
+	mkdir($root . '/custom/.peppolpeppyrus-old-' . str_repeat('a', 24) . '/admin', 0775, true);
+	mkdir($root . '/custom/.peppolpeppyrus-new-' . str_repeat('b', 24), 0775, true);
+	mkdir($root . '/custom/.peppolpeppyrus-old-keepme', 0775, true);
+	check(peppolUpdateCleanLeftovers($root . '/custom'), 'leftovers not removed');
+	checkEquals(array('.peppolpeppyrus-old-keepme', 'peppolpeppyrus'), array_values(array_diff(scandir($root . '/custom'), array('.', '..'))), 'folders after cleaning');
+	rmdir($root . '/custom/.peppolpeppyrus-old-keepme');
+
+	// Swap failure restores the installed folder
+	check(!peppolUpdateSwap($root . '/custom/missing', $dir, $err), 'swap with a missing folder succeeded');
+	check(is_file($dir . '/lib/new.php'), 'module lost after a failed swap');
+});
+
+peppolTest('SPEC_022_downloads_restricted_to_github_https', function () {
+	check(peppolUpdateUrlAllowed('https://api.github.com/repos/x/y/releases'), 'GitHub API refused');
+	check(peppolUpdateUrlAllowed('https://objects.githubusercontent.com/a/b'), 'GitHub asset host refused');
+	foreach (array(
+		'http://github.com/a',
+		'https://github.com.evil.example/a',
+		'https://evil.example/github.com',
+		'https://user:pass@github.com/a',
+		'https://github.com:8443/a',
+		'file:///etc/passwd',
+		'https://127.0.0.1/a',
+		'https://github.com\\@evil.example/a',
+	) as $url) {
+		check(!peppolUpdateUrlAllowed($url), 'URL accepted: ' . $url);
+	}
+});
+
+peppolTest('SPEC_022_version_file_and_update_page', function () {
+	global $db;
+	dol_include_once('/peppolpeppyrus/core/modules/modPeppolpeppyrus.class.php');
+	$mod = new modPeppolpeppyrus($db);
+	checkEquals($mod->version, trim(file_get_contents(dirname(__DIR__) . '/VERSION')), 'VERSION file');
+	checkEquals('https://raw.githubusercontent.com/' . PEPPOL_UPDATE_REPO . '/main/VERSION', $mod->url_last_version, 'url_last_version');
+	$pem = file_get_contents(dirname(__DIR__) . '/release-signing-key.pub');
+	$der = base64_decode(preg_replace('/-----[A-Z ]+-----|\s/', '', $pem), true);
+	checkEquals(PEPPOL_UPDATE_PUBLIC_KEY, base64_encode(substr($der, -32)), 'published public key matches the embedded key');
+	$src = file_get_contents(dirname(__DIR__) . '/admin/update.php');
+	check(strpos($src, "array('setchannel', 'check', 'confirm_install', 'finalize'), true) && !\$tokenOk") !== false, 'update actions must check the CSRF token');
+	check(strpos($src, "if (empty(\$user->admin) || !empty(\$user->socid)") !== false, 'update page must be restricted to administrators');
+	check(strpos($src, 'peppolUpdateFetchLatest($includeBeta, $error);') !== false, 'installation must not trust the cached release');
+});
+
+// ---------------------------------------------------------------------------------------------
 // Run
 // ---------------------------------------------------------------------------------------------
 

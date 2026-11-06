@@ -27,6 +27,11 @@ function peppolAdminPrepareHead()
 	$head[$h][2] = 'settings';
 	$h++;
 
+	$head[$h][0] = dol_buildpath("/peppolpeppyrus/admin/update.php", 1);
+	$head[$h][1] = $langs->trans("PeppolUpdateTab");
+	$head[$h][2] = 'update';
+	$h++;
+
 	$head[$h][0] = dol_buildpath("/peppolpeppyrus/admin/about.php", 1);
 	$head[$h][1] = $langs->trans("About");
 	$head[$h][2] = 'about';

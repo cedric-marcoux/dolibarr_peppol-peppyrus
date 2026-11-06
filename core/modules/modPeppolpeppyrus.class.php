@@ -60,7 +60,7 @@ class modPeppolpeppyrus extends DolibarrModules
 		// Possible values for version are: 'development', 'experimental', 'dolibarr', 'dolibarr_deprecated' or a version string like 'x.y.z'
 		$this->version = '2.3.0-beta.1';
 		// Url to the file with your last numberversion of this module
-		$this->url_last_version = '';
+		$this->url_last_version = 'https://raw.githubusercontent.com/cedric-marcoux/dolibarr_peppol-peppyrus/main/VERSION';
 
 		// Key used in llx_const table to save module status enabled/disabled (where PEPPOLPEPPYRUS is value of property name of module in uppercase)
 		$this->const_name = 'MAIN_MODULE_' . strtoupper($this->name);

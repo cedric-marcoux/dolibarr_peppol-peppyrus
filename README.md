@@ -109,6 +109,21 @@ This module allows sending electronic invoices via the PEPPOL network using the 
 - Rights: sending requires the module *write* right or the right to create or send customer invoices; incoming documents require the *Import Peppol invoices* right.
 - The webhook (`public/hook.php`) is disabled until the constant `PEPPOL_AP_WEBHOOK_KEY` is set (HMAC-SHA256 of the body).
 
+### Updates
+The **Updates** tab of the module setup shows the installed version and the latest version published on GitHub, and installs it in one click (administrators only; superadministrator with multicompany).
+- Channel: stable releases only, or also the beta pre-releases (checkbox).
+- The check runs only when an administrator opens the tab (at most once a day, the result is cached) or clicks *Check now*; it never runs during normal use. Nothing is installed without an administrator's confirmation.
+- Every release ZIP is signed with the maintainer's Ed25519 key (asset `<zip>.sig`, message `peppolpeppyrus|<tag>|<sha256 of the zip>`). The public key is embedded in the module and published in `release-signing-key.pub`. An unsigned or wrongly signed ZIP, a ZIP with unsafe paths or links, or an older version is refused.
+- The installed version is backed up in `documents/peppolpeppyrus_update/` (not reachable from the web) and restored automatically if the installation fails.
+- Not available when the module folder is a git checkout, when `installmodules.lock` exists in the Dolibarr data directory, or when the web server cannot write in the module folder. Releases published before 2.3.0 are not signed: install the first signed version by hand.
+- Known limit: the signature proves that a version comes from the maintainer, not that it is the newest one. Someone controlling the GitHub repository could hide a newer release; check the release page when in doubt.
+- Verify a release by hand:
+  ```sh
+  printf 'peppolpeppyrus|%s|%s' vX.Y.Z "$(sha256sum module_peppolpeppyrus-X.Y.Z.zip | cut -c1-64)" > msg
+  base64 -d module_peppolpeppyrus-X.Y.Z.zip.sig > sig.bin
+  openssl pkeyutl -verify -pubin -inkey release-signing-key.pub -rawin -in msg -sigfile sig.bin
+  ```
+
 ## API Endpoints
 
 - **Test**: `https://api.test.peppyrus.be/v1/`
@@ -230,6 +245,7 @@ When ready to go live:
 - Fix: incoming documents only require the module right "Import Peppol invoices" (no more rights of other modules, see #3)
 - Fix: webhook duplicate check used a wrong table name
 - Fix: PHP warnings in the XML generation (VAT summary, reverse-charge flag)
+- New: **Updates** tab: check and install new versions (stable, or beta when ticked) from signed GitHub releases, with backup and automatic restore; nothing is checked during normal use (#22)
 - New: regression tests, command line only: `php htdocs/custom/peppolpeppyrus/tests/run.php`
 
 ## Version 2.2.3
