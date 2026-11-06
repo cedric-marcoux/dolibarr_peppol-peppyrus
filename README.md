@@ -243,7 +243,7 @@ When ready to go live:
 
 # Changelog
 
-## Version 2.3.0-beta.1 (pre-release, branch dev)
+## Version 2.3.0-beta.2 (pre-release, branch dev)
 - Fix: credit notes are now sent with positive quantities, prices and totals, as required for a Peppol CreditNote (type 381); version 2.2.3 produced a negative CreditedQuantity and negative totals (#11)
 - Fix: line discount of a credit note computed from the absolute line total (the line amount matches Dolibarr)
 - Fix: paid invoices and credit notes converted into a discount (status Paid) get their Peppol XML and the Peppol buttons again, as for sending by e-mail; drafts and abandoned documents stay excluded (#12)
