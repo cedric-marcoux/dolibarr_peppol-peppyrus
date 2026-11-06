@@ -243,7 +243,9 @@ When ready to go live:
 
 # Changelog
 
-## Version 2.3.0-beta.2 (pre-release, branch dev)
+## Version 2.3.0-beta.3 (pre-release, branch dev)
+- Updates tab hardened: errors of a check are retried after 15 minutes, only the 3 newest backups are kept, a previous version that cannot be removed is made unreadable (#22)
+- Fix: the test, script and documentation files of the bundled e-invoicing library are no longer shipped (#23)
 - Fix: credit notes are now sent with positive quantities, prices and totals, as required for a Peppol CreditNote (type 381); version 2.2.3 produced a negative CreditedQuantity and negative totals (#11)
 - Fix: line discount of a credit note computed from the absolute line total (the line amount matches Dolibarr)
 - Fix: paid invoices and credit notes converted into a discount (status Paid) get their Peppol XML and the Peppol buttons again, as for sending by e-mail; drafts and abandoned documents stay excluded (#12)
