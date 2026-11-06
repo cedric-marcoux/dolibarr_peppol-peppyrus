@@ -243,7 +243,7 @@ When ready to go live:
 
 # Changelog
 
-## Version 2.3.0-beta.4 (pre-release, branch dev)
+## Version 2.3.1
 - Fix: a warning is shown after an update, in the Updates tab and on the invoice, when sending via Peppol stays disabled until an administrator completes the module setup (#25)
 - Updates tab hardened: errors of a check are retried after 15 minutes, only the 3 newest backups are kept, a previous version that cannot be removed is made unreadable (#22)
 - Fix: the test, script and documentation files of the bundled e-invoicing library are no longer shipped (#23)
