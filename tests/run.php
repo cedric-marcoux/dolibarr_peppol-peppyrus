@@ -904,6 +904,12 @@ peppolTest('SPEC_024_disclaimer_required_before_sending', function () {
 		checkEquals('600', substr(sprintf('%o', fileperms(PEPPOL_DISCLAIMER_DIR . '/disclaimer.json')), -3), 'record file permissions');
 		checkEquals('600', substr(sprintf('%o', fileperms(PEPPOL_DISCLAIMER_DIR . '/disclaimer.log')), -3), 'history file permissions');
 		checkEquals('', peppolSendRefusalReason($writer, $inv, 'yes'), 'send allowed after acceptance');
+		// A corrupt record file is never overwritten (the other entities would lose their acceptance)
+		$good = file_get_contents(PEPPOL_DISCLAIMER_DIR . '/disclaimer.json');
+		file_put_contents(PEPPOL_DISCLAIMER_DIR . '/disclaimer.json', '{corrupt');
+		check(!peppolDisclaimerAccept($GLOBALS['db'], $admin), 'corrupt record file overwritten');
+		checkEquals('{corrupt', file_get_contents(PEPPOL_DISCLAIMER_DIR . '/disclaimer.json'), 'corrupt record file changed');
+		file_put_contents(PEPPOL_DISCLAIMER_DIR . '/disclaimer.json', $good);
 	} finally {
 		peppolTestSetDisclaimer($accepted);
 	}

@@ -297,7 +297,12 @@ function peppolDisclaimerAccept($db, $user)
 			return false;
 		}
 		@chmod($log, 0600);
+		$file = $dir . '/disclaimer.json';
 		$records = peppolDisclaimerRecords();
+		// Never overwrite a record file that cannot be read: the other entities would lose their acceptance
+		if (is_file($file) && !$records && trim((string) @file_get_contents($file)) !== '') {
+			return false;
+		}
 		$records[(string) ((int) $conf->entity)] = $entry;
 		$json = json_encode($records);
 		$tmp = $dir . '/disclaimer-' . bin2hex(random_bytes(8)) . '.tmp';
