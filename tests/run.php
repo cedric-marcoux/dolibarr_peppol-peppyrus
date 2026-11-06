@@ -845,16 +845,22 @@ peppolTest('BUG_023_developer_scripts_command_line_only', function () {
 });
 
 /**
- * Set or remove the disclaimer acceptance of the current entity (inside the test transaction).
+ * Set or remove the disclaimer acceptance of an entity (in the test folder, PEPPOL_DISCLAIMER_DIR).
  */
 function peppolTestSetDisclaimer($value, $entity = null)
 {
-	global $db, $conf;
+	global $conf;
 	$entity = ($entity === null) ? (int) $conf->entity : (int) $entity;
-	$db->query("DELETE FROM " . MAIN_DB_PREFIX . "const WHERE name = 'PEPPOL_DISCLAIMER_ACCEPTED' AND entity = " . $entity);
-	if ($value !== null) {
-		$db->query("INSERT INTO " . MAIN_DB_PREFIX . "const (name, entity, value, type, visible) VALUES ('PEPPOL_DISCLAIMER_ACCEPTED', " . $entity . ", '" . $db->escape($value) . "', 'chaine', 0)");
+	$records = peppolDisclaimerRecords();
+	if ($value === null) {
+		unset($records[(string) $entity]);
+	} else {
+		$records[(string) $entity] = json_decode($value, true);
 	}
+	if (!is_dir(PEPPOL_DISCLAIMER_DIR)) {
+		mkdir(PEPPOL_DISCLAIMER_DIR, 0700, true);
+	}
+	file_put_contents(PEPPOL_DISCLAIMER_DIR . '/disclaimer.json', json_encode($records));
 }
 
 peppolTest('SPEC_024_disclaimer_required_before_sending', function () {
@@ -866,11 +872,13 @@ peppolTest('SPEC_024_disclaimer_required_before_sending', function () {
 		peppolTestSetDisclaimer(null);
 		check(peppolDisclaimerAcceptance() === null, 'disclaimer seen as accepted without acceptance');
 		checkEquals('PeppolDisclaimerNotAccepted', peppolSendRefusalReason($writer, $inv, 'yes'), 'send refused before acceptance');
-		// A value of another entity or of the global entity 0 does not count
+		// A record of another entity does not count, nor a Dolibarr constant (forged through the constants page)
 		peppolTestSetDisclaimer($accepted, 0);
-		$conf->global->PEPPOL_DISCLAIMER_ACCEPTED = $accepted;
 		check(peppolDisclaimerAcceptance() === null, 'acceptance of entity 0 counted for the current entity');
 		peppolTestSetDisclaimer(null, 0);
+		$GLOBALS['db']->query("INSERT INTO " . MAIN_DB_PREFIX . "const (name, entity, value, type, visible) VALUES ('PEPPOL_DISCLAIMER_ACCEPTED', " . ((int) $conf->entity) . ", '" . $GLOBALS['db']->escape($accepted) . "', 'chaine', 0)");
+		$conf->global->PEPPOL_DISCLAIMER_ACCEPTED = $accepted;
+		check(peppolDisclaimerAcceptance() === null, 'acceptance forged in the Dolibarr constants counted');
 		unset($conf->global->PEPPOL_DISCLAIMER_ACCEPTED);
 		peppolTestSetDisclaimer(json_encode(array('version' => PEPPOL_DISCLAIMER_VERSION - 1, 'user_id' => 1, 'login' => 'a', 'date' => 1)));
 		check(peppolDisclaimerAcceptance() === null, 'acceptance of an older text accepted');
@@ -885,7 +893,16 @@ peppolTest('SPEC_024_disclaimer_required_before_sending', function () {
 		check(strpos($html, 'action=peppolSendFile') === false && strpos($html, 'butActionRefused') !== false, 'send link shown before acceptance');
 		// Non administrators cannot accept
 		check(!peppolDisclaimerAccept($GLOBALS['db'], $writer), 'non administrator accepted the disclaimer');
-		peppolTestSetDisclaimer($accepted);
+		// An administrator accepts: current record and history written, private files
+		$admin = peppolTestUser(array());
+		$admin->admin = 1;
+		$admin->id = 4242;
+		$admin->login = 'testadmin';
+		check(peppolDisclaimerAccept($GLOBALS['db'], $admin), 'administrator could not accept');
+		checkEquals(4242, peppolDisclaimerAcceptance()['user_id'] ?? null, 'accepting user recorded');
+		check(strpos((string) file_get_contents(PEPPOL_DISCLAIMER_DIR . '/disclaimer.log'), '"user_id":4242') !== false, 'acceptance missing from the history');
+		checkEquals('600', substr(sprintf('%o', fileperms(PEPPOL_DISCLAIMER_DIR . '/disclaimer.json')), -3), 'record file permissions');
+		checkEquals('600', substr(sprintf('%o', fileperms(PEPPOL_DISCLAIMER_DIR . '/disclaimer.log')), -3), 'history file permissions');
 		checkEquals('', peppolSendRefusalReason($writer, $inv, 'yes'), 'send allowed after acceptance');
 	} finally {
 		peppolTestSetDisclaimer($accepted);
@@ -1292,6 +1309,8 @@ $conf->global->FACTURE_RIB_NUMBER = 0;
 // Everything written to the database by the tests is rolled back at the end (also if the run dies:
 // the transaction is never committed)
 $db->begin();
+// Disclaimer records of the tests are kept in the private test folder (#24)
+define('PEPPOL_DISCLAIMER_DIR', $tmpRoot . '/disclaimer');
 // The other tests describe the behaviour once the disclaimer is accepted (#24)
 peppolTestSetDisclaimer(json_encode(array('version' => PEPPOL_DISCLAIMER_VERSION, 'user_id' => 1, 'login' => 'test', 'date' => 1)));
 

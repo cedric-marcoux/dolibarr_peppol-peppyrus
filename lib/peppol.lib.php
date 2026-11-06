@@ -218,30 +218,52 @@ if (!defined('PEPPOL_DISCLAIMER_VERSION')) {
 }
 
 /**
+ * Folder of the disclaimer acceptance records (#24).
+ *
+ * A private folder of the data directory, not the Dolibarr constants: no Dolibarr screen can write
+ * it, so an administrator (of this or another entity) cannot forge or alter the record through
+ * the constants page.
+ *
+ * @return string
+ */
+function peppolDisclaimerDir()
+{
+	return defined('PEPPOL_DISCLAIMER_DIR') ? PEPPOL_DISCLAIMER_DIR : DOL_DATA_ROOT . '/peppolpeppyrus_update';
+}
+
+/**
+ * Read all acceptance records.
+ *
+ * @return array  entity => [version, user_id, login, date]
+ */
+function peppolDisclaimerRecords()
+{
+	$file = peppolDisclaimerDir() . '/disclaimer.json';
+	if (!is_file($file) || is_link($file)) {
+		return array();
+	}
+	$data = json_decode((string) @file_get_contents($file), true);
+	return is_array($data) ? $data : array();
+}
+
+/**
  * Acceptance of the current disclaimer in the current entity (#24).
  *
  * @return array|null  [version, user_id, login, date] or null when not accepted
  */
 function peppolDisclaimerAcceptance()
 {
-	global $db, $conf;
-	// Read the row of the current entity only: a value of another entity (or of the global entity 0)
-	// must not count as the acceptance of this one
-	$raw = '';
-	$sql = "SELECT value FROM " . MAIN_DB_PREFIX . "const WHERE name = 'PEPPOL_DISCLAIMER_ACCEPTED' AND entity = " . ((int) $conf->entity);
-	$res = $db->query($sql);
-	if ($res && ($obj = $db->fetch_object($res))) {
-		$raw = (string) $obj->value;
-	}
-	$data = json_decode($raw, true);
+	global $conf;
+	$records = peppolDisclaimerRecords();
+	$data = $records[(string) ((int) $conf->entity)] ?? null;
 	if (!is_array($data) || (int) ($data['version'] ?? 0) !== PEPPOL_DISCLAIMER_VERSION || empty($data['user_id']) || empty($data['date'])) {
 		return null;
 	}
-	return $data;
+	return array('version' => (int) $data['version'], 'user_id' => (int) $data['user_id'], 'login' => (string) ($data['login'] ?? ''), 'date' => (int) $data['date']);
 }
 
 /**
- * Record that an administrator accepted the disclaimer.
+ * Record that an administrator accepted the disclaimer (current record + append-only history).
  *
  * @param DoliDB $db   Database
  * @param User   $user Administrator
@@ -250,12 +272,50 @@ function peppolDisclaimerAcceptance()
 function peppolDisclaimerAccept($db, $user)
 {
 	global $conf;
-	require_once DOL_DOCUMENT_ROOT . '/core/lib/admin.lib.php';
 	if (empty($user->admin) || !empty($user->socid)) {
 		return false;
 	}
-	$data = array('version' => PEPPOL_DISCLAIMER_VERSION, 'user_id' => (int) $user->id, 'login' => (string) $user->login, 'date' => dol_now());
-	$ok = dolibarr_set_const($db, 'PEPPOL_DISCLAIMER_ACCEPTED', json_encode($data), 'chaine', 0, 'Disclaimer accepted', $conf->entity) > 0;
+	$dir = peppolDisclaimerDir();
+	if ((!is_dir($dir) && !@mkdir($dir, 0700, true)) || is_link($dir)) {
+		return false;
+	}
+	$lock = @fopen($dir . '/disclaimer.lock', 'c');
+	if (!$lock || !flock($lock, LOCK_EX)) {
+		return false;
+	}
+	$ok = false;
+	try {
+		$entry = array('version' => PEPPOL_DISCLAIMER_VERSION, 'user_id' => (int) $user->id, 'login' => (string) $user->login, 'date' => dol_now(), 'entity' => (int) $conf->entity);
+		// History first: an acceptance is never recorded without its trace
+		$log = $dir . '/disclaimer.log';
+		if (is_link($log)) {
+			return false;
+		}
+		$line = json_encode($entry) . "\n";
+		$fh = @fopen($log, 'ab');
+		if (!$fh || fwrite($fh, $line) !== strlen($line) || !fclose($fh)) {
+			return false;
+		}
+		@chmod($log, 0600);
+		$records = peppolDisclaimerRecords();
+		$records[(string) ((int) $conf->entity)] = $entry;
+		$json = json_encode($records);
+		$tmp = $dir . '/disclaimer-' . bin2hex(random_bytes(8)) . '.tmp';
+		$fh = @fopen($tmp, 'xb');
+		if (!$fh) {
+			return false;
+		}
+		$ok = fwrite($fh, $json) === strlen($json);
+		$ok = fclose($fh) && $ok;
+		@chmod($tmp, 0600);
+		$ok = $ok && @rename($tmp, $dir . '/disclaimer.json');
+		if (!$ok) {
+			@unlink($tmp);
+		}
+	} finally {
+		flock($lock, LOCK_UN);
+		fclose($lock);
+	}
 	dol_syslog('peppolpeppyrus disclaimer version ' . PEPPOL_DISCLAIMER_VERSION . ' accepted by user ' . ((int) $user->id) . ' in entity ' . ((int) $conf->entity) . ($ok ? '' : ' (not saved)'), LOG_NOTICE);
 	return $ok;
 }
