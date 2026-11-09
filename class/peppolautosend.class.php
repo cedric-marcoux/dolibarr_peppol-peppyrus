@@ -16,6 +16,7 @@
 dol_include_once('/peppolpeppyrus/lib/peppol.lib.php');
 require_once DOL_DOCUMENT_ROOT . '/compta/facture/class/facture.class.php';
 require_once DOL_DOCUMENT_ROOT . '/core/lib/admin.lib.php';
+require_once DOL_DOCUMENT_ROOT . '/core/lib/files.lib.php';
 
 /**
  * Automatic sending of customer invoices

@@ -101,6 +101,11 @@ if ($action == 'update' && !empty($user->admin)) {
 		$error++;
 	}
 
+	// PEPPOL_EMBED_PDF (since 2.11.0): embed the PDF in the Peppol file, on by default
+	if (!dolibarr_set_const($db, 'PEPPOL_EMBED_PDF', (string) (((int) GETPOST('PEPPOL_EMBED_PDF', 'int')) ? 1 : 0), 'chaine', 0, '', $conf->entity)) {
+		$error++;
+	}
+
 	// Update PEPPOL_USE_TRIGGER
 	$use_trigger = GETPOST('PEPPOL_USE_TRIGGER', 'int');
 	if (!dolibarr_set_const($db, 'PEPPOL_USE_TRIGGER', $use_trigger, 'chaine', 0, '', $conf->entity)) {
@@ -269,6 +274,18 @@ if ($action == 'edit') {
 	print '</thead>';
 	print '<tbody>';
 
+	// PEPPOL_EMBED_PDF (since 2.11.0)
+	print '<tr class="oddeven">';
+	print '<td><label for="PEPPOL_EMBED_PDF">' . $langs->trans("PEPPOL_EMBED_PDF") . '</label>';
+	print '<br><span class="opacitymedium small">' . $langs->trans("PEPPOL_EMBED_PDFTooltip") . '</span></td>';
+	print '<td>';
+	print '<select name="PEPPOL_EMBED_PDF" id="PEPPOL_EMBED_PDF" class="flat">';
+	print '<option value="1"' . (getDolGlobalInt('PEPPOL_EMBED_PDF', 1) === 1 ? ' selected' : '') . '>' . $langs->trans("Yes") . '</option>';
+	print '<option value="0"' . (getDolGlobalInt('PEPPOL_EMBED_PDF', 1) === 1 ? '' : ' selected') . '>' . $langs->trans("No") . '</option>';
+	print '</select>';
+	print '</td>';
+	print '</tr>';
+
 	// PEPPOL_FORCE_XML_WITH_VATNULL
 	print '<tr class="oddeven">';
 	print '<td><label for="PEPPOL_FORCE_XML_WITH_VATNULL">' . $langs->trans("PEPPOL_FORCE_XML_WITH_VATNULL") . '</label>';
@@ -364,6 +381,12 @@ if ($action == 'edit') {
 	print '</tr>';
 	print '</thead>';
 	print '<tbody>';
+
+	// PEPPOL_EMBED_PDF (since 2.11.0)
+	print '<tr class="oddeven">';
+	print '<td>' . $langs->trans("PEPPOL_EMBED_PDF") . '</td>';
+	print '<td>' . yn(getDolGlobalInt('PEPPOL_EMBED_PDF', 1)) . '</td>';
+	print '</tr>';
 
 	// PEPPOL_FORCE_XML_WITH_VATNULL
 	print '<tr class="oddeven">';

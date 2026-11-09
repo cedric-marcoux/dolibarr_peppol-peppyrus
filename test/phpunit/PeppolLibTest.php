@@ -228,4 +228,46 @@ class PeppolLibTest extends TestCase
 		$this->assertFalse(peppolDolibarrBelowRecommended('22.0.0'));
 		$this->assertFalse(peppolDolibarrBelowRecommended('24.0.2'));
 	}
+
+	/**
+	 * Through Peppol: validated and paid documents (also a credit note that was used), no draft or abandoned
+	 *
+	 * @return void
+	 */
+	public function testInvoiceStatusEligible()
+	{
+		require_once DOL_DOCUMENT_ROOT.'/compta/facture/class/facture.class.php';
+		$inv = new stdClass();
+		foreach (array(Facture::STATUS_VALIDATED => true, Facture::STATUS_CLOSED => true, Facture::STATUS_DRAFT => false, Facture::STATUS_ABANDONED => false) as $status => $expected) {
+			$inv->status = $status;
+			$this->assertSame($expected, peppolIsInvoiceStatusEligible($inv), 'status '.$status);
+		}
+		$this->assertFalse(peppolIsInvoiceStatusEligible(null));
+	}
+
+	/**
+	 * Identifiers from the access point: only letters, digits and . _ : @ -
+	 *
+	 * @return void
+	 */
+	public function testSanitizeIdentifier()
+	{
+		$this->assertSame('0106:12345678', peppolSanitizeIdentifier('0106:12345678'));
+		$this->assertSame('abc-123_x.y@z', peppolSanitizeIdentifier('abc-123_x.y@z'));
+		$this->assertSame('scriptalert1script', peppolSanitizeIdentifier('<script>alert(1)</script>'));
+		$this->assertSame('', peppolSanitizeIdentifier(array('x')));
+	}
+
+	/**
+	 * No access without user or invoice (the rest needs the database)
+	 *
+	 * @return void
+	 */
+	public function testUserCanReadInvoiceWithoutObjects()
+	{
+		$this->assertFalse(peppolUserCanReadInvoice(null, null));
+		$inv = new stdClass();
+		$inv->id = 0;
+		$this->assertFalse(peppolUserCanReadInvoice(new stdClass(), $inv));
+	}
 }

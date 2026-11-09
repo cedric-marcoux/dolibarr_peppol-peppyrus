@@ -434,3 +434,6 @@ peppolAboutReadme = About the module
 
 # Recommended Dolibarr version
 peppolDolibarrRecommended = Dolibarr %s with PHP %s: the module works, but Dolibarr 22 or newer is recommended. Older Dolibarr versions get no security updates any more and are not tested with PHP 8.4 or 8.5.
+PeppolErrorStatusNotEligible = Only validated or paid invoices and credit notes can be sent through Peppol.
+PEPPOL_EMBED_PDF = Embed the PDF in the Peppol file
+PEPPOL_EMBED_PDFTooltip = In Peppol the message itself is the invoice; the PDF is optional. Every access point on the route gets a copy of the message. Choose No when the PDF holds data the recipient does not need to approve the invoice, such as care or personal data.

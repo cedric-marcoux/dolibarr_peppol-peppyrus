@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.11.0
+
+Security and privacy fixes, and the bug fixes of the original module (Cedric Marcoux, version 2.3.1). Not taken over: the Updates tab (it installs versions from the original repository and would replace this fork) and the disclaimer.
+
+**Security and privacy**
+
+- **No link to the PDF online in the Peppol file any more.** When the invoice had been shared once (public link in Dolibarr), the link went along in the message. That link works without login for everyone who sees the message: every access point on the route and anyone they pass it on to. The invoice could be read without the sender or the customer knowing.
+- **No phone number and email address of a private customer** in the message any more: they are not needed to approve the invoice.
+- **No fixed text "note"** when the public note of the invoice is empty; a filled-in note goes along without HTML.
+- **The PDF in the Peppol file is a setting** (setup page, "Embed the PDF in the Peppol file", on by default). In Peppol the message itself is the invoice; turn it off when the PDF holds data the recipient does not need, for example care or personal data.
+- **Removed `scripts/validate.php` and `scripts/json2csv.php`**: development scripts that were in the package and could be called through the browser.
+- **Removed the tests, scripts and documentation of the bundled libraries** (`vendor/josemmo/einvoicing` and `vendor/josemmo/uxml`), among them `scripts/build-docs.php`, which writes files when it is called. They were in the package and could be called through the browser. Only `src`, `composer.json`, `README.md` and `LICENSE` stay.
+- **Automatic sending as a scheduled job**: `files.lib.php` is loaded where `dol_is_file()` is used; without it the job could stop with a fatal error.
+
+**From the original module (2.3.1)**
+
+- **Credit notes** (#11): positive quantities, prices and totals in the Peppol XML, as a Peppol CreditNote requires. Before, the quantity was made negative, which gave the credit note negative totals and could get it rejected. The discount on a line is calculated on the absolute line total.
+- **Paid invoices and credit notes that were used** (#12) get a Peppol file with the PDF and the Peppol buttons again, as for sending by email. Before, only "validated" counted. Drafts and abandoned documents stay excluded.
+- **Sending** (#13): the confirmation also checks that the document is validated or paid ("Only validated or paid invoices and credit notes can be sent through Peppol").
+- **Unit price with full precision** (#15): the unit price goes into the XML with the decimals of Dolibarr (up to 8) instead of rounded to 2, so line amounts and the total without VAT match the invoice to the cent.
+- **Peppol log** (#18): every sending (successful or not) is written to the log on the Peppol tab of the invoice again.
+- **ZIP export** of Peppol files: for each invoice it is checked that the user may see it (own customers, entity, external users).
+- **Data from the access point escaped** (#19): error messages, folder and organisation name, message ID and page numbers. Identifiers of received messages (message ID, sender, receiver) are cleaned to letters, digits and `. _ : @ -`.
+- **PHP warning** in the VAT summary of the XML fixed.
+- Tests: statuses that may go through Peppol, cleaning of identifiers, escaping of error messages from the access point.
+
+**After updating:** install the module through Setup, Modules ("Deploy/install an external module"; Dolibarr then replaces the whole folder, so the removed files disappear from the server too). Flush memcached. Generate the PDF of a credit note again before sending it, so the Peppol file is made again. Check the new setting "Embed the PDF in the Peppol file".
+
 ## 2.10.3
 
 - **Dolibarr 22 or newer is recommended.** The minimum stays Dolibarr 18.0, so nothing stops working, but on Dolibarr 18 up to 21 the setup page and the About page show a notice: those versions get no security updates any more and are not tested with PHP 8.4 or 8.5.

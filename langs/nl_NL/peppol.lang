@@ -450,3 +450,6 @@ peppolAboutReadme = Over de module
 
 # Recommended Dolibarr version
 peppolDolibarrRecommended = Dolibarr %s met PHP %s: de module werkt, maar Dolibarr 22 of nieuwer wordt aanbevolen. Oudere Dolibarr-versies krijgen geen beveiligingsupdates meer en zijn niet getest met PHP 8.4 of 8.5.
+PeppolErrorStatusNotEligible = Alleen gevalideerde of betaalde facturen en creditnota's kunnen via Peppol worden verstuurd.
+PEPPOL_EMBED_PDF = PDF meesturen in het Peppol-bestand
+PEPPOL_EMBED_PDFTooltip = In Peppol is het bericht zelf de factuur; de PDF is niet verplicht. Elk accesspoint onderweg krijgt een kopie van het bericht. Kies Nee als op de PDF gegevens staan die de ontvanger niet nodig heeft om de factuur goed te keuren, zoals zorg- of persoonsgegevens.

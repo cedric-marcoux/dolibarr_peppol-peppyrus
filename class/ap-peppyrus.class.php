@@ -179,16 +179,17 @@ class Peppyrus extends PeppolAP
 
 		$json = json_decode($content);
 
+		// The texts come from the access point: escaped, only the line breaks added here are HTML
 		if ($json && isset($json->message)) {
-			$errorMsg = $json->message;
+			$errorMsg = dol_escape_htmltag((string) $json->message);
 			if (isset($json->errors) && is_array($json->errors)) {
 				foreach ($json->errors as $e) {
-					$errorMsg .= '<br>- ' . (is_string($e) ? $e : json_encode($e));
+					$errorMsg .= '<br>- ' . dol_escape_htmltag(is_string($e) ? $e : (string) json_encode($e));
 				}
 			}
 		} elseif (!empty($content)) {
-			// Fallback: use raw content without HTML tags
-			$errorMsg = strip_tags($content);
+			// Fallback: the raw content without HTML tags, escaped
+			$errorMsg = dol_escape_htmltag(strip_tags($content));
 		}
 
 		return $errorMsg;
@@ -310,12 +311,12 @@ class Peppyrus extends PeppolAP
 					$message .= ' - ' . $langs->trans('peppolAccessPointCheckInvoiceSuccessConfirmed');
 				}
 				if (isset($json->folder)) {
-					$message .= ' - folder: ' . $json->folder;
+					$message .= ' - folder: ' . dol_escape_htmltag((string) $json->folder);
 				}
 			} else {
 				$message = $langs->trans('peppolAccessPointCheckSuccess');
 				if (isset($json->name)) {
-					$message .= ' - Organization: ' . $json->name;
+					$message .= ' - Organization: ' . dol_escape_htmltag((string) $json->name);
 				}
 			}
 			setEventMessages($message, null, 'mesgs');
@@ -418,11 +419,21 @@ class Peppyrus extends PeppolAP
 		// Use centralized response handler
 		$response = $this->handleApiResponse($result, 'sendToAccessPoint');
 
+		// Every sending in the Peppol log, shown on the Peppol tab of the invoice (from the original module, #18)
+		peppolAddLog(
+			'peppyrus',
+			(int) $object->id,
+			1,
+			(string) ($result['http_code'] ?? 0),
+			$response['success'] ? $langs->transnoentitiesnoconv('peppolSendSuccess') : strip_tags((string) $response['error_msg']),
+			(string) json_encode(array('http_code' => $result['http_code'] ?? 0, 'response' => $response['success'] ? $response['data'] : ($result['content'] ?? '')))
+		);
+
 		if ($response['success']) {
 			$json = $response['data'];
 
 			if (isset($json->id)) {
-				$message = $langs->trans('peppolSendSuccess') . ' - Message ID: ' . $json->id;
+				$message = $langs->trans('peppolSendSuccess') . ' - Message ID: ' . dol_escape_htmltag(peppolSanitizeIdentifier($json->id));
 				setEventMessages($message, null, 'mesgs');
 
 				// Store the message ID in the object for tracking
@@ -433,7 +444,7 @@ class Peppyrus extends PeppolAP
 				// Save Peppyrus message ID if extrafield exists
 				if (array_key_exists('options_peppol_id', $object->array_options)) {
 					dol_syslog("Peppol update extrafields : store the Peppyrus message id on the invoice");
-					$object->array_options['options_peppol_id'] = $json->id;
+					$object->array_options['options_peppol_id'] = peppolSanitizeIdentifier($json->id);
 					$object->updateExtraField('peppol_id');
 				} else {
 					dol_syslog("Peppol update extrafields : can't get object->array_options['options_peppol_id'] !");
@@ -581,7 +592,7 @@ class Peppyrus extends PeppolAP
 		$message = $langs->trans('peppolInvoicesListSuccess') . ' - ' . $messageCount . ' message(s) found';
 
 		if (isset($json->meta)) {
-			$message .= ' (Page ' . $json->meta->currentPage . '/' . $json->meta->pages . ')';
+			$message .= ' (Page ' . ((int) $json->meta->currentPage) . '/' . ((int) $json->meta->pages) . ')';
 		}
 
 		setEventMessages($message, null, 'mesgs');
@@ -607,9 +618,9 @@ class Peppyrus extends PeppolAP
 			}
 
 			$pi->setValues([
-				"peppolid" => $entry->id,
-				"senderID" => $entry->sender,
-				"receiverID" => $entry->recipient,
+				"peppolid" => peppolSanitizeIdentifier($entry->id),
+				"senderID" => peppolSanitizeIdentifier($entry->sender ?? ''),
+				"receiverID" => peppolSanitizeIdentifier($entry->recipient ?? ''),
 			]);
 			$res = $pi->create($user);
 			if ($res > 0) {

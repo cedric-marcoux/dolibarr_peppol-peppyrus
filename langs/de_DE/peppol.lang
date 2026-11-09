@@ -228,3 +228,6 @@ peppolCandidateActionSkipped = %s skipped (third party already has a Peppol ID o
 peppolCandidateActionError = Error, nothing was changed.
 peppolCandidateCheckResult = %s third parties checked, %s ID(s) found, %s new.
 peppolCandidateCheckErrors = The Peppol directory could not be reached (%s time); the remaining third parties are checked next time.
+PeppolErrorStatusNotEligible = Nur validierte oder bezahlte Rechnungen und Gutschriften können über Peppol gesendet werden.
+PEPPOL_EMBED_PDF = PDF in die Peppol-Datei einbetten
+PEPPOL_EMBED_PDFTooltip = Bei Peppol ist die Nachricht selbst die Rechnung; das PDF ist optional. Jeder Access Point auf dem Weg erhält eine Kopie der Nachricht. Wählen Sie Nein, wenn das PDF Daten enthält, die der Empfänger zur Freigabe der Rechnung nicht braucht, etwa Gesundheits- oder Personendaten.

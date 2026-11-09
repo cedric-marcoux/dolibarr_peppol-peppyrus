@@ -106,6 +106,11 @@ class ActionsPeppolpeppyrus
 				if (GETPOST('confirm', 'alpha') != 'yes') {
 					break;
 				}
+				// Only a validated or paid invoice or credit note (from the original module, #13)
+				if (!peppolIsInvoiceStatusEligible($object)) {
+					setEventMessages($langs->trans('PeppolErrorStatusNotEligible'), null, 'errors');
+					break;
+				}
 				$filename = peppolFindFileToUse($object, $parameters['outputdir']);
 				$object->fetch_optionals();
 				peppolSendToAccessPoint($filename, $object);
@@ -153,7 +158,8 @@ class ActionsPeppolpeppyrus
 				if ($zip->open($zipname, ZipArchive::CREATE | ZipArchive::OVERWRITE)) {
 					dol_syslog(get_class($this) . '::doMassActions zip destination is ' . $zipname);
 					foreach ($parameters['toselect'] as $objectid) {
-						if ($obj->fetch($objectid) > 0) {
+						// Every invoice must be visible to the user (own customers, entity, external users)
+						if ($obj->fetch($objectid) > 0 && peppolUserCanReadInvoice($user, $obj)) {
 							$fic = $conf->facture->dir_output . '/' . $obj->ref . "/" . $obj->ref . "_peppol.xml";
 							if (file_exists($fic)) {
 								$zip->addFile($fic, basename($fic));
@@ -258,8 +264,9 @@ class ActionsPeppolpeppyrus
 			return 0;
 		}
 
-		if ($parameters['object']->status != Facture::STATUS_VALIDATED) {
-			dol_syslog(get_class($this) . '::executeHooks not a validated invoice, status is ' . $parameters['object']->status . ', return');
+		// Validated or paid/closed, as for sending by email (also a credit note that was used, #12)
+		if (!peppolIsInvoiceStatusEligible($parameters['object'])) {
+			dol_syslog(get_class($this) . '::executeHooks invoice status ' . $parameters['object']->status . ' not eligible for Peppol (draft or abandoned), skip');
 			return 0;
 		}
 
@@ -317,8 +324,9 @@ class ActionsPeppolpeppyrus
 			return 0;
 		}
 
-		if ($parameters['object']->status != Facture::STATUS_VALIDATED) {
-			dol_syslog(get_class($this) . '::executeHooks not a validated invoice, status is ' . $parameters['object']->status . ', return');
+		// Validated or paid/closed, as for sending by email (also a credit note that was used, #12)
+		if (!peppolIsInvoiceStatusEligible($parameters['object'])) {
+			dol_syslog(get_class($this) . '::executeHooks invoice status ' . $parameters['object']->status . ' not eligible for Peppol (draft or abandoned), skip');
 			return 0;
 		}
 
@@ -520,7 +528,7 @@ class ActionsPeppolpeppyrus
 
 		$contextArray = explode(':', $parameters['context']);
 		if (in_array('invoicecard', $contextArray)) {
-			if ($object->status == Facture::STATUS_VALIDATED && $user->hasRight('peppolpeppyrus', 'read')) {
+			if (peppolIsInvoiceStatusEligible($object) && $user->hasRight('peppolpeppyrus', 'read')) {
 				$classAction = "butAction";
 				if (!$user->hasRight('peppolpeppyrus', 'write') || !$user->hasRight('facture', 'creer')) {
 					$classAction = "butActionRefused";

@@ -881,3 +881,54 @@ function peppolDolibarrRecommendedNotice()
 	}
 	return '<div class="warning">' . $langs->trans('peppolDolibarrRecommended', dol_escape_htmltag(DOL_VERSION), dol_escape_htmltag(PHP_VERSION)) . '</div>';
 }
+
+/**
+ * May this customer invoice or credit note go through Peppol (make the XML, send)?
+ *
+ * Same rule as Dolibarr for sending by email: validated or paid/closed. A credit note that was converted into a
+ * discount or refunded is "paid" and must stay sendable. Not drafts and not abandoned documents. From the original
+ * module (#12); before, only "validated" counted.
+ *
+ * @param	object	$invoice	Customer invoice
+ * @return	bool
+ */
+function peppolIsInvoiceStatusEligible($invoice)
+{
+	if (!is_object($invoice)) {
+		return false;
+	}
+	require_once DOL_DOCUMENT_ROOT . '/compta/facture/class/facture.class.php';
+	$status = isset($invoice->status) ? (int) $invoice->status : (isset($invoice->statut) ? (int) $invoice->statut : -1);
+	return in_array($status, array(Facture::STATUS_VALIDATED, Facture::STATUS_CLOSED), true);
+}
+
+/**
+ * May this user see this customer invoice? Read right on invoices plus the access rules of Dolibarr (external
+ * users, sales representatives limited to their own customers, entity). From the original module, with hasRight().
+ *
+ * @param	User	$user		User
+ * @param	object	$invoice	Customer invoice (fetched)
+ * @return	bool
+ */
+function peppolUserCanReadInvoice($user, $invoice)
+{
+	if (!is_object($user) || !is_object($invoice) || empty($invoice->id)) {
+		return false;
+	}
+	if (!$user->hasRight('facture', 'lire')) {
+		return false;
+	}
+	require_once DOL_DOCUMENT_ROOT . '/core/lib/security.lib.php';
+	return (bool) checkUserAccessToObject($user, array('facture'), (int) $invoice->id, 'facture', '', 'fk_soc', 'rowid');
+}
+
+/**
+ * Keep only the allowed characters of an identifier (Peppol ID, message ID) from the access point
+ *
+ * @param	mixed	$value	Received value
+ * @return	string			Letters, digits and . _ : @ -
+ */
+function peppolSanitizeIdentifier($value)
+{
+	return (string) preg_replace('/[^A-Za-z0-9._:@-]/', '', is_scalar($value) ? (string) $value : '');
+}

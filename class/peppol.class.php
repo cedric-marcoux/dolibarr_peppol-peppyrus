@@ -59,6 +59,9 @@ use Einvoicing\InvoiceReference;
  */
 class Peppol
 {
+	/** Decimals of the unit price in the XML: Dolibarr stores unit prices with up to 8 decimals (from the original module, #15) */
+	const PEPPOL_UNIT_PRICE_DECIMALS = 8;
+
 	public $error = '';
 	public $errors = [];
 	public $db;
@@ -326,7 +329,8 @@ class Peppol
 		// 	// do something only for the context 'somecontext1' or 'somecontext2'
 		// }
 
-		$note_pub = $objFacture->note_public ? $objFacture->note_public : "note";
+		// Only the public note when there is one, without HTML; no fixed text "note" (2.11.0)
+		$note_pub = trim(dol_string_nohtmltag((string) $objFacture->note_public, 0));
 		$ladate = new \DateTime(dol_print_date($objFacture->date, 'dayrfc'));
 		$ladatepaiement = new \DateTime(dol_print_date($objFacture->date_lim_reglement, 'dayrfc'));
 		$currency = $objFacture->multicurrency_code ?? '';
@@ -355,6 +359,8 @@ class Peppol
 
 		// Create PEPPOL invoice instance
 		$inv = new Invoice(Presets\Peppol::class);
+		// Amounts with 2 decimals, unit prices with the precision of Dolibarr (#15)
+		$inv->setRoundingMatrix(array('' => 2, 'line/price' => self::PEPPOL_UNIT_PRICE_DECIMALS));
 
 		if ($objFacture->type == \Facture::TYPE_CREDIT_NOTE) {
 			$inv->setType(Invoice::TYPE_CREDIT_NOTE);
@@ -379,8 +385,10 @@ class Peppol
 		$inv->setNumber($objFacture->ref)
 			->setIssueDate($ladate)
 			->setDelivery($delivery)
-			->setDueDate($ladatepaiement)
-			->addNote($note_pub);
+			->setDueDate($ladatepaiement);
+		if ($note_pub !== '') {
+			$inv->addNote($note_pub);
+		}
 
 		if (!empty($currency)) {
 			$inv->setCurrency($currency);
@@ -551,14 +559,8 @@ class Peppol
 				->setCity($citySeller);
 		}
 
-		//20220217 - add more informations about buyer if private person
-		if ($objFacture->thirdparty->typent_code == 'TE_PRIVATE') {
-			$buyer->setContactName($objFacture->thirdparty->name);
-			$buyer->setContactPhone($objFacture->thirdparty->phone);
-			if (!empty($objFacture->thirdparty->email)) {
-				$buyer->setContactEmail($objFacture->thirdparty->email);
-			}
-		}
+		// Since 2.11.0 no phone number and email address of a private customer in the message: they are not needed to
+		// approve the invoice, and every party on the Peppol route gets a copy of the message
 		$inv->setBuyer($buyer);
 
 		//Inversion Purchase / Sales - vu juin 2023
@@ -691,9 +693,12 @@ class Peppol
 			}
 
 			//chez peppol il faut donner le montant * quantité, la division est faite de l'autre côté
-			// Fix PEPPOL-EN16931-R120: round unit price FIRST, then calculate subprice
-			$unitPrice = round(($line->subprice ? $line->subprice : 0.00), 2);
-			$subprice = round($unitPrice * $qty, 2); // Uses rounded unitPrice for consistency
+			// The unit price keeps the precision of Dolibarr (EN 16931 allows more than 2 decimals for BT-146):
+			// the line amount is then the line total of Dolibarr to the cent, and PEPPOL-EN16931-R120 holds because
+			// the XML contains that same price. Before, the price was rounded to 2 decimals, so line and
+			// invoice totals could differ (from the original module, #15).
+			$unitPrice = round(($line->subprice ? $line->subprice : 0.00), self::PEPPOL_UNIT_PRICE_DECIMALS);
+			$subprice = round($unitPrice * $qty, 2);
 
 			//pour les remises (lignes négatives)
 			//cas particulier si dolibarr a quantité négative et montant positif on inverse
@@ -710,13 +715,12 @@ class Peppol
 					}
 				}
 			} else {
-				// Fix BR-27: BT-146 (Item net price) shall NOT be negative
-				// Dolibarr credit notes have negative subprice + positive qty
-				// PEPPOL requires positive price + negative quantity
-				if ($unitPrice < 0) {
-					$unitPrice = abs($unitPrice);
-					$qty = -abs($qty);
-				}
+				// Credit note: Dolibarr stores a positive quantity, a negative unit price and negative totals.
+				// A Peppol CreditNote (type 381) has positive quantities and amounts: the document type already says
+				// it is a credit, and the net price may not be negative (BR-27). Before, the quantity
+				// was made negative, which gave the credit note negative totals (from the original module, #11).
+				$unitPrice = abs($unitPrice);
+				$qty = abs($qty);
 				$subprice = round($unitPrice * $qty, 2);
 			}
 
@@ -749,7 +753,7 @@ class Peppol
 				}
 			}
 
-			if (!is_array($tabTVA[$tva_tx])) {
+			if (!isset($tabTVA[$tva_tx])) {
 				$tabTVA[$tva_tx] = [];
 				$tabTVA[$tva_tx]['totalHT'] = 0;
 				$tabTVA[$tva_tx]['totalTVA'] = 0;
@@ -855,7 +859,8 @@ class Peppol
 			if (!$remiseLigne) {
 				if (!empty($line->remise_percent)) {
 					// Fix PEPPOL-EN16931-R120: ensure allowance makes LineExtensionAmount = total_ht exactly
-					$remise_abs = round($subprice - $line->total_ht, 2);
+					// abs(): for a credit note the line total is negative in Dolibarr and positive in the XML (#11)
+					$remise_abs = round($subprice - abs($line->total_ht), 2);
 					dol_syslog("  peppol line add remise (Allowance): " . $line->remise_percent . " absolute remise=" . $remise_abs);
 					$allowance = (new AllowanceOrCharge())->setReason('Discount')
 						->setReasonCode(95)
@@ -898,20 +903,20 @@ class Peppol
 			}
 		}
 
-		$embeddedAttachment = (new Attachment())
-			->setId(new Identifier($objFacture->ref))
-			->setFilename($objFacture->ref . '.pdf')
-			->setMimeCode('application/pdf')
-			->setContents(file_get_contents($orig_pdf));
-		$inv->addAttachment($embeddedAttachment);
-
-		if (!empty($objFacture->getLastMainDocLink('facture'))) {
-			$externalAttachment = (new Attachment())
-				->setId(new Identifier($objFacture->ref . '-online'))
-				->setDescription('A link to PDF invoice')
-				->setExternalUrl($objFacture->getLastMainDocLink('facture'));
-			$inv->addAttachment($externalAttachment);
+		// The PDF in the message is optional (setting PEPPOL_EMBED_PDF, on by default): in Peppol the message itself
+		// is the invoice. Turn it off when the PDF holds data the recipient does not need, for example care data.
+		if (getDolGlobalInt('PEPPOL_EMBED_PDF', 1) === 1 && file_exists($orig_pdf)) {
+			$embeddedAttachment = (new Attachment())
+				->setId(new Identifier($objFacture->ref))
+				->setFilename($objFacture->ref . '.pdf')
+				->setMimeCode('application/pdf')
+				->setContents(file_get_contents($orig_pdf));
+			$inv->addAttachment($embeddedAttachment);
 		}
+
+		// Since 2.11.0 no link to the PDF online: that public link works without login for everyone who sees the
+		// message (access points on the route, and anyone they pass it on to), so the invoice could be read
+		// without the sender or the customer knowing.
 
 		try {
 			$inv->validate();
