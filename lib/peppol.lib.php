@@ -932,3 +932,19 @@ function peppolSanitizeIdentifier($value)
 {
 	return (string) preg_replace('/[^A-Za-z0-9._:@-]/', '', is_scalar($value) ? (string) $value : '');
 }
+
+/**
+ * Does the object belong to one of the entities of the current user (multicompany)? From the original module.
+ * CommonObject::fetch() by id does not filter on entity, so a page that loads an object by id must check this.
+ *
+ * @param	object	$object	Loaded object with entity and element
+ * @return	bool
+ */
+function peppolObjectIsInUserEntities($object)
+{
+	if (!is_object($object) || !isset($object->entity)) {
+		return false;
+	}
+	$entities = array_map('intval', explode(',', getEntity($object->element)));
+	return in_array((int) $object->entity, $entities, true);
+}

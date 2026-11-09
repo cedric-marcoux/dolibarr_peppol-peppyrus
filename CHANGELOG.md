@@ -12,9 +12,12 @@ Security and privacy fixes, and the bug fixes of the original module (Cedric Mar
 - **The PDF in the Peppol file is a setting** (setup page, "Embed the PDF in the Peppol file", on by default). In Peppol the message itself is the invoice; turn it off when the PDF holds data the recipient does not need, for example care or personal data.
 - **Removed `scripts/validate.php` and `scripts/json2csv.php`**: development scripts that were in the package and could be called through the browser.
 - **Removed the tests, scripts and documentation of the bundled libraries** (`vendor/josemmo/einvoicing` and `vendor/josemmo/uxml`), among them `scripts/build-docs.php`, which writes files when it is called. They were in the package and could be called through the browser. Only `src`, `composer.json`, `README.md` and `LICENSE` stay.
+- **Received Peppol documents of another company**: the card of a received document now checks that the document belongs to one of the entities of the user (multicompany). Before, a document of another entity could be opened by changing the id in the address bar (from the original module).
 - **Automatic sending as a scheduled job**: `files.lib.php` is loaded where `dol_is_file()` is used; without it the job could stop with a fatal error.
 
 **From the original module (2.3.1)**
+
+The history of the original module up to 2.3.1 is merged into this fork, so GitHub no longer reports it as behind. Where both changed the same file, this fork's version is kept; it already holds the fixes listed here.
 
 - **Credit notes** (#11): positive quantities, prices and totals in the Peppol XML, as a Peppol CreditNote requires. Before, the quantity was made negative, which gave the credit note negative totals and could get it rejected. The discount on a line is calculated on the absolute line total.
 - **Paid invoices and credit notes that were used** (#12) get a Peppol file with the PDF and the Peppol buttons again, as for sending by email. Before, only "validated" counted. Drafts and abandoned documents stay excluded.

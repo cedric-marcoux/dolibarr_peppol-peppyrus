@@ -32,7 +32,7 @@ Les clés du module doivent être :
 
 ### 4. Création du ZIP pour distribution
 ```bash
-cd /data/docker/dolibarr/data/custom
+cd /path/to/dolibarr/htdocs/custom
 zip -r module_peppolpeppyrus-X.Y.Z.zip peppolpeppyrus -x "peppolpeppyrus/.git/*"
 ```
 

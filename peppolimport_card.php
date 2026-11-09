@@ -158,6 +158,10 @@ $isdraft = (($object->statut == $object::STATUS_DRAFT) ? 1 : 0);
 if (!isModEnabled('peppolpeppyrus') || empty($permissiontoaccess)) {
 	accessforbidden();
 }
+// Multicompany: the document must belong to one of the entities of the user (fetch() by id does not check this)
+if ($object->id > 0 && !peppolObjectIsInUserEntities($object)) {
+	accessforbidden();
+}
 
 /*
  * Actions
