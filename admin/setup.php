@@ -405,7 +405,7 @@ if ($action == 'edit') {
 	} else {
 		$signal = peppolLicenseSignal($license);
 		print '<tr class="oddeven"><td class="titlefield">' . $langs->trans("Status") . '</td><td>' . dol_escape_htmltag((string) ($license['status'] ?? '')) . (!empty($license['expirationDate']) ? ' <span class="opacitymedium">(' . $langs->trans("peppolLicenseUntil", dol_escape_htmltag((string) $license['expirationDate'])) . ')</span>' : '') . '</td></tr>';
-		$max = isset($license['messagesLimit']) && $license['messagesLimit'] !== null ? (int) $license['messagesLimit'] : null;
+		$max = isset($license['messagesLimit']) ? (int) $license['messagesLimit'] : null;
 		print '<tr class="oddeven"><td>' . $langs->trans("peppolLicenseSent") . '</td><td>' . ((int) ($license['messagesSent'] ?? 0)) . ' / ' . ($max === null ? $langs->trans("peppolLicenseUnlimited") : $max);
 		if ($signal === 'limit') {
 			print ' ' . img_warning() . ' <span class="error">' . $langs->trans("peppolLicenseLimitReached") . '</span>';
@@ -413,7 +413,7 @@ if ($action == 'edit') {
 			print ' ' . img_warning() . ' <span class="warning">' . $langs->trans("peppolLicenseNearLimit") . '</span>';
 		}
 		print '</td></tr>';
-		$storage = isset($license['storageLimitBytes']) && $license['storageLimitBytes'] !== null ? dol_print_size((int) $license['storageLimitBytes']) : $langs->trans("peppolLicenseUnlimited");
+		$storage = isset($license['storageLimitBytes']) ? dol_print_size((int) $license['storageLimitBytes']) : $langs->trans("peppolLicenseUnlimited");
 		print '<tr class="oddeven"><td>' . $langs->trans("peppolLicenseStorage") . '</td><td>' . dol_print_size((int) ($license['storageUsedBytes'] ?? 0)) . ' / ' . $storage . '</td></tr>';
 	}
 	print '</table>';

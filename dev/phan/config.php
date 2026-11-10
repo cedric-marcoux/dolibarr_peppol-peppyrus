@@ -25,7 +25,7 @@ if (!is_file($plugin)) {
 }
 
 $module = array();
-foreach (array('admin', 'class', 'core', 'lib', 'public') as $dir) {
+foreach (array('admin', 'class', 'core', 'lib') as $dir) {
 	$module[] = $root.'/'.$dir;
 }
 $files = glob($root.'/*.php');

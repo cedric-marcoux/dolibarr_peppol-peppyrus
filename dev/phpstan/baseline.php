@@ -16,12 +16,6 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/../../class/peppol.class.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Call to function is_numeric\\(\\) with int will always evaluate to true\\.$#',
-	'identifier' => 'function.alreadyNarrowedType',
-	'count' => 1,
-	'path' => __DIR__ . '/../../public/hook.php',
-];
-$ignoreErrors[] = [
 	'message' => '#^Call to function property_exists\\(\\) with \\$this\\(custom\\\\peppolpeppyrus\\\\Peppolimport\\) and \'socid\' will always evaluate to true\\.$#',
 	'identifier' => 'function.alreadyNarrowedType',
 	'count' => 1,
@@ -698,12 +692,6 @@ $ignoreErrors[] = [
 	'identifier' => 'booleanNot.alwaysTrue',
 	'count' => 1,
 	'path' => __DIR__ . '/../../peppolimport_list.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Negated boolean expression is always true\\.$#',
-	'identifier' => 'booleanNot.alwaysTrue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../public/hook.php',
 ];
 $ignoreErrors[] = [
 	'message' => '#^Negated boolean expression is always true\\.$#',

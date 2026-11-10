@@ -40,7 +40,6 @@ parameters:
 		- class
 		- core
 		- lib
-		- public
 		- index.php
 		- peppol_candidates.php
 		- peppol_list.php

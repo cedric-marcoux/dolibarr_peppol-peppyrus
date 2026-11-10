@@ -220,9 +220,7 @@ if ($id > 0 || !empty($ref)) {
 	while ($obj = $db->fetch_object($dupres)) {
 		print "<p>" . $langs->trans("Status") . " : " . dol_escape_htmltag($obj->status) . "</p>";
 		print "<p>" . $langs->trans("Message") . " : " . dol_escape_htmltag($obj->message) . "</p>";
-		$json_pretty = json_encode(json_decode($obj->fulldata), JSON_PRETTY_PRINT);
-
-		print "<p>" . $langs->trans("Details") . " : <br /><pre>" . dol_escape_htmltag($json_pretty) . "</pre></p>";
+		print "<p>" . $langs->trans("Details") . " : <br /><pre>" . dol_escape_htmltag((string) $obj->fulldata) . "</pre></p>";
 	}
 
 	// Since 2.12.0: the Peppyrus report once (not per log line), with the fields Peppyrus really returns: the validation
