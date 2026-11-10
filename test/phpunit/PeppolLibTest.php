@@ -270,4 +270,20 @@ class PeppolLibTest extends TestCase
 		$this->assertSame('near', peppolLicenseSignal(array('messagesSent' => 90, 'messagesLimit' => 100)));
 		$this->assertSame('', peppolLicenseSignal(array('messagesSent' => 10, 'messagesLimit' => 100)));
 	}
+
+	/**
+	 * Status of an outgoing invoice at Peppyrus (since 2.12.0)
+	 *
+	 * @return void
+	 */
+	public function testOutgoingStatus()
+	{
+		$outbox = array('q' => true, 'x' => true);
+		$failed = array('f' => true, 'x' => true);
+		$this->assertSame('queued', peppolOutgoingStatus('q', $outbox, $failed));
+		$this->assertSame('failed', peppolOutgoingStatus('f', $outbox, $failed));
+		// In both folders: failed wins
+		$this->assertSame('failed', peppolOutgoingStatus('x', $outbox, $failed));
+		$this->assertSame('sent', peppolOutgoingStatus('s', $outbox, $failed));
+	}
 }

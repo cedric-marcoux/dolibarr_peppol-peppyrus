@@ -374,6 +374,21 @@ class modPeppolpeppyrus extends DolibarrModules
 			'target' => '',
 			'user' => 0,
 		];
+		// Since 2.12.0: outgoing invoices with their status at Peppyrus (waiting, sent, failed)
+		$this->menu[$r++] = [
+			'fk_menu' => 'fk_mainmenu=billing,fk_leftmenu=peppol',
+			'type' => 'left',
+			'titre' => 'peppolOutgoingMenu',
+			'mainmenu' => 'billing',
+			'leftmenu' => 'peppol_outgoing',
+			'url' => '/peppolpeppyrus/peppol_outgoing.php',
+			'langs' => 'peppol@peppolpeppyrus',
+			'position' => 1000 + $r,
+			'enabled' => 'isModEnabled("peppolpeppyrus")',
+			'perms' => '$user->hasRight("peppolpeppyrus", "read") && $user->hasRight("facture", "lire")',
+			'target' => '',
+			'user' => 0,
+		];
 		// Log of the exchanges with the access point
 		$this->menu[$r++] = [
 			'fk_menu' => 'fk_mainmenu=billing,fk_leftmenu=peppol',

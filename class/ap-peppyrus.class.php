@@ -896,14 +896,29 @@ class Peppyrus extends PeppolAP
 	}
 
 	/**
-	 * Sent messages Peppyrus could not deliver (folder FAILED), since 2.12.0. Only the id and the date; at most
-	 * $maxPages pages of 100.
+	 * Sent messages Peppyrus could not deliver (folder FAILED), since 2.12.0
 	 *
-	 * @param   int  $maxPages  Maximum number of pages
+	 * @param   int  $maxPages  Maximum number of pages of 100
 	 * @return  array<int,array{id:string,created:string}>|int  List, or < 0 on error
 	 */
 	public function getFailedMessages($maxPages = 10)
 	{
+		return $this->getOutgoingFolder('FAILED', $maxPages);
+	}
+
+	/**
+	 * Outgoing messages in a folder at Peppyrus (since 2.12.0): OUTBOX (waiting), SENT (sent) or FAILED (not
+	 * delivered). Only the id and the date; at most $maxPages pages of 100.
+	 *
+	 * @param   string  $folder    OUTBOX, SENT or FAILED
+	 * @param   int     $maxPages  Maximum number of pages
+	 * @return  array<int,array{id:string,created:string}>|int  List, or < 0 on error
+	 */
+	public function getOutgoingFolder($folder, $maxPages = 10)
+	{
+		if (!in_array($folder, array('OUTBOX', 'SENT', 'FAILED'), true)) {
+			return -1;
+		}
 		if ($this->validateConfiguration() < 0) {
 			return -10;
 		}
@@ -911,9 +926,9 @@ class Peppyrus extends PeppolAP
 		$out = array();
 		$maxPages = max(1, (int) $maxPages);
 		for ($page = 1; $page <= $maxPages; $page++) {
-			$url = $this->getApiUrl() . "message/list?folder=FAILED&perPage=100&page=" . ((int) $page);
+			$url = $this->getApiUrl() . "message/list?folder=" . $folder . "&perPage=100&page=" . ((int) $page);
 			$result = peppolApiRequest($url, 'GET', '', $headers);
-			$response = $this->handleApiResponse($result, 'getFailedMessages');
+			$response = $this->handleApiResponse($result, 'getOutgoingFolder');
 			if (!$response['success']) {
 				// Peppyrus answers 404 for an empty folder
 				return $response['error_code'] === -404 ? $out : $response['error_code'];

@@ -995,3 +995,20 @@ function peppolLicenseSignal($license)
 	}
 	return $sent >= 0.9 * (int) $max ? 'near' : '';
 }
+
+/**
+ * Status of a sent invoice at Peppyrus (since 2.12.0): "queued" while the message is still in OUTBOX, "failed" when
+ * it is in FAILED, otherwise "sent" (Peppyrus takes a message out of OUTBOX once it has been sent).
+ *
+ * @param	string				$messageId	Message id of the invoice
+ * @param	array<string,bool>	$outbox		Message ids in OUTBOX
+ * @param	array<string,bool>	$failed		Message ids in FAILED
+ * @return	string	queued, failed or sent
+ */
+function peppolOutgoingStatus($messageId, $outbox, $failed)
+{
+	if (isset($failed[$messageId])) {
+		return 'failed';
+	}
+	return isset($outbox[$messageId]) ? 'queued' : 'sent';
+}

@@ -100,6 +100,10 @@ This module allows sending electronic invoices via the PEPPOL network using the 
 
 Billing > Peppol > Peppol candidates lists customers and suppliers without a Peppol ID that a weekly scheduled job found in the Peppol directory by VAT number or registration number (never by name). Select the right ID and link it to the third party. Requires the module "Scheduled jobs" and the Dolibarr cron script on the server.
 
+## Outgoing invoices
+
+Billing > Peppol > Outgoing lists the sent customer invoices with their status at Peppyrus: one tick (waiting at Peppyrus), two ticks (delivered to the access point of the customer) or a red cross (not delivered). Peppol has no "read" status. Requires the rights "Peppol: read" and to read invoices.
+
 ## Daily check of failed deliveries
 
 A daily scheduled job ("Peppol: daily check of invoices the access point could not deliver") reads the folder FAILED at Peppyrus. For each own invoice that could not be delivered, one line "failed" is added to the Peppol tab of the invoice and, with the agenda on, an event on the invoice. The invoice itself does not change. The user of the scheduled job needs the right "Peppol: read".
