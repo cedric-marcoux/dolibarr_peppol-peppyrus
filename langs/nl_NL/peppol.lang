@@ -387,7 +387,6 @@ peppolBookNoRight = U heeft geen recht om Peppol-documenten in te boeken (Peppol
 peppolBookAlreadyBooked = Dit document is al ingeboekt.
 peppolBookNoFile = Het bestand van dit document ontbreekt. Haal de documenten opnieuw op.
 peppolBookNotAnInvoice = Dit document is geen leesbare e-factuur (UBL, Peppol BIS Billing 3.0).
-peppolBookCreditNote = Dit is een creditnota. Boek die met de hand in als creditnota bij de inkoopfactuur.
 peppolBookOtherCurrency = De factuur is in %s, niet in de valuta van het bedrijf. Boek hem met de hand in.
 peppolBookIncomplete = De e-factuur heeft geen factuurnummer, geen factuurdatum of geen regels. Boek hem met de hand in.
 peppolBookSeveralSuppliers = Meerdere relaties hebben dit Peppol-ID, btw-nummer of KvK-nummer. Voeg ze samen of boek de factuur met de hand in.
@@ -535,3 +534,6 @@ peppolOutgoingRead = Ontvangen door de klant
 peppolOutgoingApproved = Goedgekeurd door de klant
 peppolOutgoingQuery = Vraag van de klant
 peppolOutgoingRejected = Geweigerd door de klant
+# Creditnota's van leveranciers, sinds 2.13.0
+peppolBookCreditNoSource = Deze creditnota hoort bij factuur %s, maar die is bij deze leverancier niet ingeboekt. Boek eerst die factuur in.
+peppolBookCreditNoReference = In deze creditnota staat niet welke factuur wordt gecrediteerd. Boek hem met de hand in als creditnota bij de inkoopfactuur.

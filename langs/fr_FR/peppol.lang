@@ -330,7 +330,6 @@ peppolBookNoRight = Vous n'avez pas le droit de comptabiliser les documents Pepp
 peppolBookAlreadyBooked = Ce document a déjà été comptabilisé.
 peppolBookNoFile = Le fichier de ce document est absent. Récupérez à nouveau les documents.
 peppolBookNotAnInvoice = Ce document n'est pas une facture électronique lisible (UBL, Peppol BIS Billing 3.0).
-peppolBookCreditNote = Ceci est un avoir. Saisissez-le à la main comme avoir de la facture fournisseur.
 peppolBookOtherCurrency = La facture est en %s, pas dans la devise de la société. Saisissez-la à la main.
 peppolBookIncomplete = La facture électronique n'a pas de numéro, de date ou de lignes. Saisissez-la à la main.
 peppolBookSeveralSuppliers = Plusieurs tiers ont cet identifiant Peppol, ce numéro de TVA ou ce numéro d'entreprise. Fusionnez-les ou saisissez la facture à la main.
@@ -478,3 +477,6 @@ peppolOutgoingRead = Reçue par le client
 peppolOutgoingApproved = Acceptée par le client
 peppolOutgoingQuery = Question du client
 peppolOutgoingRejected = Refusée par le client
+# Avoirs des fournisseurs, depuis 2.13.0
+peppolBookCreditNoSource = Cet avoir concerne la facture %s, qui n'est pas comptabilisée pour ce fournisseur. Comptabilisez d'abord cette facture.
+peppolBookCreditNoReference = Cet avoir n'indique pas la facture qu'il corrige. Saisissez-le à la main comme avoir de la facture fournisseur.

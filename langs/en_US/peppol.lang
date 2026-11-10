@@ -371,7 +371,6 @@ peppolBookNoRight = You have no right to book Peppol documents (import Peppol do
 peppolBookAlreadyBooked = This document has already been booked.
 peppolBookNoFile = The file of this document is missing. Fetch the documents again.
 peppolBookNotAnInvoice = This document is not an e-invoice that can be read (UBL, Peppol BIS Billing 3.0).
-peppolBookCreditNote = This is a credit note. Book it by hand as a credit note of the supplier invoice.
 peppolBookOtherCurrency = The invoice is in %s, not in the currency of the company. Book it by hand.
 peppolBookIncomplete = The e-invoice has no invoice number, no invoice date or no lines. Book it by hand.
 peppolBookSeveralSuppliers = Several third parties have this Peppol ID, VAT number or registration number. Merge them or book the invoice by hand.
@@ -519,3 +518,6 @@ peppolOutgoingRead = Received by the customer
 peppolOutgoingApproved = Accepted by the customer
 peppolOutgoingQuery = Question of the customer
 peppolOutgoingRejected = Rejected by the customer
+# Credit notes of suppliers, since 2.13.0
+peppolBookCreditNoSource = This credit note is for invoice %s, which is not booked for this supplier. Book that invoice first.
+peppolBookCreditNoReference = This credit note does not say which invoice it corrects. Book it by hand as a credit note of the supplier invoice.

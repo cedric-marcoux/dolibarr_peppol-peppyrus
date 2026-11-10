@@ -315,3 +315,6 @@ peppolOutgoingRead = Vom Kunden empfangen
 peppolOutgoingApproved = Vom Kunden angenommen
 peppolOutgoingQuery = Rückfrage des Kunden
 peppolOutgoingRejected = Vom Kunden abgelehnt
+# Gutschriften von Lieferanten, seit 2.13.0
+peppolBookCreditNoSource = Diese Gutschrift gehört zu Rechnung %s, die für diesen Lieferanten nicht gebucht ist. Buchen Sie zuerst diese Rechnung.
+peppolBookCreditNoReference = Diese Gutschrift gibt nicht an, welche Rechnung sie korrigiert. Buchen Sie sie von Hand als Gutschrift zur Lieferantenrechnung.

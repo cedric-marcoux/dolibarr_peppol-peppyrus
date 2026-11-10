@@ -212,9 +212,21 @@ class PeppolBookingTest extends TestCase
 	 */
 	public function testCreditNoteAndOtherXml()
 	{
-		$d = PeppolBooking::parse($this->invoice('381'));
+		// Since 2.13.0: a credit note is read too, with the lines and the number of the credited invoice
+		$d = PeppolBooking::parse($this->invoice('381', '<cac:BillingReference><cac:InvoiceDocumentReference><cbc:ID>INV-000</cbc:ID></cac:InvoiceDocumentReference></cac:BillingReference>'));
 		$this->assertTrue($d['credit']);
-		$this->assertSame(array(), $d['lines']);
+		$this->assertSame('INV-000', $d['source']);
+		$this->assertCount(2, $d['lines']);
+		$this->assertEqualsWithDelta(25.0, $d['lines'][0]['pu_ht'], 0.001);
+		$this->assertSame('', PeppolBooking::parse($this->invoice())['source']);
+		$cn = strtr($this->invoice('381'), array(
+			'<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"' => '<CreditNote xmlns="urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2"',
+			'</Invoice>' => '</CreditNote>', 'InvoiceTypeCode' => 'CreditNoteTypeCode', 'InvoiceLine' => 'CreditNoteLine', 'InvoicedQuantity' => 'CreditedQuantity',
+		));
+		$d = PeppolBooking::parse($cn);
+		$this->assertTrue($d['credit']);
+		$this->assertCount(2, $d['lines']);
+		$this->assertSame('INV-001', $d['number']);
 
 		$this->assertNull(PeppolBooking::parse(''));
 		$this->assertNull(PeppolBooking::parse('<Order/>'));

@@ -102,6 +102,8 @@ class PeppolBooking
 			'supplier' => array(),
 			'lines' => array(),
 			'pdf' => null,
+			// Since 2.13.0: for a credit note the number of the invoice that is credited
+			'source' => $text('/*/cac:BillingReference/cac:InvoiceDocumentReference/cbc:ID'),
 		);
 
 		// Supplier
@@ -134,34 +136,33 @@ class PeppolBooking
 			'phone' => $text($p . '/cac:Contact/cbc:Telephone'),
 		);
 
-		// Lines and document allowances and charges, through the einvoicing reader (also computes line amounts)
-		if (!$data['credit']) {
-			try {
-				$reader = new \Einvoicing\Readers\UblReader();
-				$invoice = $reader->import($xml);
-				foreach ($invoice->getLines() as $line) {
-					$qty = (float) $line->getQuantity();
-					$net = (float) $line->getNetAmount();
-					if ($qty == 0) {
-						$qty = 1;
-					}
-					$desc = trim((string) $line->getName());
-					$more = trim((string) $line->getDescription());
-					if ($more !== '' && $more !== $desc) {
-						$desc .= ($desc !== '' ? "\n" : '') . $more;
-					}
-					$data['lines'][] = array('desc' => $desc, 'qty' => $qty, 'pu_ht' => $net / $qty, 'vat_rate' => (float) $line->getVatRate());
+		// Lines and document allowances and charges, through the einvoicing reader (also computes line amounts). Since
+		// 2.13.0 also for a credit note: amounts positive, Dolibarr makes the prices of a credit note negative itself.
+		try {
+			$reader = new \Einvoicing\Readers\UblReader();
+			$invoice = $reader->import($xml);
+			foreach ($invoice->getLines() as $line) {
+				$qty = (float) $line->getQuantity();
+				$net = (float) $line->getNetAmount();
+				if ($qty == 0) {
+					$qty = 1;
 				}
-				foreach (array(-1 => $invoice->getAllowances(), 1 => $invoice->getCharges()) as $sign => $list) {
-					foreach ($list as $ac) {
-						$amount = $ac->isPercentage() ? $ac->getEffectiveAmount((float) $invoice->getTotals()->netAmount) : $ac->getAmount();
-						$data['lines'][] = array('desc' => trim((string) $ac->getReason()), 'qty' => 1, 'pu_ht' => $sign * (float) $amount, 'vat_rate' => (float) $ac->getVatRate());
-					}
+				$desc = trim((string) $line->getName());
+				$more = trim((string) $line->getDescription());
+				if ($more !== '' && $more !== $desc) {
+					$desc .= ($desc !== '' ? "\n" : '') . $more;
 				}
-			} catch (\Throwable $e) {
-				dol_syslog('PeppolBooking::parse lines could not be read: ' . get_class($e), LOG_WARNING);
-				$data['lines'] = array();
+				$data['lines'][] = array('desc' => $desc, 'qty' => $qty, 'pu_ht' => $net / $qty, 'vat_rate' => (float) $line->getVatRate());
 			}
+			foreach (array(-1 => $invoice->getAllowances(), 1 => $invoice->getCharges()) as $sign => $list) {
+				foreach ($list as $ac) {
+					$amount = $ac->isPercentage() ? $ac->getEffectiveAmount((float) $invoice->getTotals()->netAmount) : $ac->getAmount();
+					$data['lines'][] = array('desc' => trim((string) $ac->getReason()), 'qty' => 1, 'pu_ht' => $sign * (float) $amount, 'vat_rate' => (float) $ac->getVatRate());
+				}
+			}
+		} catch (\Throwable $e) {
+			dol_syslog('PeppolBooking::parse lines could not be read: ' . get_class($e), LOG_WARNING);
+			$data['lines'] = array();
 		}
 
 		// The PDF of the invoice
@@ -363,10 +364,6 @@ class PeppolBooking
 			$this->error = $langs->trans('peppolBookNotAnInvoice');
 			return -4;
 		}
-		if ($data['credit']) {
-			$this->error = $langs->trans('peppolBookCreditNote');
-			return -5;
-		}
 		if (!empty($data['currency']) && $data['currency'] !== $conf->currency) {
 			$this->error = $langs->trans('peppolBookOtherCurrency', $data['currency']);
 			return -6;
@@ -418,6 +415,17 @@ class PeppolBooking
 			}
 		}
 
+		// Since 2.13.0: a credit note belongs to the supplier invoice that is credited (same supplier, number of the
+		// credit note). Without that invoice only when Dolibarr allows standalone credit notes.
+		$sourceId = 0;
+		if ($data['credit']) {
+			$sourceId = $data['source'] !== '' ? $this->findInvoice($socid, $data['source']) : 0;
+			if ($sourceId <= 0 && !getDolGlobalString('INVOICE_CREDIT_NOTE_STANDALONE')) {
+				$this->error = $langs->trans($data['source'] !== '' ? 'peppolBookCreditNoSource' : 'peppolBookCreditNoReference', $data['source']);
+				return -5;
+			}
+		}
+
 		// Already booked by hand (same supplier, same invoice number): link instead of a second invoice
 		$existing = $this->findInvoice($socid, $data['number']);
 		if ($existing > 0) {
@@ -433,7 +441,10 @@ class PeppolBooking
 		$inv = new FactureFournisseur($this->db);
 		$inv->socid = $socid;
 		$inv->ref_supplier = $data['number'];
-		$inv->type = FactureFournisseur::TYPE_STANDARD;
+		$inv->type = $data['credit'] ? FactureFournisseur::TYPE_CREDIT_NOTE : FactureFournisseur::TYPE_STANDARD;
+		if ($sourceId > 0) {
+			$inv->fk_facture_source = $sourceId;
+		}
 		$inv->date = $data['date'];
 		if ($data['due'] !== null) {
 			$inv->date_echeance = $data['due'];
@@ -461,7 +472,7 @@ class PeppolBooking
 		$canValidate = getDolGlobalString('MAIN_USE_ADVANCED_PERMS') ? $user->hasRight('fournisseur', 'supplier_invoice_advance', 'validate') : $user->hasRight('fournisseur', 'facture', 'creer');
 		if (getDolGlobalString('PEPPOL_BOOK_MODE', 'validate') === 'draft') {
 			dol_syslog('PeppolBooking::book kept as draft by the setup');
-		} elseif ($data['total_ttc'] !== null && abs((float) $inv->total_ttc - $data['total_ttc']) > self::TOTAL_TOLERANCE) {
+		} elseif ($data['total_ttc'] !== null && abs(abs((float) $inv->total_ttc) - abs($data['total_ttc'])) > self::TOTAL_TOLERANCE) {
 			$this->warnings[] = $langs->trans('peppolBookTotalDiffers', price($inv->total_ttc), price($data['total_ttc']));
 		} elseif (!$canValidate) {
 			$this->warnings[] = $langs->trans('peppolBookNoValidateRight');
@@ -577,7 +588,7 @@ class PeppolBooking
 			'code' => 'AP',
 			'invoiceId' => (string) $data['number'],
 			'invoiceDate' => dol_print_date((int) $data['date'], '%Y-%m-%d'),
-			'typeCode' => '380',
+			'typeCode' => $data['credit'] ? '381' : '380',
 			'receiverName' => (string) ($data['supplier']['name'] ?? ''),
 		));
 		if ($res > 0) {
