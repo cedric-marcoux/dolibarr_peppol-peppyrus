@@ -110,6 +110,23 @@ if (!empty($facturen)) {
 	peppol_sessie_terug();
 }
 
+// Since 2.13.0: the latest answer of the customer (Invoice Response) per invoice, from the Peppol log
+$antwoorden = array();
+if (!empty($facturen)) {
+	$ids = array_map(function ($f) {
+		return (int) $f->rowid;
+	}, $facturen);
+	$sql = "SELECT fk_object, status, message FROM " . MAIN_DB_PREFIX . "peppol WHERE object_typeid = 1 AND status LIKE 'IR:%'";
+	$sql .= " AND entity IN (" . getEntity('invoice') . ") AND fk_object IN (" . $db->sanitize(implode(',', $ids)) . ") ORDER BY rowid ASC";
+	$resql = $db->query($sql);
+	while ($resql && ($obj = $db->fetch_object($resql))) {
+		$niveau = peppolResponseLevel(substr((string) $obj->status, 3));
+		if ($niveau !== '') {
+			$antwoorden[(int) $obj->fk_object] = array($niveau, (string) $obj->message);
+		}
+	}
+}
+
 $aantal = array('queued' => 0, 'failed' => 0, 'sent' => 0, 'unknown' => 0);
 $regels = array();
 foreach ($facturen as $f) {
@@ -148,12 +165,21 @@ print '<div class="div-table-responsive">';
 print '<table class="tagtable nobottomiftotal liste">';
 print '<tr class="liste_titre"><th>' . $langs->trans('Invoice') . '</th><th>' . $langs->trans('Date') . '</th><th>' . $langs->trans('Customer') . '</th><th class="right">' . $langs->trans('AmountTTC') . '</th><th>' . $langs->trans('Status') . '</th></tr>';
 // Ticks: one (grey) = waiting at Peppyrus, two (green) = delivered to the access point of the customer, a red cross =
-// not delivered. Peppol has no "read" status.
+// not delivered. Since 2.13.0 a third tick when the customer sends an Invoice Response (only when the customer does:
+// Peppol does not require it).
 $teken = array(
 	'queued' => array('fa-check', 'opacitymedium', 'peppolOutgoingQueued'),
 	'sent' => array('fa-check-double', 'peppol-vinkjes-ok', 'peppolOutgoingSent'),
 	'failed' => array('fa-times', 'error', 'peppolOutgoingFailed'),
 	'unknown' => array('fa-question', 'opacitymedium', 'peppolOutgoingUnknown'),
+);
+// Since 2.13.0: the answer of the customer (Invoice Response)
+$drie = '<span class="fas fa-check-double"></span><span class="fas fa-check" style="margin-left:-0.35em"></span>';
+$antwoordTeken = array(
+	'read' => array($drie, '#2d7dd2', 'peppolOutgoingRead'),
+	'approved' => array($drie, '#25a580', 'peppolOutgoingApproved'),
+	'query' => array('<span class="fas fa-question-circle"></span>', '#d68a00', 'peppolOutgoingQuery'),
+	'rejected' => array('<span class="fas fa-times-circle"></span>', '#c0392b', 'peppolOutgoingRejected'),
 );
 foreach ($regels as $r) {
 	list($f, $stand) = $r;
@@ -164,7 +190,14 @@ foreach ($regels as $r) {
 	print '<td class="tdoverflowmax200"><a href="' . DOL_URL_ROOT . '/societe/card.php?socid=' . ((int) $f->socid) . '">' . dol_escape_htmltag((string) $f->nom) . '</a></td>';
 	print '<td class="right nowraponall">' . price((float) $f->total_ttc, 0, $langs, 1, -1, -1, $conf->currency) . '</td>';
 	$t = $langs->transnoentitiesnoconv($teken[$stand][2]);
-	print '<td class="nowraponall"><span class="fas ' . $teken[$stand][0] . ' ' . $teken[$stand][1] . '" title="' . dol_escape_htmltag($t) . '"' . ($stand === 'sent' ? ' style="color:#25a580"' : '') . '></span> <span class="small">' . dol_escape_htmltag($t) . '</span></td>';
+	$antwoord = $antwoorden[(int) $f->rowid] ?? null;
+	if ($antwoord !== null && $stand !== 'failed') {
+		// Answer of the customer: three ticks (received or accepted), a question mark (query) or a red cross (rejected)
+		$a = $antwoordTeken[$antwoord[0]];
+		print '<td class="nowraponall" title="' . dol_escape_htmltag($antwoord[1]) . '"><span class="peppol-vinkjes" style="color:' . $a[1] . '">' . $a[0] . '</span> <span class="small">' . dol_escape_htmltag($langs->transnoentitiesnoconv($a[2])) . '</span></td>';
+	} else {
+		print '<td class="nowraponall"><span class="fas ' . $teken[$stand][0] . ' ' . $teken[$stand][1] . '" title="' . dol_escape_htmltag($t) . '"' . ($stand === 'sent' ? ' style="color:#25a580"' : '') . '></span> <span class="small">' . dol_escape_htmltag($t) . '</span></td>';
+	}
 	print '</tr>';
 }
 if (empty($regels)) {

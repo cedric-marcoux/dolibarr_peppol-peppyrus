@@ -163,6 +163,8 @@ if ($resql) {
 				$object_label = $langs->trans("CustomerInvoice").' #'.$obj->fk_object;
 			} elseif ($obj->object_typeid == 2) {
 				$object_label = $langs->trans("SupplierInvoice").' #'.$obj->fk_object;
+			} elseif ($obj->object_typeid == 3) {
+				$object_label = $langs->trans("peppolIncomingDocument").' #'.$obj->fk_object;
 			} else {
 				$object_label = $langs->trans("Object").' #'.$obj->fk_object;
 			}
@@ -171,7 +173,7 @@ if ($resql) {
 
 			// Ref with link to detail page
 			print '<td class="left">';
-			print '<a href="peppol_tab.php?id='.((int) $obj->fk_object).'">'.((int) $obj->rowid).'</a>';
+			print '<a href="'.($obj->object_typeid == 3 ? 'peppolimport_card.php' : 'peppol_tab.php').'?id='.((int) $obj->fk_object).'">'.((int) $obj->rowid).'</a>';
 			print '</td>';
 
 			// Object

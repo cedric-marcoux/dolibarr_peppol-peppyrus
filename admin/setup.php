@@ -131,6 +131,7 @@ if ($action == 'updateauto' && !empty($user->admin)) {
 	$error += dolibarr_set_const($db, 'PEPPOL_BOOK_MODE', $mode, 'chaine', 0, '', $conf->entity) > 0 ? 0 : 1;
 	$error += dolibarr_set_const($db, 'PEPPOL_BOOK_CREATE_SUPPLIER', (string) (((int) GETPOST('PEPPOL_BOOK_CREATE_SUPPLIER', 'int')) ? 1 : 0), 'chaine', 0, '', $conf->entity) > 0 ? 0 : 1;
 	$error += dolibarr_set_const($db, 'PEPPOL_BOOK_UPDATE_SUPPLIER', (string) (((int) GETPOST('PEPPOL_BOOK_UPDATE_SUPPLIER', 'int')) ? 1 : 0), 'chaine', 0, '', $conf->entity) > 0 ? 0 : 1;
+	$error += dolibarr_set_const($db, 'PEPPOL_IR_SEND_APPROVAL', (string) (((int) GETPOST('PEPPOL_IR_SEND_APPROVAL', 'int')) ? 1 : 0), 'chaine', 0, '', $conf->entity) > 0 ? 0 : 1;
 
 	$error += peppolSetCronJob($db, 'runDailyFetch', ((int) GETPOST('PEPPOL_JOB_FETCH', 'int'))) ? 0 : 1;
 	$error += peppolSetCronJob($db, 'runWeeklyCheck', ((int) GETPOST('PEPPOL_JOB_CANDIDATES', 'int'))) ? 0 : 1;
@@ -461,6 +462,10 @@ print '<td>' . $yesno('PEPPOL_BOOK_CREATE_SUPPLIER', getDolGlobalInt('PEPPOL_BOO
 print '<tr class="oddeven"><td><label for="PEPPOL_BOOK_UPDATE_SUPPLIER">' . $langs->trans('peppolSetupUpdateSupplier') . '</label>';
 print '<br><span class="opacitymedium small">' . $langs->trans('peppolSetupUpdateSupplierHelp') . '</span></td>';
 print '<td>' . $yesno('PEPPOL_BOOK_UPDATE_SUPPLIER', getDolGlobalInt('PEPPOL_BOOK_UPDATE_SUPPLIER', 1)) . '</td></tr>';
+
+print '<tr class="oddeven"><td><label for="PEPPOL_IR_SEND_APPROVAL">' . $langs->trans('peppolSetupSendApproval') . '</label>';
+print '<br><span class="opacitymedium small">' . $langs->trans('peppolSetupSendApprovalHelp') . '</span></td>';
+print '<td>' . $yesno('PEPPOL_IR_SEND_APPROVAL', getDolGlobalInt('PEPPOL_IR_SEND_APPROVAL', 1)) . '</td></tr>';
 
 print '<tr class="liste_titre"><td colspan="2">' . $langs->trans('peppolSetupAutomation') . '</td></tr>';
 

@@ -9,6 +9,104 @@ use PHPUnit\Framework\TestCase;
 require_once dirname(__DIR__, 2).'/class/peppolbooking.class.php';
 
 /**
+ * Stand-in for the user (rights as User::hasRight())
+ */
+class PeppolBookingFakeUser
+{
+	/** @var bool */
+	public $allowed = true;
+
+	/**
+	 * @param string $module Module
+	 * @param string $perm   Permission
+	 * @param string $sub    Sub permission
+	 * @return bool
+	 */
+	public function hasRight($module, $perm, $sub = '')
+	{
+		return $this->allowed;
+	}
+}
+
+/**
+ * Stand-in for an incoming document (Peppolimport)
+ */
+class PeppolBookingFakeImport
+{
+	/** @var int */
+	public $id = 7;
+	/** @var string */
+	public $ref = 'PI-7';
+	/** @var string */
+	public $senderID = '0106:12345678';
+	/** @var int */
+	public $fk_invoice = 0;
+	/** @var int */
+	public $status = 1;
+	/** @var string */
+	public $response_code = '';
+	/** @var string */
+	public $response_note = '';
+	/** @var string */
+	public $file = '';
+	/** @var string */
+	public $error = '';
+
+	/**
+	 * @return string
+	 */
+	public function fullFilename()
+	{
+		return $this->file;
+	}
+
+	/**
+	 * @param object $user User
+	 * @param string $code Code
+	 * @param string $note Note
+	 * @return int
+	 */
+	public function saveResponse($user, $code, $note = '')
+	{
+		$this->response_code = $code;
+		$this->response_note = $note;
+		return 1;
+	}
+}
+
+/**
+ * Stand-in for the access point
+ */
+class PeppolBookingFakeAP
+{
+	/** @var int */
+	public static $ret = 1;
+	/** @var array<int,array<string,string>> */
+	public static $sent = array();
+	/** @var string */
+	public $error = 'made-up error';
+
+	/**
+	 * @return PeppolBookingFakeAP
+	 */
+	public static function make()
+	{
+		return new self();
+	}
+
+	/**
+	 * @param object               $pi   Document
+	 * @param array<string,string> $resp Response
+	 * @return int
+	 */
+	public function sendInvoiceResponse($pi, array $resp)
+	{
+		self::$sent[] = $resp;
+		return self::$ret;
+	}
+}
+
+/**
  * Reading of incoming e-invoices for booking
  */
 class PeppolBookingTest extends TestCase
@@ -133,5 +231,118 @@ class PeppolBookingTest extends TestCase
 	{
 		$this->assertSame('NL001234567B01', PeppolBooking::normalizeVat('nl 0012.34.567-B01'));
 		$this->assertSame('', PeppolBooking::normalizeVat(''));
+	}
+
+	/**
+	 * Booking with a stubbed access point, and an incoming document from a made-up XML file
+	 *
+	 * @param string $file XML file
+	 * @return array{0:PeppolBooking,1:PeppolBookingFakeImport}
+	 */
+	private function rejectSetup(&$file)
+	{
+		global $langs;
+		$langs->load('peppol@peppolpeppyrus');
+		$file = (string) tempnam(sys_get_temp_dir(), 'peppoltest');
+		file_put_contents($file, $this->invoice());
+		$booking = new PeppolBooking(null);
+		$booking->apFactory = array('PeppolBookingFakeAP', 'make');
+		$pi = new PeppolBookingFakeImport();
+		$pi->file = $file;
+		PeppolBookingFakeAP::$ret = 1;
+		PeppolBookingFakeAP::$sent = array();
+		return array($booking, $pi);
+	}
+
+	/**
+	 * Rejecting: rights, reason, already booked, and what happens with each answer of the access point (2.13.0)
+	 *
+	 * @return void
+	 */
+	public function testReject()
+	{
+		$file = '';
+		list($booking, $pi) = $this->rejectSetup($file);
+		$user = new PeppolBookingFakeUser();
+
+		// Sent: the supplier gets RE with the reason and the invoice number and date of the XML
+		$this->assertSame(1, $booking->reject($pi, $user, 'PRI', 'made-up remark'));
+		$this->assertCount(1, PeppolBookingFakeAP::$sent);
+		$this->assertSame('RE', PeppolBookingFakeAP::$sent[0]['code']);
+		$this->assertSame('PRI', PeppolBookingFakeAP::$sent[0]['reason']);
+		$this->assertSame('INV-001', PeppolBookingFakeAP::$sent[0]['invoiceId']);
+		$this->assertSame('2026-10-31', PeppolBookingFakeAP::$sent[0]['invoiceDate']);
+		$this->assertSame('380', PeppolBookingFakeAP::$sent[0]['typeCode']);
+		$this->assertSame('RE', $pi->response_code);
+		$this->assertStringContainsString('made-up remark', $pi->response_note);
+
+		// Twice: refused
+		$this->assertSame(-3, $booking->reject($pi, $user, 'PRI'));
+
+		// Supplier cannot receive it: only stored here, with a warning
+		$pi = new PeppolBookingFakeImport();
+		$pi->file = $file;
+		PeppolBookingFakeAP::$ret = -5;
+		$this->assertSame(2, $booking->reject($pi, $user, 'QTY'));
+		$this->assertSame('RE', $pi->response_code);
+		$this->assertCount(1, $booking->warnings);
+
+		// Error of the access point: nothing changes, can be tried again
+		$pi = new PeppolBookingFakeImport();
+		$pi->file = $file;
+		PeppolBookingFakeAP::$ret = -100;
+		$this->assertSame(-6, $booking->reject($pi, $user, 'QTY'));
+		$this->assertSame('', $pi->response_code);
+
+		// "Other reason" needs an explanation; unknown reason refused; no right; already booked
+		PeppolBookingFakeAP::$ret = 1;
+		$this->assertSame(-4, $booking->reject($pi, $user, 'OTH', ' '));
+		$this->assertSame(-4, $booking->reject($pi, $user, 'XYZ', 'text'));
+		$user->allowed = false;
+		$this->assertSame(-1, $booking->reject($pi, $user, 'PRI'));
+		$user->allowed = true;
+		$pi->fk_invoice = 12;
+		$this->assertSame(-2, $booking->reject($pi, $user, 'PRI'));
+		unlink($file);
+	}
+
+	/**
+	 * Approval after booking: only with the setting on, stored on success, a warning on failure (2.13.0)
+	 *
+	 * @return void
+	 */
+	public function testSendApproval()
+	{
+		global $conf;
+		$file = '';
+		list($booking, $pi) = $this->rejectSetup($file);
+		$user = new PeppolBookingFakeUser();
+		$data = PeppolBooking::parse($this->invoice());
+		$send = new ReflectionMethod('PeppolBooking', 'sendApproval');
+		$send->setAccessible(true);
+
+		$conf->global->PEPPOL_IR_SEND_APPROVAL = '0';
+		$send->invoke($booking, $pi, $user, $data);
+		$this->assertCount(0, PeppolBookingFakeAP::$sent);
+
+		$conf->global->PEPPOL_IR_SEND_APPROVAL = '1';
+		$send->invoke($booking, $pi, $user, $data);
+		$this->assertCount(1, PeppolBookingFakeAP::$sent);
+		$this->assertSame('AP', PeppolBookingFakeAP::$sent[0]['code']);
+		$this->assertSame('AP', $pi->response_code);
+		$this->assertCount(1, $booking->notices);
+
+		// Already approved: not again
+		$send->invoke($booking, $pi, $user, $data);
+		$this->assertCount(1, PeppolBookingFakeAP::$sent);
+
+		// Failure: only a warning
+		$pi = new PeppolBookingFakeImport();
+		PeppolBookingFakeAP::$ret = -5;
+		$send->invoke($booking, $pi, $user, $data);
+		$this->assertSame('', $pi->response_code);
+		$this->assertCount(1, $booking->warnings);
+		unset($conf->global->PEPPOL_IR_SEND_APPROVAL);
+		unlink($file);
 	}
 }

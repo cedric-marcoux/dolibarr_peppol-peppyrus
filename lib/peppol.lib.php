@@ -687,7 +687,7 @@ function peppolGetSupplierInvoicesList()
  *
  * @param string $ap_name Access point name
  * @param int $fk_object Object id
- * @param int $object_typeid 1 customer invoice, 2 supplier invoice
+ * @param int $object_typeid 1 customer invoice, 2 supplier invoice, 3 incoming Peppol document (since 2.13.0)
  * @param string $status Status
  * @param string $message Message
  * @param string $fulldata Full answer (JSON)
@@ -730,10 +730,36 @@ function peppolBookingUrl($object, $user)
 	if (!$user->hasRight('peppolpeppyrus', 'import') || !$user->hasRight('fournisseur', 'facture', 'creer')) {
 		return '';
 	}
+	// Since 2.13.0: not after a rejection
+	if ((string) ($object->response_code ?? '') === 'RE') {
+		return '';
+	}
 	if (!method_exists($object, 'fileExist') || !$object->fileExist()) {
 		return '';
 	}
 	return dol_buildpath('/peppolpeppyrus/peppolimport_card.php', 1) . '?id=' . ((int) $object->id) . '&action=book&token=' . newToken();
+}
+
+/**
+ * Link of the button Reject (since 2.13.0): asks a reason and sends the supplier an Invoice Response.
+ * Empty when the document is already booked or rejected, or the user lacks the rights (same as Book).
+ *
+ * @param	object	$object	Peppolimport
+ * @param	User	$user	User
+ * @return	string			URL, or ''
+ */
+function peppolRejectUrl($object, $user)
+{
+	if (!isModEnabled('peppolpeppyrus') || !is_object($object) || empty($object->id) || !empty($object->fk_invoice)) {
+		return '';
+	}
+	if ((string) ($object->response_code ?? '') === 'RE') {
+		return '';
+	}
+	if (!$user->hasRight('peppolpeppyrus', 'import') || !$user->hasRight('fournisseur', 'facture', 'creer')) {
+		return '';
+	}
+	return dol_buildpath('/peppolpeppyrus/peppolimport_card.php', 1) . '?id=' . ((int) $object->id) . '&action=reject&token=' . newToken();
 }
 
 /**
@@ -1011,4 +1037,215 @@ function peppolOutgoingStatus($messageId, $outbox, $failed)
 		return 'failed';
 	}
 	return isset($outbox[$messageId]) ? 'queued' : 'sent';
+}
+
+/** Document type of a Peppol Invoice Response (BIS 63, ApplicationResponse), since 2.13.0 */
+const PEPPOL_IR_DOCTYPE = 'busdox-docid-qns::urn:oasis:names:specification:ubl:schema:xsd:ApplicationResponse-2::ApplicationResponse##urn:fdc:peppol.eu:poacc:trns:invoice_response:3::2.1';
+/** Process of a Peppol Invoice Response, since 2.13.0 */
+const PEPPOL_IR_PROCESS = 'cenbii-procid-ubl::urn:fdc:peppol.eu:poacc:bis:invoice_response:3';
+
+/**
+ * Reasons to reject an invoice (Peppol code list OPStatusReason), with the language key (since 2.13.0)
+ *
+ * @return array<string,string>
+ */
+function peppolRejectReasons()
+{
+	return array(
+		'REF' => 'peppolReasonREF',
+		'LEG' => 'peppolReasonLEG',
+		'REC' => 'peppolReasonREC',
+		'QUA' => 'peppolReasonQUA',
+		'DEL' => 'peppolReasonDEL',
+		'PRI' => 'peppolReasonPRI',
+		'QTY' => 'peppolReasonQTY',
+		'ITM' => 'peppolReasonITM',
+		'PAY' => 'peppolReasonPAY',
+		'UNR' => 'peppolReasonUNR',
+		'FIN' => 'peppolReasonFIN',
+		'OTH' => 'peppolReasonOTH',
+	);
+}
+
+/**
+ * Status in an Invoice Response (UNCL4343, Peppol subset), with the language key (since 2.13.0)
+ *
+ * @return array<string,string>
+ */
+function peppolResponseCodes()
+{
+	return array(
+		'AB' => 'peppolResponseAB',
+		'IP' => 'peppolResponseIP',
+		'UQ' => 'peppolResponseUQ',
+		'CA' => 'peppolResponseCA',
+		'RE' => 'peppolResponseRE',
+		'AP' => 'peppolResponseAP',
+		'PD' => 'peppolResponsePD',
+	);
+}
+
+/**
+ * Peppol-ID ("0106:12345678" of "iso6523-actorid-upis::0106:12345678") in schema en waarde
+ *
+ * @param	string	$id		Peppol-ID
+ * @return	array{scheme:string,value:string}
+ */
+function peppolSplitParticipant($id)
+{
+	$id = trim((string) preg_replace('/^.*::/', '', (string) $id));
+	$pos = strpos($id, ':');
+	if ($pos === false) {
+		return array('scheme' => '', 'value' => $id);
+	}
+	return array('scheme' => substr($id, 0, $pos), 'value' => substr($id, $pos + 1));
+}
+
+/**
+ * An Invoice Response (Peppol BIS 63, UBL ApplicationResponse) as XML, since 2.13.0. Only what Peppol asks:
+ * sender and receiver (Peppol ID and name), the status, the reason on a rejection, and the invoice concerned.
+ * No contact details of persons.
+ *
+ * @param	array{id:string,date:string,sender:string,senderName:string,receiver:string,receiverName:string,code:string,reason?:string,reasonText?:string,invoiceId:string,invoiceDate:string,typeCode?:string}	$p	Data
+ * @return	string	XML, or '' when required data is missing or wrong
+ */
+function peppolInvoiceResponseXml($p)
+{
+	$x = function ($v) {
+		return htmlspecialchars((string) $v, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+	};
+	$code = (string) ($p['code'] ?? '');
+	$reason = (string) ($p['reason'] ?? '');
+	$sender = peppolSplitParticipant((string) ($p['sender'] ?? ''));
+	$receiver = peppolSplitParticipant((string) ($p['receiver'] ?? ''));
+	$datum = '/^\d{4}-\d{2}-\d{2}$/';
+	if (!isset(peppolResponseCodes()[$code]) || ($reason !== '' && !isset(peppolRejectReasons()[$reason])) || $sender['scheme'] === '' || $receiver['scheme'] === ''
+		|| (string) ($p['id'] ?? '') === '' || (string) ($p['invoiceId'] ?? '') === '' || !preg_match($datum, (string) ($p['date'] ?? '')) || !preg_match($datum, (string) ($p['invoiceDate'] ?? ''))) {
+		return '';
+	}
+	// Rejecting needs a reason (code or text)
+	if ($code === 'RE' && $reason === '' && trim((string) ($p['reasonText'] ?? '')) === '') {
+		return '';
+	}
+	$type = in_array((string) ($p['typeCode'] ?? '380'), array('380', '381', '383', '384', '386', '389', '751'), true) ? (string) ($p['typeCode'] ?? '380') : '380';
+	$party = function ($tag, $part, $name) use ($x) {
+		return "\t<cac:" . $tag . ">\n\t\t<cbc:EndpointID schemeID=\"" . $x($part['scheme']) . "\">" . $x($part['value']) . "</cbc:EndpointID>\n\t\t<cac:PartyLegalEntity>\n\t\t\t<cbc:RegistrationName>" . $x($name) . "</cbc:RegistrationName>\n\t\t</cac:PartyLegalEntity>\n\t</cac:" . $tag . ">\n";
+	};
+	$xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+	$xml .= '<ApplicationResponse xmlns="urn:oasis:names:specification:ubl:schema:xsd:ApplicationResponse-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">' . "\n";
+	$xml .= "\t<cbc:CustomizationID>urn:fdc:peppol.eu:poacc:trns:invoice_response:3</cbc:CustomizationID>\n";
+	$xml .= "\t<cbc:ProfileID>urn:fdc:peppol.eu:poacc:bis:invoice_response:3</cbc:ProfileID>\n";
+	$xml .= "\t<cbc:ID>" . $x($p['id']) . "</cbc:ID>\n";
+	$xml .= "\t<cbc:IssueDate>" . $x($p['date']) . "</cbc:IssueDate>\n";
+	$xml .= $party('SenderParty', $sender, (string) ($p['senderName'] ?? ''));
+	$xml .= $party('ReceiverParty', $receiver, (string) ($p['receiverName'] ?? ''));
+	$xml .= "\t<cac:DocumentResponse>\n\t\t<cac:Response>\n\t\t\t<cbc:ResponseCode>" . $x($code) . "</cbc:ResponseCode>\n";
+	if ($reason !== '' || trim((string) ($p['reasonText'] ?? '')) !== '') {
+		$xml .= "\t\t\t<cac:Status>\n";
+		if ($reason !== '') {
+			$xml .= "\t\t\t\t<cbc:StatusReasonCode listID=\"OPStatusReason\">" . $x($reason) . "</cbc:StatusReasonCode>\n";
+		}
+		if (trim((string) ($p['reasonText'] ?? '')) !== '') {
+			$xml .= "\t\t\t\t<cbc:StatusReason>" . $x(dol_trunc(trim((string) $p['reasonText']), 500, 'right', 'UTF-8', 1)) . "</cbc:StatusReason>\n";
+		}
+		$xml .= "\t\t\t</cac:Status>\n";
+	}
+	$xml .= "\t\t</cac:Response>\n\t\t<cac:DocumentReference>\n\t\t\t<cbc:ID>" . $x($p['invoiceId']) . "</cbc:ID>\n";
+	$xml .= "\t\t\t<cbc:IssueDate>" . $x($p['invoiceDate']) . "</cbc:IssueDate>\n\t\t\t<cbc:DocumentTypeCode>" . $type . "</cbc:DocumentTypeCode>\n";
+	$xml .= "\t\t</cac:DocumentReference>\n\t</cac:DocumentResponse>\n</ApplicationResponse>\n";
+	return $xml;
+}
+
+/**
+ * Read a received Invoice Response (since 2.13.0): the status, the reason and the invoice concerned.
+ * A message with a DOCTYPE or without ApplicationResponse is not read.
+ *
+ * @param	string	$xml	XML
+ * @return	array{code:string,reason:string,reasonText:string,invoiceId:string,invoiceDate:string,sender:string}|null
+ */
+function peppolParseInvoiceResponse($xml)
+{
+	$xml = (string) $xml;
+	if ($xml === '' || strpos($xml, '<!DOCTYPE') !== false) {
+		return null;
+	}
+	$dom = new DOMDocument();
+	$prev = libxml_use_internal_errors(true);
+	$ok = $dom->loadXML($xml, LIBXML_NONET);
+	libxml_use_internal_errors($prev);
+	if (!$ok || !$dom->documentElement || $dom->documentElement->localName !== 'ApplicationResponse') {
+		return null;
+	}
+	$xp = new DOMXPath($dom);
+	$xp->registerNamespace('cac', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
+	$xp->registerNamespace('cbc', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
+	$text = function ($q) use ($xp) {
+		$n = $xp->query($q);
+		return ($n && $n->length > 0) ? trim((string) $n->item(0)->textContent) : '';
+	};
+	$code = strtoupper($text('/*/cac:DocumentResponse/cac:Response/cbc:ResponseCode'));
+	if (!isset(peppolResponseCodes()[$code])) {
+		return null;
+	}
+	$scheme = $text('/*/cac:SenderParty/cbc:EndpointID/@schemeID');
+	$endpoint = $text('/*/cac:SenderParty/cbc:EndpointID');
+	return array(
+		'code' => $code,
+		'reason' => strtoupper($text('/*/cac:DocumentResponse/cac:Response/cac:Status/cbc:StatusReasonCode')),
+		'reasonText' => $text('/*/cac:DocumentResponse/cac:Response/cac:Status/cbc:StatusReason'),
+		'invoiceId' => $text('/*/cac:DocumentResponse/cac:DocumentReference/cbc:ID'),
+		'invoiceDate' => $text('/*/cac:DocumentResponse/cac:DocumentReference/cbc:IssueDate'),
+		'sender' => ($scheme !== '' && $endpoint !== '') ? $scheme . ':' . $endpoint : '',
+	);
+}
+
+/**
+ * Can a participant receive an Invoice Response? From the services in the SMP (GET peppol/lookup), since 2.13.0
+ *
+ * @param	mixed	$lookup		Answer of peppol/lookup (decoded)
+ * @return	bool
+ */
+function peppolSupportsInvoiceResponse($lookup)
+{
+	$services = array();
+	if (is_object($lookup) && isset($lookup->services) && is_array($lookup->services)) {
+		$services = $lookup->services;
+	} elseif (is_array($lookup) && isset($lookup['services']) && is_array($lookup['services'])) {
+		$services = $lookup['services'];
+	}
+	foreach ($services as $s) {
+		$type = is_object($s) ? (string) ($s->documentType ?? '') : (is_array($s) ? (string) ($s['documentType'] ?? '') : '');
+		if (stripos($type, 'invoice_response') !== false) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * What an answer of the customer (Invoice Response) means for the Outgoing list, since 2.13.0:
+ * "read" received or in process (AB, IP), "approved" accepted or paid (AP, CA, PD), "query" the customer has a
+ * question (UQ), "rejected" rejected (RE).
+ *
+ * @param	string	$code	Status (UNCL4343)
+ * @return	string	read, approved, query, rejected or ''
+ */
+function peppolResponseLevel($code)
+{
+	$map = array('AB' => 'read', 'IP' => 'read', 'AP' => 'approved', 'CA' => 'approved', 'PD' => 'approved', 'UQ' => 'query', 'RE' => 'rejected');
+	return $map[strtoupper((string) $code)] ?? '';
+}
+
+/**
+ * Are two Peppol IDs the same participant? Without prefix (iso6523-actorid-upis::) and case, since 2.13.0
+ *
+ * @param	string	$a	Peppol-ID
+ * @param	string	$b	Peppol-ID
+ * @return	bool
+ */
+function peppolSameParticipant($a, $b)
+{
+	$a = peppolSplitParticipant((string) $a);
+	$b = peppolSplitParticipant((string) $b);
+	return $a['scheme'] !== '' && $a['value'] !== '' && strtolower($a['scheme']) === strtolower($b['scheme']) && strtolower($a['value']) === strtolower($b['value']);
 }

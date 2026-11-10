@@ -48,6 +48,12 @@ class PeppolBooking
 	/** @var bool The invoice was validated */
 	public $validated = false;
 
+	/** @var string[] Messages that something succeeded, such as the sent approval (since 2.13.0) */
+	public $notices = array();
+
+	/** @var callable Function that returns the access point (since 2.13.0; replaceable in tests) */
+	public $apFactory = 'peppolGetAPObject';
+
 	/**
 	 * @param	DoliDB	$db		Database handler
 	 */
@@ -328,6 +334,7 @@ class PeppolBooking
 
 		$langs->loadLangs(array('peppol@peppolpeppyrus', 'bills', 'companies'));
 		$this->warnings = array();
+		$this->notices = array();
 		$this->invoiceId = 0;
 		$this->supplierCreated = false;
 		$this->validated = false;
@@ -340,6 +347,11 @@ class PeppolBooking
 			$this->invoiceId = (int) $pi->fk_invoice;
 			$this->error = $langs->trans('peppolBookAlreadyBooked');
 			return -2;
+		}
+		// Since 2.13.0: rejected to the supplier, then no longer booked
+		if ((string) ($pi->response_code ?? '') === 'RE') {
+			$this->error = $langs->trans('peppolBookRejected');
+			return -14;
 		}
 		$file = $pi->fullFilename();
 		if ($file === '' || !dol_is_file($file)) {
@@ -412,6 +424,7 @@ class PeppolBooking
 			$this->invoiceId = $existing;
 			$this->linkDocument($pi, $user, $existing, $socid);
 			$this->warnings[] = $langs->trans('peppolBookLinkedExisting');
+			$this->sendApproval($pi, $user, $data);
 			return $existing;
 		}
 
@@ -461,8 +474,120 @@ class PeppolBooking
 
 		$this->attachFiles($inv, $pi, $data['pdf']);
 		$this->linkDocument($pi, $user, (int) $id, $socid);
+		$this->sendApproval($pi, $user, $data);
 		dol_syslog('PeppolBooking::book document ' . ((int) $pi->id) . ' booked as supplier invoice ' . ((int) $id) . ', lines ' . count($data['lines']) . ($this->validated ? ', validated' : ', draft') . ($this->supplierCreated ? ', supplier created' : ''));
 		return (int) $id;
+	}
+
+	/**
+	 * Reject an incoming invoice, since 2.13.0: an Invoice Response RE with the reason to the supplier, then the
+	 * document is canceled and can no longer be booked. When the supplier cannot receive such a message, the
+	 * rejection is only stored here, with a message to inform the supplier yourself. On an error of Peppyrus nothing
+	 * changes, so it can be tried again.
+	 *
+	 * @param	object	$pi			Peppolimport
+	 * @param	User	$user		User
+	 * @param	string	$reason		Code of peppolRejectReasons()
+	 * @param	string	$text		Explanation (required with OTH)
+	 * @return	int		1 sent, 2 only stored here, <0 error ($this->error)
+	 */
+	public function reject($pi, $user, $reason, $text = '')
+	{
+		global $langs;
+
+		$langs->loadLangs(array('peppol@peppolpeppyrus'));
+		$this->warnings = array();
+		$this->notices = array();
+		$this->error = '';
+		$text = dol_trunc(trim((string) $text), 200, 'right', 'UTF-8', 1);
+		if (!$user->hasRight('peppolpeppyrus', 'import') || !$user->hasRight('fournisseur', 'facture', 'creer')) {
+			$this->error = $langs->trans('peppolBookNoRight');
+			return -1;
+		}
+		if (!empty($pi->fk_invoice)) {
+			$this->error = $langs->trans('peppolRejectAlreadyBooked');
+			return -2;
+		}
+		if ((string) ($pi->response_code ?? '') === 'RE') {
+			$this->error = $langs->trans('peppolRejectAlready');
+			return -3;
+		}
+		if (!isset(peppolRejectReasons()[(string) $reason]) || ($reason === 'OTH' && $text === '')) {
+			$this->error = $langs->trans('peppolRejectReasonMissing');
+			return -4;
+		}
+		$note = $langs->transnoentitiesnoconv(peppolRejectReasons()[(string) $reason]) . ($text !== '' ? ': ' . $text : '');
+
+		$file = method_exists($pi, 'fullFilename') ? $pi->fullFilename() : '';
+		$data = ($file !== '' && dol_is_file($file)) ? self::parse((string) file_get_contents($file)) : null;
+		$res = -5;
+		$ap = null;
+		if ($data !== null && $data['number'] !== '' && $data['date'] !== null) {
+			$ap = call_user_func($this->apFactory);
+			if (is_object($ap) && method_exists($ap, 'sendInvoiceResponse')) {
+				$res = $ap->sendInvoiceResponse($pi, array(
+					'code' => 'RE',
+					'reason' => (string) $reason,
+					'reasonText' => $text,
+					'invoiceId' => (string) $data['number'],
+					'invoiceDate' => dol_print_date((int) $data['date'], '%Y-%m-%d'),
+					'typeCode' => $data['credit'] ? '381' : '380',
+					'receiverName' => (string) ($data['supplier']['name'] ?? ''),
+				));
+			}
+		}
+		if ($res <= 0 && $res !== -5) {
+			$this->error = $langs->trans('peppolRejectSendFailed', is_object($ap) ? (string) $ap->error : '');
+			return -6;
+		}
+		if ($pi->saveResponse($user, 'RE', $note) < 0) {
+			$this->error = (string) $pi->error;
+			return -7;
+		}
+		if ($res > 0) {
+			$this->notices[] = $langs->trans('peppolRejectSent');
+			return 1;
+		}
+		$this->warnings[] = $langs->trans('peppolRejectLocalOnly');
+		return 2;
+	}
+
+	/**
+	 * Approval (Invoice Response AP) to the supplier after booking, since 2.13.0. Only when the setting is on
+	 * (default on) and the supplier can receive such a message. When it fails, only a message: the invoice is
+	 * booked anyway.
+	 *
+	 * @param	object	$pi		Peppolimport
+	 * @param	User	$user	User
+	 * @param	array<string,mixed>	$data	Result of parse()
+	 * @return	void
+	 */
+	private function sendApproval($pi, $user, $data)
+	{
+		global $langs;
+
+		if (!getDolGlobalInt('PEPPOL_IR_SEND_APPROVAL', 1) || (string) ($pi->response_code ?? '') === 'AP' || empty($pi->senderID) || $data['date'] === null) {
+			return;
+		}
+		$ap = call_user_func($this->apFactory);
+		if (!is_object($ap) || !method_exists($ap, 'sendInvoiceResponse')) {
+			return;
+		}
+		$res = $ap->sendInvoiceResponse($pi, array(
+			'code' => 'AP',
+			'invoiceId' => (string) $data['number'],
+			'invoiceDate' => dol_print_date((int) $data['date'], '%Y-%m-%d'),
+			'typeCode' => '380',
+			'receiverName' => (string) ($data['supplier']['name'] ?? ''),
+		));
+		if ($res > 0) {
+			if (method_exists($pi, 'saveResponse')) {
+				$pi->saveResponse($user, 'AP');
+			}
+			$this->notices[] = $langs->trans('peppolApprovalSent');
+		} else {
+			$this->warnings[] = $langs->trans('peppolApprovalNotSent', (string) $ap->error);
+		}
 	}
 
 	/**
@@ -505,6 +630,13 @@ class PeppolBooking
 		$files = array();
 		if ($pdf !== null) {
 			$files[$pdf['name']] = $pdf['content'];
+		} elseif (!empty($pi->peppolid)) {
+			// Since 2.13.0: no PDF in the message, then Peppyrus makes one of the invoice itself
+			$ap = call_user_func($this->apFactory);
+			$rendered = (is_object($ap) && method_exists($ap, 'renderMessage')) ? (string) $ap->renderMessage((string) $pi->peppolid) : '';
+			if ($rendered !== '') {
+				$files[dol_sanitizeFileName('peppol-' . $inv->ref . '.pdf')] = $rendered;
+			}
 		}
 		$xml = $pi->fullFilename();
 		$files[dol_sanitizeFileName(basename($xml))] = (string) file_get_contents($xml);

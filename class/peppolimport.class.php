@@ -19,6 +19,7 @@ use Sabre\DAV\Client;
 
 // require_once __DIR__.'/../lib/scaninvoices.lib.php';
 dol_include_once('/scaninvoices/lib/scaninvoices.lib.php');
+dol_include_once('/peppolpeppyrus/lib/peppol.lib.php');
 
 /**
  * Class for Peppolimport
@@ -138,6 +139,10 @@ class Peppolimport extends \CommonObject
 		'fk_user_modif' => array('type' => 'integer:User:user/class/user.class.php', 'label' => 'UserModif', 'enabled' => '1', 'position' => 511, 'notnull' => -1, 'visible' => -2,),
 		'import_key' => array('type' => 'varchar(14)', 'label' => 'ImportId', 'enabled' => '1', 'position' => 1000, 'notnull' => -1, 'visible' => 4,),
 		'status' => array('type' => 'smallint', 'label' => 'Status', 'enabled' => '1', 'position' => 1002, 'notnull' => 0, 'visible' => 4, 'index' => 1, 'arrayofkeyval' => array('' => '', self::STATUS_DRAFT => 'Waiting', self::STATUS_VALIDATED => 'Analyzed', self::STATUS_CLOSED => 'Success', self::STATUS_ERROR => 'Error',  self::STATUS_HALFSUCCESS => 'Partial', self::STATUS_CANCELED => 'Canceled'),),
+		// Since 2.13.0: the answer to the supplier (Invoice Response)
+		'response_code' => array('type' => 'varchar(4)', 'label' => 'peppolResponseCode', 'enabled' => '1', 'position' => 1010, 'notnull' => 0, 'visible' => -2, 'noteditable' => 1),
+		'response_date' => array('type' => 'datetime', 'label' => 'peppolResponseDate', 'enabled' => '1', 'position' => 1011, 'notnull' => 0, 'visible' => -2, 'noteditable' => 1),
+		'response_note' => array('type' => 'varchar(255)', 'label' => 'peppolResponseNote', 'enabled' => '1', 'position' => 1012, 'notnull' => 0, 'visible' => -2, 'noteditable' => 1),
 	);
 	public $rowid;
 	public $ref;
@@ -170,6 +175,12 @@ class Peppolimport extends \CommonObject
 	public $import_key;
 	public $status;
 	// END MODULEBUILDER PROPERTIES
+	/** @var string Answer to the supplier (UNCL4343, since 2.13.0) */
+	public $response_code;
+	/** @var int|string Date of that answer */
+	public $response_date;
+	/** @var string Reason or explanation */
+	public $response_note;
 
 
 	// If this object has a subtable with lines
@@ -222,9 +233,8 @@ class Peppolimport extends \CommonObject
 		if (empty(getDolGlobalString('MAIN_SHOW_TECHNICAL_ID')) && isset($this->fields['rowid'])) {
 			$this->fields['rowid']['visible'] = 0;
 		}
-		if (empty($conf->multicompany->enabled) && isset($this->fields['entity'])) {
-			$this->fields['entity']['enabled'] = 0;
-		}
+		// Since 2.13.0 entity always stays a field (hidden): without Multicompany it was not read, and the entity check
+		// refused the card of every incoming document
 
 		// Example to show how to set values of fields definition dynamically
 		/*if ($user->hasRight('peppolpeppyrus', 'read')) {
@@ -759,6 +769,38 @@ class Peppolimport extends \CommonObject
 		 }*/
 
 		return $this->setStatusCommon($user, self::STATUS_CANCELED, $notrigger, 'PEPPOLIMPORT_CANCEL');
+	}
+
+	/**
+	 * Store the answer to the supplier (since 2.13.0). On a rejection (RE) the document is canceled and can no
+	 * longer be booked.
+	 *
+	 * @param	\User	$user	User
+	 * @param	string	$code	Status of peppolResponseCodes()
+	 * @param	string	$note	Reason or explanation
+	 * @return	int				Negative on error, positive on success
+	 */
+	public function saveResponse($user, $code, $note = '')
+	{
+		if (empty($this->id) || !isset(peppolResponseCodes()[(string) $code])) {
+			return -1;
+		}
+		$now = dol_now();
+		$note = dol_trunc(trim((string) $note), 255, 'right', 'UTF-8', 1);
+		$sql = "UPDATE " . MAIN_DB_PREFIX . $this->table_element . " SET response_code = '" . $this->db->escape((string) $code) . "'";
+		$sql .= ", response_date = '" . $this->db->idate($now) . "', response_note = '" . $this->db->escape($note) . "'";
+		$sql .= " WHERE rowid = " . ((int) $this->id) . " AND entity IN (" . getEntity($this->element) . ")";
+		if (!$this->db->query($sql)) {
+			$this->error = $this->db->lasterror();
+			return -1;
+		}
+		$this->response_code = (string) $code;
+		$this->response_date = $now;
+		$this->response_note = $note;
+		if ($code === 'RE' && (int) $this->status !== self::STATUS_CANCELED) {
+			return $this->setStatusCommon($user, self::STATUS_CANCELED, 0, 'PEPPOLIMPORT_CANCEL');
+		}
+		return 1;
 	}
 
 	/**

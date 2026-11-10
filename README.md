@@ -102,7 +102,11 @@ Billing > Peppol > Peppol candidates lists customers and suppliers without a Pep
 
 ## Outgoing invoices
 
-Billing > Peppol > Outgoing lists the sent customer invoices with their status at Peppyrus: one tick (waiting at Peppyrus), two ticks (delivered to the access point of the customer) or a red cross (not delivered). Peppol has no "read" status. Requires the rights "Peppol: read" and to read invoices.
+Billing > Peppol > Outgoing lists the sent customer invoices with their status at Peppyrus: one tick (waiting at Peppyrus), two ticks (delivered to the access point of the customer) or a red cross (not delivered). When the customer sends an Invoice Response, a third tick (received or accepted), a question mark (query) or a red cross (rejected by the customer). Requires the rights "Peppol: read" and to read invoices.
+
+## Reject or accept incoming invoices
+
+On the card of an incoming document, **Reject** asks a reason and sends the supplier an Invoice Response (Peppol BIS 63); the document is then no longer booked. On **Book**, the supplier receives an approval, unless the setting "Send approval to the supplier on booking" is off.
 
 ## Daily check of failed deliveries
 

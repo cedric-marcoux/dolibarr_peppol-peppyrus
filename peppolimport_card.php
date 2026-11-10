@@ -233,6 +233,25 @@ if (empty($reshook)) {
 			$msg .= ($booking->supplierCreated ? ' ' . $langs->trans('peppolBookSupplierCreated') : '');
 			$msg .= ' <a href="' . dol_escape_htmltag($invoiceUrl) . '">' . $langs->trans('peppolBookOpenInvoice') . '</a>';
 			setEventMessages($msg, $booking->warnings, ($res > 0 && !count($booking->warnings)) ? 'mesgs' : 'warnings');
+			setEventMessages('', $booking->notices, 'mesgs');
+		} else {
+			setEventMessages(dol_escape_htmltag($booking->error), null, 'errors');
+		}
+		$object->fetch($object->id);
+		$action = '';
+	}
+
+	// Since 2.13.0: reject with a reason, the supplier receives an Invoice Response
+	if ($action == 'confirm_reject' && $confirm == 'yes' && $object->id > 0) {
+		if (!peppolCheckToken()) {
+			accessforbidden($langs->trans('ErrorBadValueForParameter', 'token'));
+		}
+		dol_include_once('/peppolpeppyrus/class/peppolbooking.class.php');
+		$booking = new PeppolBooking($db);
+		$res = $booking->reject($object, $user, GETPOST('reject_reason', 'aZ09'), GETPOST('reject_text', 'alphanohtml'));
+		if ($res > 0) {
+			setEventMessages('', $booking->notices, 'mesgs');
+			setEventMessages('', $booking->warnings, 'warnings');
 		} else {
 			setEventMessages(dol_escape_htmltag($booking->error), null, 'errors');
 		}
@@ -387,6 +406,19 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 		$formconfirm = $form->formconfirm($_SERVER["PHP_SELF"] . '?id=' . $object->id, $langs->trans('ToClone'), $langs->trans('ConfirmCloneAsk', $object->ref), 'confirm_clone', $formquestion, 'yes', 1);
 	}
 
+	// Reject: reason and explanation (since 2.13.0)
+	if ($action == 'reject' && peppolRejectUrl($object, $user) !== '') {
+		$reasons = array();
+		foreach (peppolRejectReasons() as $code => $key) {
+			$reasons[$code] = $langs->trans($key);
+		}
+		$formquestion = array(
+			array('type' => 'select', 'name' => 'reject_reason', 'label' => $langs->trans('peppolRejectReason'), 'values' => $reasons, 'default' => 'OTH'),
+			array('type' => 'text', 'name' => 'reject_text', 'label' => $langs->trans('peppolRejectText'), 'value' => '', 'moreattr' => 'maxlength="200"', 'morecss' => 'minwidth300'),
+		);
+		$formconfirm = $form->formconfirm($_SERVER["PHP_SELF"] . '?id=' . $object->id, $langs->trans('peppolReject'), $langs->trans('peppolRejectConfirm'), 'confirm_reject', $formquestion, 'no', 1, 300, 600);
+	}
+
 	// Call Hook formConfirm
 	$parameters = array('formConfirm' => $formconfirm);
 	$reshook = $hookmanager->executeHooks('formConfirm', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
@@ -457,6 +489,13 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 	//unset($object->fields['fk_project']);				// Hide field already shown in banner
 	//unset($object->fields['fk_soc']);					// Hide field already shown in banner
 	include DOL_DOCUMENT_ROOT . '/core/tpl/commonfields_view.tpl.php';
+
+	// Answer to the supplier (since 2.13.0)
+	if (!empty($object->response_code) && isset(peppolResponseCodes()[(string) $object->response_code])) {
+		print '<tr><td>' . $langs->trans('peppolResponseToSupplier') . '</td><td>' . $langs->trans(peppolResponseCodes()[(string) $object->response_code]);
+		print ' <span class="opacitymedium">' . dol_print_date($db->jdate($object->response_date), 'dayhour') . '</span>';
+		print ((string) $object->response_note !== '' ? '<br>' . dol_escape_htmltag((string) $object->response_note) : '') . '</td></tr>';
+	}
 
 	// Other attributes. Fields from hook formObjectOptions and Extrafields.
 	// include DOL_DOCUMENT_ROOT.'/core/tpl/extrafields_view.tpl.php';
@@ -549,6 +588,12 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 			$bookingUrl = peppolBookingUrl($object, $user);
 			if ($bookingUrl !== '') {
 				print dolGetButtonAction($langs->trans('peppolBookInvoiceHelp'), $langs->trans('peppolBookInvoice'), 'default', $bookingUrl);
+			}
+
+			// Reject with a reason (since 2.13.0)
+			$rejectUrl = peppolRejectUrl($object, $user);
+			if ($rejectUrl !== '') {
+				print dolGetButtonAction($langs->trans('peppolRejectHelp'), $langs->trans('peppolReject'), 'delete', $rejectUrl);
 			}
 
 			// Manual import page of the original module: only when that page is installed
