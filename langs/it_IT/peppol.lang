@@ -64,8 +64,6 @@ PEPPOL_AP_API_KEY=Chiave API Peppyrus (Produzione)
 PEPPOL_AP_API_KEYTooltip=La tua chiave per connetterti all'API Peppyrus in modalità PRODUZIONE. Questa chiave ti viene fornita da Peppyrus.
 PEPPOL_AP_API_KEY_DEV=Chiave API Peppyrus (Test/DEV)
 PEPPOL_AP_API_KEY_DEVTooltip=La tua chiave per connetterti all'API Peppyrus in modalità TEST. Usa questa chiave per test nell'ambiente di sviluppo.
-PEPPOL_AP_WEBHOOK_KEY=Chiave segreta webhook
-PEPPOL_AP_WEBHOOK_KEYTooltip=Chiave segreta per verificare la firma (HMAC) delle chiamate webhook. Senza questa chiave il webhook rifiuta ogni chiamata.
 PeppolSecretConfigured=Configurata (nascosta)
 PeppolSecretKeepCurrent=Lasciare vuoto per mantenere la chiave attuale
 

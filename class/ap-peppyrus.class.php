@@ -151,6 +151,16 @@ class Peppyrus extends PeppolAP
 					'error_msg' => $langs->trans('peppolErrorConnection')
 				];
 
+			case 402:
+				// Since 2.12.0: the maximum number of messages of the plan is reached
+				dol_syslog("Peppyrus::{$context} limit of the plan reached (HTTP 402)", LOG_WARNING);
+				return [
+					'success' => false,
+					'data' => null,
+					'error_code' => -402,
+					'error_msg' => $langs->trans('peppolErrorLimitReached')
+				];
+
 			default:
 				dol_syslog("Peppyrus::{$context} Unexpected HTTP code: {$httpCode}", LOG_ERR);
 				return [
@@ -877,13 +887,69 @@ class Peppyrus extends PeppolAP
 		$response = $this->handleApiResponse($result, 'getMessageReport');
 
 		if ($response['success']) {
-			$json = json_decode($result['content'], true);
-			setEventMessage($langs->trans('peppolReportSuccess'), 'mesgs');
-			return $json;
+			// Since 2.12.0 no message on success: the report is fetched every time the tab is opened
+			return json_decode($result['content'], true);
 		} else {
 			setEventMessage($response['error_msg'], 'errors');
 			return $response['error_code'];
 		}
+	}
+
+	/**
+	 * Sent messages Peppyrus could not deliver (folder FAILED), since 2.12.0. Only the id and the date; at most
+	 * $maxPages pages of 100.
+	 *
+	 * @param   int  $maxPages  Maximum number of pages
+	 * @return  array<int,array{id:string,created:string}>|int  List, or < 0 on error
+	 */
+	public function getFailedMessages($maxPages = 10)
+	{
+		if ($this->validateConfiguration() < 0) {
+			return -10;
+		}
+		$headers = array('X-Api-Key: ' . $this->getApiKey());
+		$out = array();
+		$maxPages = max(1, (int) $maxPages);
+		for ($page = 1; $page <= $maxPages; $page++) {
+			$url = $this->getApiUrl() . "message/list?folder=FAILED&perPage=100&page=" . ((int) $page);
+			$result = peppolApiRequest($url, 'GET', '', $headers);
+			$response = $this->handleApiResponse($result, 'getFailedMessages');
+			if (!$response['success']) {
+				// Peppyrus answers 404 for an empty folder
+				return $response['error_code'] === -404 ? $out : $response['error_code'];
+			}
+			$json = $response['data'];
+			$items = (is_object($json) && isset($json->items) && is_array($json->items)) ? $json->items : array();
+			foreach ($items as $item) {
+				if (is_object($item) && isset($item->id) && (!isset($item->direction) || $item->direction === 'OUT')) {
+					$out[] = array('id' => peppolSanitizeIdentifier((string) $item->id), 'created' => isset($item->created) ? (string) $item->created : '');
+				}
+			}
+			$pages = (is_object($json) && isset($json->meta->pages)) ? (int) $json->meta->pages : 1;
+			if ($page >= $pages || empty($items)) {
+				break;
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Peppyrus plan (GET organization/license), since 2.12.0: status, sent this month and the maximum
+	 *
+	 * @return  array<string,mixed>|int  Data, or < 0 on error
+	 */
+	public function getOrganizationLicense()
+	{
+		if ($this->validateConfiguration() < 0) {
+			return -10;
+		}
+		$result = peppolApiRequest($this->getApiUrl() . "organization/license", 'GET', '', array('X-Api-Key: ' . $this->getApiKey()));
+		$response = $this->handleApiResponse($result, 'getOrganizationLicense');
+		if (!$response['success']) {
+			return $response['error_code'];
+		}
+		$data = json_decode((string) ($result['content'] ?? ''), true);
+		return is_array($data) ? $data : -101;
 	}
 
 	/**

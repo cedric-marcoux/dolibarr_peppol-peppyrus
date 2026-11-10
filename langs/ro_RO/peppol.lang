@@ -64,8 +64,6 @@ PEPPOL_AP_API_KEY=Cheie API Peppyrus (Producție)
 PEPPOL_AP_API_KEYTooltip=Cheia dumneavoastră pentru conectare la API-ul Peppyrus în modul PRODUCȚIE. Această cheie vă este furnizată de Peppyrus.
 PEPPOL_AP_API_KEY_DEV=Cheie API Peppyrus (Test/DEV)
 PEPPOL_AP_API_KEY_DEVTooltip=Cheia dumneavoastră pentru conectare la API-ul Peppyrus în modul TEST. Utilizați această cheie pentru teste în mediul de dezvoltare.
-PEPPOL_AP_WEBHOOK_KEY=Cheie secretă webhook
-PEPPOL_AP_WEBHOOK_KEYTooltip=Cheie secretă pentru verificarea semnăturii (HMAC) apelurilor webhook. Fără această cheie, webhook-ul refuză orice apel.
 PeppolSecretConfigured=Configurată (ascunsă)
 PeppolSecretKeepCurrent=Lăsați gol pentru a păstra cheia actuală
 

@@ -67,7 +67,6 @@ if ($action == 'update' && !empty($user->admin)) {
 	$secretfields = array(
 		'PEPPOL_AP_API_KEY' => 'PEPPOL_AP_API_KEY',
 		'PEPPOL_AP_DEV_API_KEY' => 'PEPPOL_AP_DEV_API_KEY',
-		'PEPPOL_AP_WEBHOOK_KEY' => 'PEPPOL_AP_WEBHOOK_KEY',
 	);
 	foreach ($secretfields as $field => $constname) {
 		$secret = trim(GETPOST($field, 'alphanohtml'));
@@ -230,13 +229,6 @@ if ($action == 'edit') {
 	print '<td><input type="password" name="PEPPOL_AP_DEV_API_KEY" id="PEPPOL_AP_DEV_API_KEY" class="flat minwidth400" value="" autocomplete="new-password" placeholder="' . dol_escape_htmltag($langs->trans(peppolGetApiKey('PEPPOL_AP_DEV_API_KEY') ? "PeppolSecretKeepCurrent" : "NotConfigured")) . '"></td>';
 	print '</tr>';
 
-	// PEPPOL_AP_WEBHOOK_KEY
-	print '<tr class="oddeven">';
-	print '<td><label for="PEPPOL_AP_WEBHOOK_KEY">' . $langs->trans("PEPPOL_AP_WEBHOOK_KEY") . '</label>';
-	print '<br><span class="opacitymedium small">' . $langs->trans("PEPPOL_AP_WEBHOOK_KEYTooltip") . '</span></td>';
-	print '<td><input type="password" name="PEPPOL_AP_WEBHOOK_KEY" id="PEPPOL_AP_WEBHOOK_KEY" class="flat minwidth400" value="" autocomplete="new-password" placeholder="' . dol_escape_htmltag($langs->trans(getDolGlobalString('PEPPOL_AP_WEBHOOK_KEY') ? "PeppolSecretKeepCurrent" : "NotConfigured")) . '"></td>';
-	print '</tr>';
-
 	// PEPPOL_PROD
 	print '<tr class="oddeven">';
 	print '<td><label for="PEPPOL_PROD">' . $langs->trans("PEPPOL_PROD") . '</label></td>';
@@ -343,7 +335,6 @@ if ($action == 'edit') {
 	$secretrows = array(
 		'PEPPOL_AP_API_KEY' => peppolGetApiKey('PEPPOL_AP_API_KEY'),
 		'PEPPOL_AP_API_KEY_DEV' => peppolGetApiKey('PEPPOL_AP_DEV_API_KEY'),
-		'PEPPOL_AP_WEBHOOK_KEY' => getDolGlobalString('PEPPOL_AP_WEBHOOK_KEY'),
 	);
 	foreach ($secretrows as $label => $secretvalue) {
 		print '<tr class="oddeven">';
@@ -401,6 +392,30 @@ if ($action == 'edit') {
 	print '</tr>';
 
 	print '</tbody>';
+	print '</table>';
+
+	// Since 2.12.0: the Peppyrus plan (sent this month, maximum, storage)
+	print '<br>';
+	print '<table class="noborder centpercent">';
+	print '<tr class="liste_titre"><td colspan="2">' . $langs->trans("peppolLicenseTitle") . '</td></tr>';
+	$apLicense = peppolGetAPObject();
+	$license = ($apLicense && method_exists($apLicense, 'getOrganizationLicense')) ? $apLicense->getOrganizationLicense() : -1;
+	if (!is_array($license)) {
+		print '<tr class="oddeven"><td colspan="2"><span class="opacitymedium">' . $langs->trans("peppolLicenseUnavailable") . '</span></td></tr>';
+	} else {
+		$signal = peppolLicenseSignal($license);
+		print '<tr class="oddeven"><td class="titlefield">' . $langs->trans("Status") . '</td><td>' . dol_escape_htmltag((string) ($license['status'] ?? '')) . (!empty($license['expirationDate']) ? ' <span class="opacitymedium">(' . $langs->trans("peppolLicenseUntil", dol_escape_htmltag((string) $license['expirationDate'])) . ')</span>' : '') . '</td></tr>';
+		$max = isset($license['messagesLimit']) && $license['messagesLimit'] !== null ? (int) $license['messagesLimit'] : null;
+		print '<tr class="oddeven"><td>' . $langs->trans("peppolLicenseSent") . '</td><td>' . ((int) ($license['messagesSent'] ?? 0)) . ' / ' . ($max === null ? $langs->trans("peppolLicenseUnlimited") : $max);
+		if ($signal === 'limit') {
+			print ' ' . img_warning() . ' <span class="error">' . $langs->trans("peppolLicenseLimitReached") . '</span>';
+		} elseif ($signal === 'near') {
+			print ' ' . img_warning() . ' <span class="warning">' . $langs->trans("peppolLicenseNearLimit") . '</span>';
+		}
+		print '</td></tr>';
+		$storage = isset($license['storageLimitBytes']) && $license['storageLimitBytes'] !== null ? dol_print_size((int) $license['storageLimitBytes']) : $langs->trans("peppolLicenseUnlimited");
+		print '<tr class="oddeven"><td>' . $langs->trans("peppolLicenseStorage") . '</td><td>' . dol_print_size((int) ($license['storageUsedBytes'] ?? 0)) . ' / ' . $storage . '</td></tr>';
+	}
 	print '</table>';
 
 	print '<div class="tabsAction">';

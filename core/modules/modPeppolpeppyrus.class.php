@@ -59,7 +59,7 @@ class modPeppolpeppyrus extends DolibarrModules
 		$this->editor_url = 'https://github.com/RealRidrick/dolibarr_peppol-peppyrus';
 
 		// Possible values for version are: 'development', 'experimental', 'dolibarr', 'dolibarr_deprecated' or a version string like 'x.y.z'
-		$this->version = '2.11.1';
+		$this->version = '2.12.0';
 		// File with the latest version number (VERSION in the public repository), read by checkForUpdate()
 		$this->url_last_version = 'https://raw.githubusercontent.com/RealRidrick/dolibarr_peppol-peppyrus/main/VERSION';
 
@@ -282,6 +282,21 @@ class modPeppolpeppyrus extends DolibarrModules
 				'test' => 'isModEnabled("peppolpeppyrus")',
 				'priority' => 60,
 			),
+			// Since 2.12.0: invoices Peppyrus could not deliver (folder FAILED)
+			3 => array(
+				'label' => 'Peppol: daily check of invoices the access point could not deliver',
+				'jobtype' => 'method',
+				'class' => '/peppolpeppyrus/class/peppolfailedcheck.class.php',
+				'objectname' => 'PeppolFailedCheck',
+				'method' => 'runDailyCheck',
+				'parameters' => '',
+				'comment' => 'Reads the folder FAILED at the access point. For each own invoice that could not be delivered: one line "failed" on the Peppol tab of the invoice and, with the agenda on, an event on the invoice. The user of the job needs the right Peppol: read.',
+				'frequency' => 1,
+				'unitfrequency' => 86400,
+				'status' => 1,
+				'test' => 'isModEnabled("peppolpeppyrus")',
+				'priority' => 50,
+			),
 		);
 		// Example: $this->cronjobs=array(
 		//    0=>array('label'=>'My label', 'jobtype'=>'method', 'class'=>'/dir/class/file.class.php', 'objectname'=>'MyClass', 'method'=>'myMethod', 'parameters'=>'param1, param2', 'comment'=>'Comment', 'frequency'=>2, 'unitfrequency'=>3600, 'status'=>0, 'test'=>'$conf->peppolpeppyrus->enabled', 'priority'=>50),
@@ -412,6 +427,10 @@ class modPeppolpeppyrus extends DolibarrModules
 		$result = $extrafields->addExtraField('peppol_id',  $langs->trans('PeppolSpecificID'),    		'varchar', 1101, 100, 'thirdparty', 0, 0, '', null, 1, '', 1, $langs->trans('PeppolSpecificIDTooltip'), '', '', 'peppol@peppolpeppyrus', '$conf->peppolpeppyrus->enabled');
 		$result = $extrafields->addExtraField('peppol_id',  $langs->trans('PeppolSpecificInvoiceID'),   'varchar', 1101, 100, 'facture', 0, 0, '', null, 0, '', 5, $langs->trans('PeppolSpecificInvoiceIDTooltip'), '', '', 'peppol@peppolpeppyrus', '$conf->peppolpeppyrus->enabled');
 		$result = $extrafields->addExtraField('peppol_id',  $langs->trans('PeppolSpecificInvoiceID'),   'varchar', 1101, 100, 'facture_fourn', 0, 0, '', null, 0, '', 5, $langs->trans('PeppolSpecificInvoiceIDTooltip'), '', '', 'peppol@peppolpeppyrus', '$conf->peppolpeppyrus->enabled');
+
+		// Since 2.12.0 no webhook any more (Peppyrus has no webhooks): remove its secret key
+		require_once DOL_DOCUMENT_ROOT . '/core/lib/admin.lib.php';
+		dolibarr_del_const($this->db, 'PEPPOL_AP_WEBHOOK_KEY', $conf->entity);
 
 		// Permissions
 		$this->remove($options);

@@ -7,7 +7,7 @@
 use PHPUnit\Framework\TestCase;
 
 /**
- * Tests of the search, matching, webhook and request helpers of the module
+ * Tests of the search, matching and request helpers of the module
  */
 class PeppolLibTest extends TestCase
 {
@@ -119,33 +119,6 @@ class PeppolLibTest extends TestCase
 		$this->assertStringContainsString('NL', peppolSchemeLabel('9944'));
 		$this->assertSame('', peppolSchemeLabel('1234'));
 		$this->assertSame('', peppolSchemeLabel('abc'));
-	}
-
-	/**
-	 * The webhook only accepts a document addressed to the Peppol ID of the entity
-	 *
-	 * @return void
-	 */
-	public function testWebhookReceiverMatches()
-	{
-		global $conf;
-		$conf->global->PEPPOL_AP_SENDER_ID = '0208:0475670182';
-		$conf->modules = array();
-		$this->assertTrue(peppolWebhookReceiverMatches('0208:0475670182'));
-		$this->assertTrue(peppolWebhookReceiverMatches('iso6523-actorid-upis::0208:0475670182'));
-		$this->assertTrue(peppolWebhookReceiverMatches('0475670182'));
-		$this->assertFalse(peppolWebhookReceiverMatches('9925:0475670182'));
-		$this->assertFalse(peppolWebhookReceiverMatches('0208:0111111111'));
-		// Without Multicompany an empty receiver is accepted (only one company can be meant)
-		$this->assertTrue(peppolWebhookReceiverMatches(''));
-
-		// With Multicompany: no own Peppol ID or no receiver is refused
-		$conf->modules = array('multicompany' => 'multicompany');
-		$this->assertFalse(peppolWebhookReceiverMatches(''));
-		$conf->global->PEPPOL_AP_SENDER_ID = '';
-		$this->assertFalse(peppolWebhookReceiverMatches('0208:0475670182'));
-		$conf->modules = array();
-		unset($conf->global->PEPPOL_AP_SENDER_ID);
 	}
 
 	/**
@@ -269,5 +242,32 @@ class PeppolLibTest extends TestCase
 		$inv = new stdClass();
 		$inv->id = 0;
 		$this->assertFalse(peppolUserCanReadInvoice(new stdClass(), $inv));
+	}
+
+	/**
+	 * Peppyrus report, failed deliveries and the signal for the plan (since 2.12.0)
+	 *
+	 * @return void
+	 */
+	public function testReportFailedLicense()
+	{
+		$r = peppolReportRules(array('validationRules' => array(array('id' => 'BR-01', 'type' => 'fatal', 'location' => '/Invoice', 'message' => 'x'), array('id' => 'W1', 'type' => 'WARNING'), 'onzin'), 'transmissionRules' => 'AS4 ok'));
+		$this->assertSame(1, $r['fatal']);
+		$this->assertSame(1, $r['warnings']);
+		$this->assertCount(2, $r['rules']);
+		$this->assertSame('FATAL', $r['rules'][0]['type']);
+		$this->assertSame('AS4 ok', $r['transport']);
+		$this->assertSame(array('rules' => array(), 'transport' => '', 'fatal' => 0, 'warnings' => 0), peppolReportRules(-404));
+
+		$failed = array(array('id' => 'a', 'created' => '2026-11-10'), array('id' => 'b', 'created' => ''), array('id' => 'c', 'created' => ''), array('id' => 'a2', 'created' => ''));
+		$invoices = array('a' => 10, 'b' => 11, 'a2' => 10);
+		$toReport = peppolFailedToReport($failed, $invoices, array(11 => true));
+		// c is not an own invoice, b is already reported, invoice 10 only once
+		$this->assertSame(array(array('invoice' => 10, 'id' => 'a', 'created' => '2026-11-10')), $toReport);
+
+		$this->assertSame('', peppolLicenseSignal(array('messagesSent' => 500, 'messagesLimit' => null)));
+		$this->assertSame('limit', peppolLicenseSignal(array('messagesSent' => 100, 'messagesLimit' => 100)));
+		$this->assertSame('near', peppolLicenseSignal(array('messagesSent' => 90, 'messagesLimit' => 100)));
+		$this->assertSame('', peppolLicenseSignal(array('messagesSent' => 10, 'messagesLimit' => 100)));
 	}
 }

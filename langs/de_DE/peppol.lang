@@ -74,8 +74,6 @@ PEPPOL_AP_API_KEY = Peppyrus API-Schlüssel (Produktion)
 PEPPOL_AP_API_KEYTooltip = Ihr Schlüssel zur Verbindung mit der Peppyrus-API im PRODUKTIONS-Modus. Dieser Schlüssel wird von Peppyrus bereitgestellt.
 PEPPOL_AP_API_KEY_DEV = Peppyrus API-Schlüssel (Test/DEV)
 PEPPOL_AP_API_KEY_DEVTooltip = Ihr Schlüssel zur Verbindung mit der Peppyrus-API im TEST-Modus. Verwenden Sie diesen Schlüssel für Tests in der Entwicklungsumgebung.
-PEPPOL_AP_WEBHOOK_KEY = Geheimer Webhook-Schlüssel
-PEPPOL_AP_WEBHOOK_KEYTooltip = Geheimer Schlüssel zur Prüfung der Signatur (HMAC) von Webhook-Aufrufen. Ohne diesen Schlüssel lehnt der Webhook jeden Aufruf ab.
 PeppolSecretConfigured = Konfiguriert (verborgen)
 PeppolSecretKeepCurrent = Leer lassen, um den aktuellen Schlüssel zu behalten
 peppolBtnSend = Peppol: Senden
@@ -158,7 +156,6 @@ PeppolErrorNeedPDF = Die PDF-Datei der Rechnung scheint nicht vorhanden zu sein!
 #
 # Peppyrus API - Funktionen
 #
-peppolReportSuccess = Lieferbericht abgerufen
 peppolReportError = Fehler beim Abrufen des Berichts
 peppolReportErrorNoMessageId = Nachrichten-ID fehlt
 peppolReportNotFound = Bericht nicht gefunden
@@ -231,3 +228,24 @@ peppolCandidateCheckErrors = The Peppol directory could not be reached (%s time)
 PeppolErrorStatusNotEligible = Nur validierte oder bezahlte Rechnungen und Gutschriften können über Peppol gesendet werden.
 PEPPOL_EMBED_PDF = PDF in die Peppol-Datei einbetten
 PEPPOL_EMBED_PDFTooltip = Bei Peppol ist die Nachricht selbst die Rechnung; das PDF ist optional. Jeder Access Point auf dem Weg erhält eine Kopie der Nachricht. Wählen Sie Nein, wenn das PDF Daten enthält, die der Empfänger zur Freigabe der Rechnung nicht braucht, etwa Gesundheits- oder Personendaten.
+# Since 2.12.0
+peppolReportTransmission = Übertragung
+peppolReportValidation = Prüfung bei Peppyrus
+peppolReportNone = (noch) keine Angaben
+peppolReportNoRules = keine Hinweise
+peppolReportRule = Regel
+peppolReportLocation = Stelle
+peppolSendFailedAtAp = Peppol: der Access Point konnte diese Rechnung nicht zustellen (Ordner FAILED). Prüfen Sie die Peppol-ID des Kunden und senden Sie erneut, oder senden Sie die Rechnung auf anderem Weg.
+peppolSendFailedShort = Peppol: Rechnung nicht zugestellt
+peppolFailedCheckResult = %s Rechnung(en) neu gefunden, die nicht zugestellt werden konnten.
+peppolFailedCheckNoRight = Der Benutzer der geplanten Aufgabe hat kein Recht, Peppol zu lesen (Peppol: lesen).
+peppolFailedCheckNoAnswer = Der Access Point hat nicht geantwortet; die Prüfung wird beim nächsten Mal wiederholt.
+peppolErrorLimitReached = Die maximale Anzahl Nachrichten Ihres Peppyrus-Abonnements ist für diesen Monat erreicht (HTTP 402). Es wurde nichts gesendet.
+peppolLicenseTitle = Peppyrus-Abonnement
+peppolLicenseUnavailable = Das Abonnement konnte nicht abgerufen werden (kein API-Schlüssel oder keine Verbindung).
+peppolLicenseUntil = bis %s
+peppolLicenseSent = Diesen Monat gesendet
+peppolLicenseUnlimited = unbegrenzt
+peppolLicenseLimitReached = Maximum erreicht: Peppyrus lehnt diesen Monat neue Nachrichten ab
+peppolLicenseNearLimit = fast am Maximum
+peppolLicenseStorage = Speicher

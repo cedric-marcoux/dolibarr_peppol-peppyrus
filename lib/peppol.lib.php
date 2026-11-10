@@ -373,35 +373,6 @@ function peppol_sessie_terug()
 }
 
 /**
- * Check that a receiver Peppol ID is the Peppol ID configured for the current entity (PEPPOL_AP_SENDER_ID).
- * Accepted forms: "0208:0123456789" or "iso6523-actorid-upis::0208:0123456789"; comparison is case-insensitive.
- * Without Multicompany an unknown own ID or an empty receiver is accepted (only one company can be meant).
- *
- * @param	string	$receiverId		Receiver ID from the webhook headers
- * @return	bool
- */
-function peppolWebhookReceiverMatches($receiverId)
-{
-	$own = getDolGlobalString('PEPPOL_AP_SENDER_ID');
-	$multicompany = isModEnabled('multicompany');
-	if ($own === '' || $receiverId === '') {
-		return !$multicompany;
-	}
-	$normalize = function ($id) {
-		$id = strtoupper(trim(preg_replace('/^.*::/', '', (string) $id)));
-		$parts = explode(':', $id);
-		$value = array_pop($parts);
-		return array('scheme' => (count($parts) ? end($parts) : ''), 'value' => preg_replace('/[^A-Z0-9]/', '', $value));
-	};
-	$a = $normalize($own);
-	$b = $normalize($receiverId);
-	if ($a['value'] === '' || $a['value'] !== $b['value']) {
-		return false;
-	}
-	return ($a['scheme'] === '' || $b['scheme'] === '' || $a['scheme'] === $b['scheme']);
-}
-
-/**
  * Check the anti-CSRF token of a request that changes data through a link (GET)
  *
  * @return	bool	true if the token sent with the request is the current session token
@@ -947,4 +918,80 @@ function peppolObjectIsInUserEntities($object)
 	}
 	$entities = array_map('intval', explode(',', getEntity($object->element)));
 	return in_array((int) $object->entity, $entities, true);
+}
+
+/**
+ * The report of a sent message at Peppyrus (GET message/{id}/report) in a fixed form (since 2.12.0): the validation
+ * rules (FATAL or WARNING) and the transmission rules. Peppyrus returns validationRules (id, type, location, message)
+ * and transmissionRules (text); unknown or missing fields become empty.
+ *
+ * @param	mixed	$report		The report (decoded JSON)
+ * @return	array{rules:array<int,array{type:string,id:string,location:string,message:string}>,transport:string,fatal:int,warnings:int}
+ */
+function peppolReportRules($report)
+{
+	$out = array('rules' => array(), 'transport' => '', 'fatal' => 0, 'warnings' => 0);
+	if (!is_array($report)) {
+		return $out;
+	}
+	foreach ((array) ($report['validationRules'] ?? array()) as $r) {
+		if (!is_array($r)) {
+			continue;
+		}
+		$type = strtoupper((string) ($r['type'] ?? ''));
+		$type = in_array($type, array('FATAL', 'WARNING'), true) ? $type : '';
+		$out['rules'][] = array('type' => $type, 'id' => (string) ($r['id'] ?? ''), 'location' => (string) ($r['location'] ?? ''), 'message' => (string) ($r['message'] ?? ''));
+		if ($type === 'FATAL') {
+			$out['fatal']++;
+		} elseif ($type === 'WARNING') {
+			$out['warnings']++;
+		}
+	}
+	$transport = $report['transmissionRules'] ?? '';
+	$out['transport'] = is_scalar($transport) ? (string) $transport : (string) json_encode($transport);
+	return $out;
+}
+
+
+/**
+ * Which failed messages (folder FAILED at Peppyrus) still have to be reported (since 2.12.0): only those of an own
+ * invoice that is not yet marked as failed in the Peppol log of that invoice. One report per invoice.
+ *
+ * @param	array<int,array{id:string,created:string}>	$failed		Failed messages from Peppyrus
+ * @param	array<string,int>							$invoices	Message id => invoice id (own invoices)
+ * @param	array<int,bool>								$reported		Invoice id => already reported
+ * @return	array<int,array{invoice:int,id:string,created:string}>
+ */
+function peppolFailedToReport($failed, $invoices, $reported)
+{
+	$out = array();
+	foreach ($failed as $f) {
+		$id = (string) ($f['id'] ?? '');
+		$fid = (int) ($invoices[$id] ?? 0);
+		if ($id === '' || $fid <= 0 || !empty($reported[$fid]) || isset($out[$fid])) {
+			continue;
+		}
+		$out[$fid] = array('invoice' => $fid, 'id' => $id, 'created' => (string) ($f['created'] ?? ''));
+	}
+	return array_values($out);
+}
+
+/**
+ * Signal for the Peppyrus plan (since 2.12.0): "limit" when the maximum number of sent messages this month is reached
+ * (Peppyrus then refuses with HTTP 402), "near" from 90%, otherwise empty. Without a maximum always empty.
+ *
+ * @param	array<string,mixed>	$license	From GET organization/license
+ * @return	string
+ */
+function peppolLicenseSignal($license)
+{
+	$max = $license['messagesLimit'] ?? null;
+	if ($max === null || (int) $max <= 0) {
+		return '';
+	}
+	$sent = (int) ($license['messagesSent'] ?? 0);
+	if ($sent >= (int) $max) {
+		return 'limit';
+	}
+	return $sent >= 0.9 * (int) $max ? 'near' : '';
 }

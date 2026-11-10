@@ -100,6 +100,10 @@ This module allows sending electronic invoices via the PEPPOL network using the 
 
 Billing > Peppol > Peppol candidates lists customers and suppliers without a Peppol ID that a weekly scheduled job found in the Peppol directory by VAT number or registration number (never by name). Select the right ID and link it to the third party. Requires the module "Scheduled jobs" and the Dolibarr cron script on the server.
 
+## Daily check of failed deliveries
+
+A daily scheduled job ("Peppol: daily check of invoices the access point could not deliver") reads the folder FAILED at Peppyrus. For each own invoice that could not be delivered, one line "failed" is added to the Peppol tab of the invoice and, with the agenda on, an event on the invoice. The invoice itself does not change. The user of the scheduled job needs the right "Peppol: read".
+
 ## Daily fetch of incoming documents
 
 A daily scheduled job ("Peppol: daily fetch of incoming documents from the access point") fetches the new documents from the access point into Billing > Peppol > Incoming documents and confirms them at the access point, as the button "Refresh" on that page does. It does not create, validate or pay supplier invoices. A document whose download or confirmation failed stays unconfirmed at the access point and is tried again the next day. The user of the scheduled job needs the right "Peppol: write". The time of the last fetch is shown on the page. The job result and the log hold counts only. Requires the module "Scheduled jobs" and the Dolibarr cron script on the server.
@@ -173,7 +177,7 @@ Optional, for the maintainer of this fork only: extra security and language chec
 
 ## Standard and deliberate deviations
 
-The module follows the rules of DoliMods (code standard, checks above) and an internal security guideline of the maintainer (rights and entity checks, CSRF tokens, escaping, no secrets or personal data in logs, long actions do not block the browser). Comments `beveiliging-uitzondering` mark the three reviewed security exceptions (the HMAC-checked webhook in `public/hook.php` and one SQL filter in `class/peppolimport.class.php`).
+The module follows the rules of DoliMods (code standard, checks above) and an internal security guideline of the maintainer (rights and entity checks, CSRF tokens, escaping, no secrets or personal data in logs, long actions do not block the browser). Comments `beveiliging-uitzondering` mark the reviewed security exception (one SQL filter in `class/peppolimport.class.php`).
 
 Deliberate deviations from that internal guideline, because the module is public and also used by the original author:
 
@@ -233,7 +237,6 @@ Peppyrus provides a separate test environment for development and testing purpos
 3. Configure both keys in the module settings:
    - **PEPPOL_AP_API_KEY**: Production API key
    - **PEPPOL_AP_DEV_API_KEY**: Test/Development API key (formerly PEPPOL_AP_API_KEY_DEV, still read until saved again)
-   - **PEPPOL_AP_WEBHOOK_KEY**: secret key for the webhook signature; without it the webhook refuses every call
    - **PEPPOL_VAT_EXEMPT_CODE**: VAT category of invoice lines at 0% VAT that are not reverse charge and not an intra-community supply: category E with this exemption reason (default VATEX-EU-132-1C, medical care), or "Not subject to VAT" for category O
 
 ### Configuration for Testing

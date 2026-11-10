@@ -223,45 +223,34 @@ if ($id > 0 || !empty($ref)) {
 		$json_pretty = json_encode(json_decode($obj->fulldata), JSON_PRETTY_PRINT);
 
 		print "<p>" . $langs->trans("Details") . " : <br /><pre>" . dol_escape_htmltag($json_pretty) . "</pre></p>";
+	}
 
-		// Display delivery report from Access Point if available
-		$object->fetch_optionals();
-		$peppolMessageId = isset($object->array_options['options_peppol_id']) ? $object->array_options['options_peppol_id'] : '';
-
-		if (!empty($peppolMessageId)) {
-			$ap = peppolGetAPObject();
-			if ($ap && method_exists($ap, 'getMessageReport')) {
-				$report = $ap->getMessageReport($peppolMessageId);
-				if (is_array($report)) {
-					print '<div class="fichecenter" style="margin-top: 20px;">';
-					print '<h3>' . $langs->trans('peppolDeliveryReport') . '</h3>';
-					print '<table class="border centpercent">';
-
-					if (isset($report['status'])) {
-						print '<tr><td class="titlefield">' . $langs->trans('Status') . '</td>';
-						print '<td>' . dol_escape_htmltag($report['status']) . '</td></tr>';
-					}
-					if (isset($report['delivered'])) {
-						print '<tr><td>' . $langs->trans('Delivered') . '</td>';
-						print '<td>' . ($report['delivered'] ? $langs->trans('Yes') : $langs->trans('No')) . '</td></tr>';
-					}
-					if (isset($report['deliveryDate'])) {
-						print '<tr><td>' . $langs->trans('DeliveryDate') . '</td>';
-						print '<td>' . dol_escape_htmltag($report['deliveryDate']) . '</td></tr>';
-					}
-					if (isset($report['recipient'])) {
-						print '<tr><td>' . $langs->trans('Recipient') . '</td>';
-						print '<td>' . dol_escape_htmltag($report['recipient']) . '</td></tr>';
-					}
-					if (isset($report['error'])) {
-						print '<tr><td>' . $langs->trans('Error') . '</td>';
-						print '<td class="error">' . dol_escape_htmltag($report['error']) . '</td></tr>';
-					}
-
-					print '</table>';
-					print '</div>';
+	// Since 2.12.0: the Peppyrus report once (not per log line), with the fields Peppyrus really returns: the validation
+	// rules (FATAL or WARNING) and the transmission rules
+	$object->fetch_optionals();
+	$peppolMessageId = isset($object->array_options['options_peppol_id']) ? (string) $object->array_options['options_peppol_id'] : '';
+	if ($peppolMessageId !== '') {
+		$ap = peppolGetAPObject();
+		if ($ap && method_exists($ap, 'getMessageReport')) {
+			$report = peppolReportRules($ap->getMessageReport($peppolMessageId));
+			print '<div class="fichecenter" style="margin-top: 20px;">';
+			print '<h3>' . $langs->trans('peppolDeliveryReport') . '</h3>';
+			print '<table class="border centpercent">';
+			print '<tr><td class="titlefield">' . $langs->trans('peppolReportTransmission') . '</td><td>' . ($report['transport'] !== '' ? dol_escape_htmltag($report['transport']) : '<span class="opacitymedium">' . $langs->trans('peppolReportNone') . '</span>') . '</td></tr>';
+			print '<tr><td>' . $langs->trans('peppolReportValidation') . '</td><td>';
+			if (empty($report['rules'])) {
+				print img_picto('', 'tick') . ' ' . $langs->trans('peppolReportNoRules');
+			} else {
+				print '<table class="noborder centpercent"><tr class="liste_titre"><th>' . $langs->trans('Type') . '</th><th>' . $langs->trans('peppolReportRule') . '</th><th>' . $langs->trans('peppolReportLocation') . '</th><th>' . $langs->trans('Message') . '</th></tr>';
+				foreach ($report['rules'] as $r) {
+					print '<tr class="oddeven"><td class="nowraponall' . ($r['type'] === 'FATAL' ? ' error' : '') . '">' . dol_escape_htmltag($r['type']) . '</td><td class="nowraponall">' . dol_escape_htmltag($r['id']) . '</td>';
+					print '<td class="small">' . dol_escape_htmltag($r['location']) . '</td><td>' . dol_escape_htmltag($r['message']) . '</td></tr>';
 				}
+				print '</table>';
 			}
+			print '</td></tr>';
+			print '</table>';
+			print '</div>';
 		}
 	}
 

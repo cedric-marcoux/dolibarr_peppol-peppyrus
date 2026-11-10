@@ -74,8 +74,6 @@ PEPPOL_AP_API_KEY = Clé API Peppyrus (Production)
 PEPPOL_AP_API_KEYTooltip = Votre clé pour vous connecter à l'API Peppyrus en mode PRODUCTION. Cette clé vous est fournie par Peppyrus.
 PEPPOL_AP_API_KEY_DEV = Clé API Peppyrus (Test/DEV)
 PEPPOL_AP_API_KEY_DEVTooltip = Votre clé pour vous connecter à l'API Peppyrus en mode TEST. Utilisez cette clé pour vos tests sur l'environnement de développement.
-PEPPOL_AP_WEBHOOK_KEY = Clé secrète du webhook
-PEPPOL_AP_WEBHOOK_KEYTooltip = Clé secrète servant à vérifier la signature (HMAC) des appels webhook. Sans cette clé, le webhook refuse tout appel.
 PeppolSecretConfigured = Configurée (masquée)
 PeppolSecretKeepCurrent = Laisser vide pour conserver la clé actuelle
 peppolBtnSend = Peppol : Envoyer
@@ -158,7 +156,6 @@ PeppolErrorNeedPDF = Le fichier PDF de la facture ne semble pas être présent !
 #
 # Peppyrus API - Fonctionnalités
 #
-peppolReportSuccess = Rapport de livraison récupéré
 peppolReportError = Erreur lors de la récupération du rapport
 peppolReportErrorNoMessageId = ID du message manquant
 peppolReportNotFound = Rapport non trouvé
@@ -395,3 +392,24 @@ peppolDolibarrRecommended = Dolibarr %s avec PHP %s : le module fonctionne, mais
 PeppolErrorStatusNotEligible = Seules les factures et notes de crédit validées ou payées peuvent être envoyées via Peppol.
 PEPPOL_EMBED_PDF = Joindre le PDF au fichier Peppol
 PEPPOL_EMBED_PDFTooltip = Dans Peppol, le message est lui-même la facture ; le PDF est facultatif. Chaque point d'accès sur le trajet reçoit une copie du message. Choisissez Non si le PDF contient des données dont le destinataire n'a pas besoin pour approuver la facture, par exemple des données de santé ou personnelles.
+# Since 2.12.0
+peppolReportTransmission = Transmission
+peppolReportValidation = Contrôle chez Peppyrus
+peppolReportNone = pas (encore) d'information
+peppolReportNoRules = aucune remarque
+peppolReportRule = Règle
+peppolReportLocation = Emplacement
+peppolSendFailedAtAp = Peppol : le point d'accès n'a pas pu livrer cette facture (dossier FAILED). Vérifiez l'identifiant Peppol du client et renvoyez-la, ou envoyez la facture autrement.
+peppolSendFailedShort = Peppol : facture non livrée
+peppolFailedCheckResult = %s facture(s) nouvellement trouvée(s) qui n'ont pas pu être livrées.
+peppolFailedCheckNoRight = L'utilisateur de la tâche planifiée n'a pas le droit de lire Peppol (Peppol : lire).
+peppolFailedCheckNoAnswer = Le point d'accès n'a pas répondu ; le contrôle sera refait la prochaine fois.
+peppolErrorLimitReached = Le nombre maximum de messages de votre abonnement Peppyrus est atteint pour ce mois (HTTP 402). Rien n'a été envoyé.
+peppolLicenseTitle = Abonnement Peppyrus
+peppolLicenseUnavailable = L'abonnement n'a pas pu être récupéré (pas de clé API ou pas de connexion).
+peppolLicenseUntil = jusqu'au %s
+peppolLicenseSent = Envoyés ce mois-ci
+peppolLicenseUnlimited = illimité
+peppolLicenseLimitReached = maximum atteint : Peppyrus refuse les nouveaux messages ce mois-ci
+peppolLicenseNearLimit = presque au maximum
+peppolLicenseStorage = Stockage

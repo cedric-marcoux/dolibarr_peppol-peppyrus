@@ -88,8 +88,6 @@ PEPPOL_AP_API_KEY = Peppyrus API-sleutel (productie)
 PEPPOL_AP_API_KEYTooltip = Sleutel voor de verbinding met de Peppyrus-API in productie. Deze sleutel ontvangt u van Peppyrus.
 PEPPOL_AP_API_KEY_DEV = Peppyrus API-sleutel (test)
 PEPPOL_AP_API_KEY_DEVTooltip = Sleutel voor de verbinding met de Peppyrus-API in de testomgeving.
-PEPPOL_AP_WEBHOOK_KEY = Geheime sleutel webhook
-PEPPOL_AP_WEBHOOK_KEYTooltip = Geheime sleutel waarmee de handtekening (HMAC) van webhook-aanroepen wordt gecontroleerd. Zonder deze sleutel weigert de webhook elke aanroep.
 PeppolSecretConfigured = Ingesteld (verborgen)
 PeppolSecretKeepCurrent = Leeg laten om de huidige sleutel te behouden
 PEPPOL_AP_SENDER_ID = Peppol-ID van uw onderneming
@@ -223,7 +221,6 @@ peppolSearchNotAvailable = Zoeken in de directory is bij dit accesspoint niet be
 #
 # Peppyrus-API: functies
 #
-peppolReportSuccess = Afleverrapport opgehaald
 peppolReportError = Fout bij het ophalen van het rapport
 peppolReportErrorNoMessageId = Bericht-ID ontbreekt
 peppolReportNotFound = Rapport niet gevonden
@@ -453,3 +450,24 @@ peppolDolibarrRecommended = Dolibarr %s met PHP %s: de module werkt, maar Doliba
 PeppolErrorStatusNotEligible = Alleen gevalideerde of betaalde facturen en creditnota's kunnen via Peppol worden verstuurd.
 PEPPOL_EMBED_PDF = PDF meesturen in het Peppol-bestand
 PEPPOL_EMBED_PDFTooltip = In Peppol is het bericht zelf de factuur; de PDF is niet verplicht. Elk accesspoint onderweg krijgt een kopie van het bericht. Kies Nee als op de PDF gegevens staan die de ontvanger niet nodig heeft om de factuur goed te keuren, zoals zorg- of persoonsgegevens.
+# Since 2.12.0
+peppolReportTransmission = Transport
+peppolReportValidation = Controle bij Peppyrus
+peppolReportNone = (nog) geen gegevens
+peppolReportNoRules = geen opmerkingen
+peppolReportRule = Regel
+peppolReportLocation = Plaats
+peppolSendFailedAtAp = Peppol: het accesspoint kon deze factuur niet afleveren (map FAILED). Controleer het Peppol-ID van de klant en verstuur opnieuw, of verstuur de factuur op een andere manier.
+peppolSendFailedShort = Peppol: factuur niet afgeleverd
+peppolFailedCheckResult = %s factuur/facturen nieuw gevonden die niet konden worden afgeleverd.
+peppolFailedCheckNoRight = De gebruiker van de geplande taak heeft geen recht om Peppol te lezen (Peppol: lezen).
+peppolFailedCheckNoAnswer = Het accesspoint gaf geen antwoord; de controle gebeurt de volgende keer opnieuw.
+peppolErrorLimitReached = Het maximum aantal berichten van uw abonnement bij Peppyrus is deze maand bereikt (HTTP 402). Er is niets verstuurd.
+peppolLicenseTitle = Abonnement bij Peppyrus
+peppolLicenseUnavailable = Het abonnement kon niet worden opgehaald (geen API-sleutel of geen verbinding).
+peppolLicenseUntil = tot %s
+peppolLicenseSent = Verstuurd deze maand
+peppolLicenseUnlimited = onbeperkt
+peppolLicenseLimitReached = maximum bereikt: Peppyrus weigert deze maand nieuwe berichten
+peppolLicenseNearLimit = bijna het maximum
+peppolLicenseStorage = Opslag

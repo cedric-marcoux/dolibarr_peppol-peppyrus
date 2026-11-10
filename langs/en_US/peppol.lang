@@ -71,8 +71,6 @@ PEPPOL_AP_API_KEY = Peppyrus API Key (Production)
 PEPPOL_AP_API_KEYTooltip = Your key to connect to the Peppyrus API in PRODUCTION mode. This key is provided by Peppyrus.
 PEPPOL_AP_API_KEY_DEV = Peppyrus API Key (Test/DEV)
 PEPPOL_AP_API_KEY_DEVTooltip = Your key to connect to the Peppyrus API in TEST mode. Use this key to test on the development environment.
-PEPPOL_AP_WEBHOOK_KEY = Webhook secret key
-PEPPOL_AP_WEBHOOK_KEYTooltip = Secret key used to verify the signature (HMAC) of webhook calls. Without this key the webhook refuses every call.
 PeppolSecretConfigured = Configured (hidden)
 PeppolSecretKeepCurrent = Leave empty to keep the current key
 peppolBtnSend = Peppol : Send
@@ -155,7 +153,6 @@ PeppolErrorNeedPDF = The invoice PDF file does not seem to be present!
 #
 # Peppyrus API - Features
 #
-peppolReportSuccess = Delivery report retrieved
 peppolReportError = Error retrieving report
 peppolReportErrorNoMessageId = Missing message ID
 peppolReportNotFound = Report not found
@@ -437,3 +434,24 @@ peppolDolibarrRecommended = Dolibarr %s with PHP %s: the module works, but Dolib
 PeppolErrorStatusNotEligible = Only validated or paid invoices and credit notes can be sent through Peppol.
 PEPPOL_EMBED_PDF = Embed the PDF in the Peppol file
 PEPPOL_EMBED_PDFTooltip = In Peppol the message itself is the invoice; the PDF is optional. Every access point on the route gets a copy of the message. Choose No when the PDF holds data the recipient does not need to approve the invoice, such as care or personal data.
+# Since 2.12.0
+peppolReportTransmission = Transmission
+peppolReportValidation = Validation at Peppyrus
+peppolReportNone = no information (yet)
+peppolReportNoRules = no remarks
+peppolReportRule = Rule
+peppolReportLocation = Location
+peppolSendFailedAtAp = Peppol: the access point could not deliver this invoice (folder FAILED). Check the Peppol ID of the customer and send again, or send the invoice in another way.
+peppolSendFailedShort = Peppol: invoice not delivered
+peppolFailedCheckResult = %s invoice(s) newly found that could not be delivered.
+peppolFailedCheckNoRight = The user of the scheduled job has no right to read Peppol (Peppol: read).
+peppolFailedCheckNoAnswer = The access point did not answer; the check is done again next time.
+peppolErrorLimitReached = The maximum number of messages of your Peppyrus plan is reached for this month (HTTP 402). Nothing was sent.
+peppolLicenseTitle = Peppyrus plan
+peppolLicenseUnavailable = The plan could not be retrieved (no API key or no connection).
+peppolLicenseUntil = until %s
+peppolLicenseSent = Sent this month
+peppolLicenseUnlimited = unlimited
+peppolLicenseLimitReached = maximum reached: Peppyrus refuses new messages this month
+peppolLicenseNearLimit = almost at the maximum
+peppolLicenseStorage = Storage
