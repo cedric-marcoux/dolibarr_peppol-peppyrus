@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.11.1
+
+- **Module enabled check on every page.** The Peppol directory search, the Peppol list and the Peppol ID search now check themselves that the module is enabled (`isModEnabled()`), like the other pages. The permission of the module was already checked, so a user without that permission could not open these pages before either.
+
+**After updating:** replace the module files and flush memcached; deactivating and reactivating is not needed.
+
 ## 2.11.0
 
 Security and privacy fixes, and the bug fixes of the original module (Cedric Marcoux, version 2.3.1). Not taken over: the Updates tab (it installs versions from the original repository and would replace this fork) and the disclaimer.

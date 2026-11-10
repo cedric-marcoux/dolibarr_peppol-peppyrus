@@ -72,6 +72,9 @@ $sortorder = GETPOST('sortorder', 'aZ09comma');
 $hookmanager->initHooks(array('peppollist'));
 
 // Security check
+if (!isModEnabled('peppolpeppyrus')) {
+	accessforbidden();
+}
 $result = restrictedArea($user, 'peppolpeppyrus');
 
 // List of fields to show in the list

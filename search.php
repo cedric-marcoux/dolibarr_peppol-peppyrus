@@ -75,6 +75,9 @@ if (!in_array($backto, array('card', 'comm', 'fourn'))) {
 $backurl = peppolThirdpartyBackUrl((int) $socid, $backto);
 
 // Security check
+if (!isModEnabled('peppolpeppyrus')) {
+	accessforbidden();
+}
 $result = restrictedArea($user, 'peppolpeppyrus');
 
 // Load third party if socid is provided

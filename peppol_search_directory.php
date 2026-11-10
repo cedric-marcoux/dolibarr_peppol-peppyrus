@@ -66,6 +66,9 @@ $search_country = GETPOST('search_country', 'aZ09');
 $socid = GETPOST('socid', 'int');
 
 // Security check
+if (!isModEnabled('peppolpeppyrus')) {
+	accessforbidden();
+}
 $result = restrictedArea($user, 'peppolpeppyrus');
 
 // Load third party if socid is provided
