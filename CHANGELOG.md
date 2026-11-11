@@ -11,6 +11,9 @@
 - **Credit notes of suppliers can be booked.** Book now turns a Peppol credit note into a supplier credit note of the credited supplier invoice (same supplier, invoice number from `BillingReference`). Lines and VAT come from the e-invoice; Dolibarr makes the amounts negative. It is validated when the total matches. Without that invoice, or without a reference, a message and nothing is created, unless `INVOICE_CREDIT_NOTE_STANDALONE` is on (the same rule as Dolibarr itself).
 - **Fixed: the card of an incoming document said "Access denied"** without the module Multicompany. The entity of the document was not read, so the entity check always refused.
 
+- **Incoming documents: status filter "To process"**, the default. It shows what is not booked or rejected yet (waiting, analyzed, error, partial). Booked documents are under Success, rejected ones under Canceled, the empty choice shows all. New setting **Incoming documents show by default** (To process, a status, or All). The status "Waiting" is translated, and a canceled document shows "Canceled" instead of "Disabled".
+- **Peppyrus plan:** new line **Received this month** (the INBOX at Peppyrus, also messages already fetched; received messages do not count for the maximum). Storage is readable ("0 B of 25 GB" instead of bytes).
+
 **After updating:** disable and enable the module (Setup, Modules), so the new columns for the answer are added to the database. Without them the card of an incoming document gives an error.
 
 ## 2.12.0

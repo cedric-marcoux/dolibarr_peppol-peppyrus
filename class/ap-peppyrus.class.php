@@ -1117,16 +1117,16 @@ class Peppyrus extends PeppolAP
 	}
 
 	/**
-	 * Outgoing messages in a folder at Peppyrus (since 2.12.0): OUTBOX (waiting), SENT (sent) or FAILED (not
-	 * delivered). Only the id and the date; at most $maxPages pages of 100.
+	 * Messages in a folder at Peppyrus (since 2.12.0): OUTBOX (waiting), SENT (sent) or FAILED (not delivered); since
+	 * 2.13.0 also INBOX (received, also when already fetched). Only the id and the date; at most $maxPages pages of 100.
 	 *
-	 * @param   string  $folder    OUTBOX, SENT or FAILED
+	 * @param   string  $folder    OUTBOX, SENT, FAILED or INBOX
 	 * @param   int     $maxPages  Maximum number of pages
 	 * @return  array<int,array{id:string,created:string}>|int  List, or < 0 on error
 	 */
 	public function getOutgoingFolder($folder, $maxPages = 10)
 	{
-		if (!in_array($folder, array('OUTBOX', 'SENT', 'FAILED'), true)) {
+		if (!in_array($folder, array('OUTBOX', 'SENT', 'FAILED', 'INBOX'), true)) {
 			return -1;
 		}
 		if ($this->validateConfiguration() < 0) {
@@ -1146,7 +1146,7 @@ class Peppyrus extends PeppolAP
 			$json = $response['data'];
 			$items = (is_object($json) && isset($json->items) && is_array($json->items)) ? $json->items : array();
 			foreach ($items as $item) {
-				if (is_object($item) && isset($item->id) && (!isset($item->direction) || $item->direction === 'OUT')) {
+				if (is_object($item) && isset($item->id) && (!isset($item->direction) || $item->direction === ($folder === 'INBOX' ? 'IN' : 'OUT'))) {
 					$out[] = array('id' => peppolSanitizeIdentifier((string) $item->id), 'created' => isset($item->created) ? (string) $item->created : '');
 				}
 			}

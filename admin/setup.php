@@ -132,6 +132,8 @@ if ($action == 'updateauto' && !empty($user->admin)) {
 	$error += dolibarr_set_const($db, 'PEPPOL_BOOK_CREATE_SUPPLIER', (string) (((int) GETPOST('PEPPOL_BOOK_CREATE_SUPPLIER', 'int')) ? 1 : 0), 'chaine', 0, '', $conf->entity) > 0 ? 0 : 1;
 	$error += dolibarr_set_const($db, 'PEPPOL_BOOK_UPDATE_SUPPLIER', (string) (((int) GETPOST('PEPPOL_BOOK_UPDATE_SUPPLIER', 'int')) ? 1 : 0), 'chaine', 0, '', $conf->entity) > 0 ? 0 : 1;
 	$error += dolibarr_set_const($db, 'PEPPOL_IR_SEND_APPROVAL', (string) (((int) GETPOST('PEPPOL_IR_SEND_APPROVAL', 'int')) ? 1 : 0), 'chaine', 0, '', $conf->entity) > 0 ? 0 : 1;
+	$inboxDefault = GETPOST('PEPPOL_INBOX_DEFAULT_STATUS', 'aZ09');
+	$error += dolibarr_set_const($db, 'PEPPOL_INBOX_DEFAULT_STATUS', isset(peppolInboxDefaultChoices()[$inboxDefault]) ? $inboxDefault : 'open', 'chaine', 0, '', $conf->entity) > 0 ? 0 : 1;
 
 	$error += peppolSetCronJob($db, 'runDailyFetch', ((int) GETPOST('PEPPOL_JOB_FETCH', 'int'))) ? 0 : 1;
 	$error += peppolSetCronJob($db, 'runWeeklyCheck', ((int) GETPOST('PEPPOL_JOB_CANDIDATES', 'int'))) ? 0 : 1;
@@ -414,8 +416,12 @@ if ($action == 'edit') {
 			print ' ' . img_warning() . ' <span class="warning">' . $langs->trans("peppolLicenseNearLimit") . '</span>';
 		}
 		print '</td></tr>';
-		$storage = isset($license['storageLimitBytes']) ? dol_print_size((int) $license['storageLimitBytes']) : $langs->trans("peppolLicenseUnlimited");
-		print '<tr class="oddeven"><td>' . $langs->trans("peppolLicenseStorage") . '</td><td>' . dol_print_size((int) ($license['storageUsedBytes'] ?? 0)) . ' / ' . $storage . '</td></tr>';
+		// Since 2.13.0: received this month (the inbox at Peppyrus, also what was fetched); does not count for the maximum
+		$inbox = method_exists($apLicense, 'getOutgoingFolder') ? $apLicense->getOutgoingFolder('INBOX', 10) : -1;
+		print '<tr class="oddeven"><td>' . $langs->trans("peppolLicenseReceived") . '</td><td>' . (is_array($inbox) ? peppolCountInMonth($inbox, dol_now()) : '<span class="opacitymedium">' . $langs->trans("peppolLicenseReceivedUnknown") . '</span>') . '</td></tr>';
+		// Storage readable (KB, MB, GB) instead of bytes
+		$storage = isset($license['storageLimitBytes']) ? peppolReadableSize((int) $license['storageLimitBytes']) : $langs->trans("peppolLicenseUnlimited");
+		print '<tr class="oddeven"><td>' . $langs->trans("peppolLicenseStorage") . '</td><td>' . $langs->trans("peppolLicenseStorageOf", peppolReadableSize((int) ($license['storageUsedBytes'] ?? 0)), $storage) . '</td></tr>';
 	}
 	print '</table>';
 
@@ -466,6 +472,14 @@ print '<td>' . $yesno('PEPPOL_BOOK_UPDATE_SUPPLIER', getDolGlobalInt('PEPPOL_BOO
 print '<tr class="oddeven"><td><label for="PEPPOL_IR_SEND_APPROVAL">' . $langs->trans('peppolSetupSendApproval') . '</label>';
 print '<br><span class="opacitymedium small">' . $langs->trans('peppolSetupSendApprovalHelp') . '</span></td>';
 print '<td>' . $yesno('PEPPOL_IR_SEND_APPROVAL', getDolGlobalInt('PEPPOL_IR_SEND_APPROVAL', 1)) . '</td></tr>';
+
+print '<tr class="oddeven"><td><label for="PEPPOL_INBOX_DEFAULT_STATUS">' . $langs->trans('peppolSetupInboxDefault') . '</label>';
+print '<br><span class="opacitymedium small">' . $langs->trans('peppolSetupInboxDefaultHelp') . '</span></td>';
+print '<td><select name="PEPPOL_INBOX_DEFAULT_STATUS" id="PEPPOL_INBOX_DEFAULT_STATUS" class="flat">';
+foreach (peppolInboxDefaultChoices() as $k => $label) {
+	print '<option value="' . dol_escape_htmltag((string) $k) . '"' . (getDolGlobalString('PEPPOL_INBOX_DEFAULT_STATUS', 'open') === (string) $k ? ' selected' : '') . '>' . dol_escape_htmltag($langs->transnoentitiesnoconv($label)) . '</option>';
+}
+print '</select></td></tr>';
 
 print '<tr class="liste_titre"><td colspan="2">' . $langs->trans('peppolSetupAutomation') . '</td></tr>';
 

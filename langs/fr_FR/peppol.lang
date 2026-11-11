@@ -480,3 +480,12 @@ peppolOutgoingRejected = Refusée par le client
 # Avoirs des fournisseurs, depuis 2.13.0
 peppolBookCreditNoSource = Cet avoir concerne la facture %s, qui n'est pas comptabilisée pour ce fournisseur. Comptabilisez d'abord cette facture.
 peppolBookCreditNoReference = Cet avoir n'indique pas la facture qu'il corrige. Saisissez-le à la main comme avoir de la facture fournisseur.
+# Abonnement Peppyrus, depuis 2.13.0
+peppolLicenseReceived = Reçus ce mois-ci
+peppolLicenseReceivedUnknown = inconnu (Peppyrus n'a pas répondu)
+peppolLicenseStorageOf = %s sur %s
+# Documents entrants, depuis 2.13.0
+peppolStatusOpen = À traiter
+peppolStatusWaiting = En attente
+peppolSetupInboxDefault = Documents entrants affichés par défaut
+peppolSetupInboxDefaultHelp = Le filtre d'état à l'ouverture de la liste. « À traiter » regroupe tout ce qui n'est pas encore comptabilisé ou refusé (en attente, analysé, erreur, partiel). Les documents comptabilisés ont l'état Succès, les refusés l'état Annulé.

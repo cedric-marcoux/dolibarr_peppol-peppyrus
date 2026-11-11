@@ -1249,3 +1249,81 @@ function peppolSameParticipant($a, $b)
 	$b = peppolSplitParticipant((string) $b);
 	return $a['scheme'] !== '' && $a['value'] !== '' && strtolower($a['scheme']) === strtolower($b['scheme']) && strtolower($a['value']) === strtolower($b['value']);
 }
+
+/**
+ * How many messages in a list of Peppyrus were created in the month of $now (since 2.13.0), for example the
+ * received messages of this month. A message without a readable date does not count.
+ *
+ * @param	array<int,array{id:string,created:string}>	$list	Result of getOutgoingFolder()
+ * @param	int		$now	Moment in the month that counts
+ * @return	int
+ */
+function peppolCountInMonth($list, $now)
+{
+	$maand = dol_print_date($now, '%Y-%m', 'gmt');
+	$n = 0;
+	foreach ($list as $m) {
+		$t = strtotime((string) ($m['created'] ?? ''));
+		if ($t !== false && dol_print_date($t, '%Y-%m', 'gmt') === $maand) {
+			$n++;
+		}
+	}
+	return $n;
+}
+
+/**
+ * A size in bytes, readable, in B, KB, MB, GB or TB (steps of 1024), since 2.13.0
+ *
+ * @param	int		$bytes	Number of bytes
+ * @return	string	For example "0 B", "1.5 MB" or "25 GB"
+ */
+function peppolReadableSize($bytes)
+{
+	$units = array('B', 'KB', 'MB', 'GB', 'TB');
+	$v = max(0, (float) $bytes);
+	$i = 0;
+	while ($v >= 1024 && $i < count($units) - 1) {
+		$v /= 1024;
+		$i++;
+	}
+	$v = round($v, 1);
+	return ($v == floor($v) ? (string) (int) $v : price($v, 0, '', 0, -1, 1)) . ' ' . $units[$i];
+}
+
+/**
+ * Statuses of an incoming document that still has to be processed (since 2.13.0): waiting, analyzed, error and
+ * partial. Booked (success, 2) and rejected (canceled, 9) are not part of it.
+ *
+ * @return int[]
+ */
+function peppolInboxOpenStatuses()
+{
+	return array(0, 1, 3, 5);
+}
+
+/**
+ * Choices for the default status filter of Incoming documents (since 2.13.0), with the language key. The statuses
+ * are digits; PHP turns those keys into integers.
+ *
+ * @return array<int|string,string>
+ */
+function peppolInboxDefaultChoices()
+{
+	return array('open' => 'peppolStatusOpen', 'all' => 'All', '0' => 'peppolStatusWaiting', '1' => 'Analyzed', '3' => 'Error', '5' => 'Partial', '2' => 'Success', '9' => 'Canceled');
+}
+
+/**
+ * The default status filter of Incoming documents from the setup (since 2.13.0): "open" (to process, the default),
+ * a status, or '' for all documents
+ *
+ * @param	string|null	$value	Value of the setting; null reads PEPPOL_INBOX_DEFAULT_STATUS
+ * @return	string
+ */
+function peppolInboxDefaultStatus($value = null)
+{
+	$value = $value === null ? getDolGlobalString('PEPPOL_INBOX_DEFAULT_STATUS', 'open') : (string) $value;
+	if (!isset(peppolInboxDefaultChoices()[$value])) {
+		return 'open';
+	}
+	return $value === 'all' ? '' : $value;
+}

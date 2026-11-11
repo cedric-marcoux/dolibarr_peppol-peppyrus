@@ -537,3 +537,12 @@ peppolOutgoingRejected = Geweigerd door de klant
 # Creditnota's van leveranciers, sinds 2.13.0
 peppolBookCreditNoSource = Deze creditnota hoort bij factuur %s, maar die is bij deze leverancier niet ingeboekt. Boek eerst die factuur in.
 peppolBookCreditNoReference = In deze creditnota staat niet welke factuur wordt gecrediteerd. Boek hem met de hand in als creditnota bij de inkoopfactuur.
+# Abonnement bij Peppyrus, sinds 2.13.0
+peppolLicenseReceived = Ontvangen deze maand
+peppolLicenseReceivedUnknown = onbekend (Peppyrus gaf geen antwoord)
+peppolLicenseStorageOf = %s van %s
+# Inkomende documenten, sinds 2.13.0
+peppolStatusOpen = Te verwerken
+peppolStatusWaiting = Wachtend
+peppolSetupInboxDefault = Inkomende documenten toont standaard
+peppolSetupInboxDefaultHelp = De statusfilter als de lijst wordt geopend. "Te verwerken" is alles wat nog niet is ingeboekt of geweigerd (wachtend, geanalyseerd, fout, gedeeltelijk). Ingeboekte documenten hebben de status Gelukt, geweigerde de status Geannuleerd.

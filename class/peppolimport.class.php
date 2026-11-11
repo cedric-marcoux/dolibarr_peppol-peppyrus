@@ -138,7 +138,7 @@ class Peppolimport extends \CommonObject
 		'fk_user_creat' => array('type' => 'integer:User:user/class/user.class.php', 'label' => 'UserAuthor', 'enabled' => '1', 'position' => 510, 'notnull' => 1, 'visible' => -2, 'foreignkey' => 'user.rowid',),
 		'fk_user_modif' => array('type' => 'integer:User:user/class/user.class.php', 'label' => 'UserModif', 'enabled' => '1', 'position' => 511, 'notnull' => -1, 'visible' => -2,),
 		'import_key' => array('type' => 'varchar(14)', 'label' => 'ImportId', 'enabled' => '1', 'position' => 1000, 'notnull' => -1, 'visible' => 4,),
-		'status' => array('type' => 'smallint', 'label' => 'Status', 'enabled' => '1', 'position' => 1002, 'notnull' => 0, 'visible' => 4, 'index' => 1, 'arrayofkeyval' => array('' => '', self::STATUS_DRAFT => 'Waiting', self::STATUS_VALIDATED => 'Analyzed', self::STATUS_CLOSED => 'Success', self::STATUS_ERROR => 'Error',  self::STATUS_HALFSUCCESS => 'Partial', self::STATUS_CANCELED => 'Canceled'),),
+		'status' => array('type' => 'smallint', 'label' => 'Status', 'enabled' => '1', 'position' => 1002, 'notnull' => 0, 'visible' => 4, 'index' => 1, 'arrayofkeyval' => array('' => '', self::STATUS_DRAFT => 'peppolStatusWaiting', self::STATUS_VALIDATED => 'Analyzed', self::STATUS_CLOSED => 'Success', self::STATUS_ERROR => 'Error',  self::STATUS_HALFSUCCESS => 'Partial', self::STATUS_CANCELED => 'Canceled'),),
 		// Since 2.13.0: the answer to the supplier (Invoice Response)
 		'response_code' => array('type' => 'varchar(4)', 'label' => 'peppolResponseCode', 'enabled' => '1', 'position' => 1010, 'notnull' => 0, 'visible' => -2, 'noteditable' => 1),
 		'response_date' => array('type' => 'datetime', 'label' => 'peppolResponseDate', 'enabled' => '1', 'position' => 1011, 'notnull' => 0, 'visible' => -2, 'noteditable' => 1),
@@ -959,12 +959,12 @@ class Peppolimport extends \CommonObject
 		if (empty($this->labelStatus) || empty($this->labelStatusShort)) {
 			global $langs;
 			//$langs->load("peppol@peppolpeppyrus");
-			$this->labelStatus[self::STATUS_DRAFT] = $langs->trans('Waiting');
+			$this->labelStatus[self::STATUS_DRAFT] = $langs->trans('peppolStatusWaiting');
 			$this->labelStatus[self::STATUS_VALIDATED] = $langs->trans('Analyzed');
 			$this->labelStatus[self::STATUS_CLOSED] = $langs->trans('Success');
 			$this->labelStatus[self::STATUS_HALFSUCCESS] = $langs->trans('Partial');
 			// $this->labelStatus[self::STATUS_SUCCESS] = $langs->trans('Success');
-			$this->labelStatus[self::STATUS_CANCELED] = $langs->trans('Disabled');
+			$this->labelStatus[self::STATUS_CANCELED] = $langs->trans('Canceled');
 			$this->labelStatus[self::STATUS_ERROR] = $langs->trans('Error');
 
 			$this->labelStatusShort[self::STATUS_DRAFT] = $langs->trans('Waiting');

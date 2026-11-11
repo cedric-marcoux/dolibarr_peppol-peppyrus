@@ -348,4 +348,44 @@ class PeppolLibTest extends TestCase
 		$this->assertFalse(peppolSameParticipant('0106:12345678', '0106:87654321'));
 		$this->assertFalse(peppolSameParticipant('', ''));
 	}
+
+	/**
+	 * Received this month and a readable size (2.13.0)
+	 *
+	 * @return void
+	 */
+	public function testCountInMonthAndReadableSize()
+	{
+		$now = dol_mktime(12, 0, 0, 11, 11, 2026, 'gmt');
+		$list = array(
+			array('id' => 'a', 'created' => '2026-11-10T21:00:00+00:00'),
+			array('id' => 'b', 'created' => '2026-11-01 08:00:00'),
+			array('id' => 'c', 'created' => '2026-10-31T23:00:00+00:00'),
+			array('id' => 'd', 'created' => ''),
+		);
+		$this->assertSame(2, peppolCountInMonth($list, $now));
+		$this->assertSame(0, peppolCountInMonth(array(), $now));
+		$this->assertSame('0 B', peppolReadableSize(0));
+		$this->assertSame('25 GB', peppolReadableSize(26843545600));
+		$this->assertSame('512 B', peppolReadableSize(512));
+		$this->assertSame('2 KB', peppolReadableSize(2048));
+		$this->assertStringEndsWith(' MB', peppolReadableSize(1572864));
+	}
+
+	/**
+	 * Default status filter of Incoming documents (2.13.0)
+	 *
+	 * @return void
+	 */
+	public function testInboxDefaultStatus()
+	{
+		$this->assertSame('open', peppolInboxDefaultStatus('open'));
+		$this->assertSame('', peppolInboxDefaultStatus('all'));
+		$this->assertSame('1', peppolInboxDefaultStatus('1'));
+		$this->assertSame('9', peppolInboxDefaultStatus('9'));
+		$this->assertSame('open', peppolInboxDefaultStatus('xyz'));
+		$this->assertSame('open', peppolInboxDefaultStatus(''));
+		$this->assertSame(array(0, 1, 3, 5), peppolInboxOpenStatuses());
+		$this->assertNotContains(2, peppolInboxOpenStatuses());
+	}
 }

@@ -521,3 +521,12 @@ peppolOutgoingRejected = Rejected by the customer
 # Credit notes of suppliers, since 2.13.0
 peppolBookCreditNoSource = This credit note is for invoice %s, which is not booked for this supplier. Book that invoice first.
 peppolBookCreditNoReference = This credit note does not say which invoice it corrects. Book it by hand as a credit note of the supplier invoice.
+# Plan at Peppyrus, since 2.13.0
+peppolLicenseReceived = Received this month
+peppolLicenseReceivedUnknown = unknown (Peppyrus did not answer)
+peppolLicenseStorageOf = %s of %s
+# Incoming documents, since 2.13.0
+peppolStatusOpen = To process
+peppolStatusWaiting = Waiting
+peppolSetupInboxDefault = Incoming documents show by default
+peppolSetupInboxDefaultHelp = The status filter when the list is opened. "To process" is everything that is not booked or rejected yet (waiting, analyzed, error, partial). Booked documents have status Success, rejected ones Canceled.

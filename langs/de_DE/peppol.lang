@@ -318,3 +318,12 @@ peppolOutgoingRejected = Vom Kunden abgelehnt
 # Gutschriften von Lieferanten, seit 2.13.0
 peppolBookCreditNoSource = Diese Gutschrift gehört zu Rechnung %s, die für diesen Lieferanten nicht gebucht ist. Buchen Sie zuerst diese Rechnung.
 peppolBookCreditNoReference = Diese Gutschrift gibt nicht an, welche Rechnung sie korrigiert. Buchen Sie sie von Hand als Gutschrift zur Lieferantenrechnung.
+# Peppyrus-Abonnement, seit 2.13.0
+peppolLicenseReceived = Diesen Monat empfangen
+peppolLicenseReceivedUnknown = unbekannt (Peppyrus hat nicht geantwortet)
+peppolLicenseStorageOf = %s von %s
+# Eingehende Dokumente, seit 2.13.0
+peppolStatusOpen = Zu bearbeiten
+peppolStatusWaiting = Wartend
+peppolSetupInboxDefault = Eingehende Dokumente standardmäßig anzeigen
+peppolSetupInboxDefaultHelp = Der Statusfilter beim Öffnen der Liste. „Zu bearbeiten“ ist alles, was noch nicht gebucht oder abgelehnt ist (wartend, analysiert, Fehler, teilweise). Gebuchte Dokumente haben den Status Erfolg, abgelehnte den Status Storniert.
