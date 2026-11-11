@@ -1287,7 +1287,13 @@ function peppolReadableSize($bytes)
 		$i++;
 	}
 	$v = round($v, 1);
-	return ($v == floor($v) ? (string) (int) $v : price($v, 0, '', 0, -1, 1)) . ' ' . $units[$i];
+	if ($v == floor($v)) {
+		return (string) (int) $v . ' ' . $units[$i];
+	}
+	// Decimal separator of the language (no price(): that needs settings of a running Dolibarr)
+	global $langs;
+	$sep = is_object($langs) ? $langs->transnoentitiesnoconv('SeparatorDecimal') : '.';
+	return number_format($v, 1, ($sep !== '' && $sep !== 'SeparatorDecimal') ? $sep : '.', '') . ' ' . $units[$i];
 }
 
 /**

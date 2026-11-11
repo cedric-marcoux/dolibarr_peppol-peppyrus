@@ -369,7 +369,7 @@ class PeppolLibTest extends TestCase
 		$this->assertSame('25 GB', peppolReadableSize(26843545600));
 		$this->assertSame('512 B', peppolReadableSize(512));
 		$this->assertSame('2 KB', peppolReadableSize(2048));
-		$this->assertStringEndsWith(' MB', peppolReadableSize(1572864));
+		$this->assertMatchesRegularExpression('/^1[.,]5 MB$/', peppolReadableSize(1572864));
 	}
 
 	/**
