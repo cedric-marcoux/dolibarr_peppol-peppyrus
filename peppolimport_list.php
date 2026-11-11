@@ -982,6 +982,8 @@ print '</table>'."\n";
 print '</div>'."\n";
 
 print '</form>'."\n";
+// Since 2.13.0: choosing another status refreshes the list at once (no click on the magnifier needed)
+print '<script>$(document).ready(function () { $("select[name=search_status]").on("change", function () { $(this).closest("form").submit(); }); });</script>'."\n";
 
 // if (in_array('builddoc', $arrayofmassactions) && ($nbtotalofrecords === '' || $nbtotalofrecords)) {
 // 	$hidegeneratedfilelistifempty = 1;
