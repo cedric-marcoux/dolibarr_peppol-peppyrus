@@ -1286,14 +1286,15 @@ function peppolReadableSize($bytes)
 		$v /= 1024;
 		$i++;
 	}
-	$v = round($v, 1);
-	if ($v == floor($v)) {
-		return (string) (int) $v . ' ' . $units[$i];
+	// In tenths, as an integer: no comparison of floats needed
+	$tenths = (int) round($v * 10);
+	if ($tenths % 10 === 0) {
+		return (string) intdiv($tenths, 10) . ' ' . $units[$i];
 	}
 	// Decimal separator of the language (no price(): that needs settings of a running Dolibarr)
 	global $langs;
 	$sep = is_object($langs) ? $langs->transnoentitiesnoconv('SeparatorDecimal') : '.';
-	return number_format($v, 1, ($sep !== '' && $sep !== 'SeparatorDecimal') ? $sep : '.', '') . ' ' . $units[$i];
+	return number_format($tenths / 10, 1, ($sep !== '' && $sep !== 'SeparatorDecimal') ? $sep : '.', '') . ' ' . $units[$i];
 }
 
 /**
