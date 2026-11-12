@@ -27,12 +27,15 @@ dol_include_once('/peppolpeppyrus/lib/peppol.lib.php');
 class Peppolimport extends \CommonObject
 {
 
+	/** @var int|null */
 	public $socid;
 	public $labelStatusShort;
 	public $labelStatus;
 	public $output;
+	/** @var \User */
 	public $user_validation;
 	public $oldref;
+	/** @var \User */
 	public $user_creation;
 	public $user_creation_id;
 	public $user_modification_id;
@@ -144,31 +147,55 @@ class Peppolimport extends \CommonObject
 		'response_date' => array('type' => 'datetime', 'label' => 'peppolResponseDate', 'enabled' => '1', 'position' => 1011, 'notnull' => 0, 'visible' => -2, 'noteditable' => 1),
 		'response_note' => array('type' => 'varchar(255)', 'label' => 'peppolResponseNote', 'enabled' => '1', 'position' => 1012, 'notnull' => 0, 'visible' => -2, 'noteditable' => 1),
 	);
+	/** @var int|null */
 	public $rowid;
 	public $ref;
+	/** @var string|null */
 	public $filename;
+	/** @var string|null */
 	public $sha1;
+	/** @var string|null */
 	public $peppolid;
+	/** @var string|null */
 	public $internalNumber;
+	/** @var string|null */
 	public $senderScheme;
+	/** @var string|null */
 	public $senderID;
+	/** @var string|null */
 	public $receiverScheme;
+	/** @var string|null */
 	public $receiverID;
+	/** @var string|null */
 	public $c1CountryCode;
+	/** @var string|null */
 	public $c2Timestamp;
+	/** @var string|null */
 	public $c2SeatID;
+	/** @var string|null */
 	public $c2MessageID;
+	/** @var string|null */
 	public $c3IncomingUniqueID;
+	/** @var string|null */
 	public $c3MessageID;
+	/** @var string|null */
 	public $c3Timestamp;
+	/** @var string|null */
 	public $conversationID;
+	/** @var string|null */
 	public $sbdhInstanceID;
+	/** @var string|null */
 	public $processScheme;
+	/** @var string|null */
 	public $processValue;
+	/** @var string|null */
 	public $documentTypeScheme;
+	/** @var string|null */
 	public $documentTypeValue;
 	public $tms;
+	/** @var int|null */
 	public $fk_supplier;
+	/** @var int|null */
 	public $fk_invoice;
 	public $fk_user_creat;
 	public $fk_user_modif;
@@ -437,9 +464,9 @@ class Peppolimport extends \CommonObject
 	 * @param  string      $sortfield    Sort field
 	 * @param  int         $limit        limit
 	 * @param  int         $offset       Offset
-	 * @param  array       $filter       Filter array. Example array('field'=>'valueforlike', 'customurl'=>...)
+	 * @param  array<string, mixed>       $filter       Filter array. Example array('field'=>'valueforlike', 'customurl'=>...)
 	 * @param  string      $filtermode   Filter mode (AND or OR)
-	 * @return array|int                 int <0 if KO, array of pages if OK
+	 * @return array<int, self>|int                 int <0 if KO, array of pages if OK
 	 */
 	public function fetchAll($sortorder = '', $sortfield = '', $limit = 0, $offset = 0, array $filter = array(), $filtermode = 'AND')
 	{
@@ -1030,7 +1057,7 @@ class Peppolimport extends \CommonObject
 	/**
 	 * 	Create an array of lines
 	 *
-	 * 	@return array|int		array of lines if OK, <0 if KO
+	 * 	@return \CommonObjectLine[]|\CommonObject[]|\stdClass[]|int		array of lines if OK, <0 if KO
 	 */
 	public function getLinesArray()
 	{
@@ -1116,7 +1143,7 @@ class Peppolimport extends \CommonObject
 	 *  @param      int			$hidedetails    Hide details of lines
 	 *  @param      int			$hidedesc       Hide description
 	 *  @param      int			$hideref        Hide ref
-	 *  @param      null|array  $moreparams     Array to provide more information
+	 *  @param      ?array<string, string>  $moreparams     Array to provide more information
 	 *  @return     int         				0 if KO, 1 if OK
 	 */
 	public function generateDocument($modele, $outputlangs, $hidedetails = 0, $hidedesc = 0, $hideref = 0, $moreparams = null)
@@ -1246,7 +1273,7 @@ class Peppolimport extends \CommonObject
 	/**
 	 * Set several properties
 	 *
-	 * @param array $array Property name => value
+	 * @param array<string, mixed> $array Property name => value
 	 * @return void
 	 */
 	public function setValues($array)

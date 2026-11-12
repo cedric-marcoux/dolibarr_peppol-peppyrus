@@ -15,12 +15,19 @@ namespace custom\peppolpeppyrus;
  */
 abstract class PeppolAP
 {
+	/** @var string */
 	public $error = '';
+	/** @var string[] */
 	public $errors = [];
+	/** @var \DoliDB */
 	public $db;
+	/** @var string|null */
 	public $descripton;  //short description of the peppol accesspoint
+	/** @var string|null */
 	public $operatorurl; //url to the operator
+	/** @var int|null */
 	public $status;      //0 draft ... 10 = ready for production
+	/** @var string[] */
 	public $setupNeeds = []; //list of setup keys needed for that module setup
 
 	/**

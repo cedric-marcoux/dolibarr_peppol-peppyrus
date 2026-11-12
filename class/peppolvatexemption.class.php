@@ -16,7 +16,7 @@ class PeppolVatExemption
 	private $db;
 
 	/**
-	 * @var array VAT exemption reason codes according to UNCL5305 and EU VAT Directive
+	 * @var array<string, string> VAT exemption reason codes according to UNCL5305 and EU VAT Directive
 	 */
 	const VAT_EXEMPT_CODES = [
 		// Articles 132 EU VAT Directive - General exemptions

@@ -18,13 +18,18 @@ require_once __DIR__ . '/../lib/peppol.lib.php';
  */
 class Peppyrus extends PeppolAP
 {
+	/** @var string */
 	public $description = "Peppyrus is a free and reliable PEPPOL Access Point";
+	/** @var string|null */
 	public $operatorurl = "https://www.peppyrus.be/";
+	/** @var int|null */
 	public $status = 8;
+	/** @var mixed */
 	public $supplierInvoicesList;
 
 	/** @var array{listed:int,new:int,retried:int,failed:int} Counts of the last getSupplierInvoicesList() (no names or ids) */
 	public $fetchStats = array('listed' => 0, 'new' => 0, 'retried' => 0, 'failed' => 0);
+	/** @var string[] */
 	public $setupNeeds = ['PEPPOL_AP_SENDER_ID', 'PEPPOL_AP_API_KEY', 'PEPPOL_PROD'];
 
 	/**
@@ -68,10 +73,10 @@ class Peppyrus extends PeppolAP
 	/**
 	 * Handle API response with proper error codes
 	 *
-	 * @param   array   $result   Result of peppolApiRequest() (same keys as getURLContent())
+	 * @param   array<string, mixed>   $result   Result of peppolApiRequest() (same keys as getURLContent())
 	 * @param   string  $context  Method name for logging
 	 *
-	 * @return  array   ['success' => bool, 'data' => mixed, 'error_code' => int, 'error_msg' => string]
+	 * @return  array{success:bool, data:mixed, error_code:int, error_msg:string}   ['success' => bool, 'data' => mixed, 'error_code' => int, 'error_msg' => string]
 	 */
 	protected function handleApiResponse($result, $context = '')
 	{
@@ -1066,7 +1071,7 @@ class Peppyrus extends PeppolAP
 	 *
 	 * @param   string  $messageId  UUID of the message
 	 *
-	 * @return  array|int  Report data array or <= 0 on error
+	 * @return  array<mixed>|int  Report data array or <= 0 on error
 	 */
 	public function getMessageReport($messageId)
 	{
@@ -1183,7 +1188,7 @@ class Peppyrus extends PeppolAP
 	 * @param   string  $vatNumber    VAT number without country prefix
 	 * @param   string  $countryCode  ISO country code (BE, NL, FR, etc.)
 	 *
-	 * @return  array|int  Participant data array or <= 0 on error
+	 * @return  array<mixed>|int  Participant data array or <= 0 on error
 	 */
 	public function findPeppolIdByVat($vatNumber, $countryCode = '')
 	{
@@ -1238,9 +1243,9 @@ class Peppyrus extends PeppolAP
 	/**
 	 * Search PEPPOL directory
 	 *
-	 * @param   array  $params  Search parameters (query, participantId, name, country, etc.)
+	 * @param   array<string, string>  $params  Search parameters (query, participantId, name, country, etc.)
 	 *
-	 * @return  array|int  Search results array or <= 0 on error
+	 * @return  array<mixed>|int  Search results array or <= 0 on error
 	 */
 	public function searchPeppolDirectory($params = [])
 	{
@@ -1292,7 +1297,7 @@ class Peppyrus extends PeppolAP
 	/**
 	 * Get organization's PEPPOL specific info
 	 *
-	 * @return  array|int  Organization PEPPOL info array or <= 0 on error
+	 * @return  array<mixed>|int  Organization PEPPOL info array or <= 0 on error
 	 */
 	public function getOrganizationPeppolInfo()
 	{

@@ -16,31 +16,7 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/../../class/peppolvatexemption.class.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Constant custom\\\\peppolpeppyrus\\\\PeppolVatExemption\\:\\:VAT_EXEMPT_CODES type has no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolvatexemption.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Function dolibarrToPeppolMeansCode\\(\\) return type has no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../lib/peppol.lib.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Function peppolAdminPrepareHead\\(\\) return type has no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../lib/peppol.lib.php',
-];
-$ignoreErrors[] = [
 	'message' => '#^Function peppolConcatMessages\\(\\) has parameter \\$arr with no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../lib/peppol.lib.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Function peppolListOfFilesLinkedTo\\(\\) return type has no value type specified in iterable type array\\.$#',
 	'identifier' => 'missingType.iterableValue',
 	'count' => 1,
 	'path' => __DIR__ . '/../../lib/peppol.lib.php',
@@ -50,84 +26,6 @@ $ignoreErrors[] = [
 	'identifier' => 'booleanAnd.leftAlwaysTrue',
 	'count' => 2,
 	'path' => __DIR__ . '/../../class/peppolvatexemption.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method ActionsPeppolpeppyrus\\:\\:addMoreActionsButtons\\(\\) has parameter \\$parameters with no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/actions_peppolpeppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method ActionsPeppolpeppyrus\\:\\:addMoreMassActions\\(\\) has parameter \\$parameters with no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/actions_peppolpeppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method ActionsPeppolpeppyrus\\:\\:afterODTCreation\\(\\) has parameter \\$parameters with no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/actions_peppolpeppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method ActionsPeppolpeppyrus\\:\\:afterPDFCreation\\(\\) has parameter \\$parameters with no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/actions_peppolpeppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method ActionsPeppolpeppyrus\\:\\:beforePDFCreation\\(\\) has parameter \\$parameters with no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/actions_peppolpeppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method ActionsPeppolpeppyrus\\:\\:doActions\\(\\) has parameter \\$parameters with no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/actions_peppolpeppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method ActionsPeppolpeppyrus\\:\\:doMassActions\\(\\) has parameter \\$parameters with no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/actions_peppolpeppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method ActionsPeppolpeppyrus\\:\\:formConfirm\\(\\) has parameter \\$parameters with no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/actions_peppolpeppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method ActionsPeppolpeppyrus\\:\\:formObjectOptions\\(\\) has parameter \\$parameters with no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/actions_peppolpeppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method ActionsPeppolpeppyrus\\:\\:getFormMail\\(\\) has parameter \\$parameters with no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/actions_peppolpeppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method ActionsPeppolpeppyrus\\:\\:getNomUrl\\(\\) has parameter \\$parameters with no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/actions_peppolpeppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method ActionsPeppolpeppyrus\\:\\:loadDataForCustomReports\\(\\) has parameter \\$parameters with no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/actions_peppolpeppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method ActionsPeppolpeppyrus\\:\\:restrictedArea\\(\\) has parameter \\$parameters with no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/actions_peppolpeppyrus.class.php',
 ];
 $ignoreErrors[] = [
 	'message' => '#^Method custom\\\\peppolpeppyrus\\\\PeppolVatExemption\\:\\:generatePeppolLineTaxCategory\\(\\) return type has no value type specified in iterable type array\\.$#',
@@ -166,12 +64,6 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/../../class/peppolvatexemption.class.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppol\\:\\:_checkBaseErrors\\(\\) has parameter \\$checklist with no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppol.class.php',
-];
-$ignoreErrors[] = [
 	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppol\\:\\:iec6523Code\\(\\) has no return type specified\\.$#',
 	'identifier' => 'missingType.return',
 	'count' => 1,
@@ -184,92 +76,14 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/../../class/peppol.class.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppol\\:\\:searchPeppolDirectory\\(\\) return type has no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppol.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:fetchAll\\(\\) has parameter \\$filter with no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:fetchAll\\(\\) return type has no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:generateDocument\\(\\) has parameter \\$moreparams with no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:getLinesArray\\(\\) return type has no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:setValues\\(\\) has parameter \\$array with no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppyrus\\:\\:findPeppolIdByVat\\(\\) return type has no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppyrus\\:\\:getMessageReport\\(\\) return type has no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppyrus\\:\\:getOrganizationPeppolInfo\\(\\) return type has no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
-];
-$ignoreErrors[] = [
 	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppyrus\\:\\:getSupplierInvoicePdf\\(\\) has no return type specified\\.$#',
 	'identifier' => 'missingType.return',
 	'count' => 1,
 	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppyrus\\:\\:handleApiResponse\\(\\) has parameter \\$result with no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppyrus\\:\\:handleApiResponse\\(\\) return type has no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
-];
-$ignoreErrors[] = [
 	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppyrus\\:\\:rejectSupplierInvoice\\(\\) has no return type specified\\.$#',
 	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppyrus\\:\\:searchPeppolDirectory\\(\\) has parameter \\$params with no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppyrus\\:\\:searchPeppolDirectory\\(\\) return type has no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
 	'count' => 1,
 	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
 ];
@@ -322,18 +136,6 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/../../class/peppolvatexemption.class.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Property ActionsPeppolpeppyrus\\:\\:\\$errors type has no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/actions_peppolpeppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property ActionsPeppolpeppyrus\\:\\:\\$results type has no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/actions_peppolpeppyrus.class.php',
-];
-$ignoreErrors[] = [
 	'message' => '#^Property CommonObject\\:\\:\\$date_modification \\(int\\|string\\) does not accept null\\.$#',
 	'identifier' => 'assign.propertyType',
 	'count' => 1,
@@ -358,158 +160,8 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/../../index.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\PeppolAP\\:\\:\\$db has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolap.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\PeppolAP\\:\\:\\$descripton has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolap.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\PeppolAP\\:\\:\\$error has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolap.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\PeppolAP\\:\\:\\$errors has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolap.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\PeppolAP\\:\\:\\$operatorurl has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolap.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\PeppolAP\\:\\:\\$setupNeeds has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolap.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\PeppolAP\\:\\:\\$status has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolap.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppol\\:\\:\\$_invoice has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppol.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppol\\:\\:\\$db has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppol.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppol\\:\\:\\$error has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppol.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppol\\:\\:\\$errors has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppol.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$c1CountryCode has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$c2MessageID has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$c2SeatID has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$c2Timestamp has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$c3IncomingUniqueID has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$c3MessageID has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$c3Timestamp has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$conversationID has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$documentTypeScheme has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$documentTypeValue has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
 	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$fields type has no value type specified in iterable type array\\.$#',
 	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$filename has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$fk_invoice has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$fk_supplier has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$internalNumber has no type specified\\.$#',
-	'identifier' => 'missingType.property',
 	'count' => 1,
 	'path' => __DIR__ . '/../../class/peppolimport.class.php',
 ];
@@ -532,72 +184,6 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/../../class/peppolimport.class.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$peppolid has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$processScheme has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$processValue has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$receiverID has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$receiverScheme has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$rowid has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$sbdhInstanceID has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$senderID has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$senderScheme has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$sha1 has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$socid has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
 	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$status \\(int\\) in isset\\(\\) is not nullable\\.$#',
 	'identifier' => 'isset.property',
 	'count' => 1,
@@ -608,48 +194,6 @@ $ignoreErrors[] = [
 	'identifier' => 'missingType.property',
 	'count' => 1,
 	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$user_creation has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$user_validation has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppyrus\\:\\:\\$description has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppyrus\\:\\:\\$operatorurl has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppyrus\\:\\:\\$setupNeeds has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppyrus\\:\\:\\$status has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppyrus\\:\\:\\$supplierInvoicesList has no type specified\\.$#',
-	'identifier' => 'missingType.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
 ];
 $ignoreErrors[] = [
 	'message' => '#^Property modPeppolpeppyrus\\:\\:\\$dictionaries type has no value type specified in iterable type array\\.$#',

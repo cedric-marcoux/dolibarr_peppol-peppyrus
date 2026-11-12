@@ -33,12 +33,12 @@ class ActionsPeppolpeppyrus
 	public $error = '';
 
 	/**
-	 * @var array Errors
+	 * @var string[] Errors
 	 */
 	public $errors = array();
 
 	/**
-	 * @var array Hook results. Propagated to $hookmanager->resArray for later reuse
+	 * @var array<string, mixed> Hook results. Propagated to $hookmanager->resArray for later reuse
 	 */
 	public $results = array();
 
@@ -66,7 +66,7 @@ class ActionsPeppolpeppyrus
 	/**
 	 * Hook getNomUrl (not used by this module)
 	 *
-	 * @param array        $parameters Hook parameters
+	 * @param array<string, mixed> $parameters Hook parameters
 	 * @param CommonObject $object     Object the hook works on
 	 * @param string       $action     Current action
 	 * @return int                     0 to continue
@@ -81,7 +81,7 @@ class ActionsPeppolpeppyrus
 	/**
 	 * Overloading the doActions function
 	 *
-	 * @param array $parameters Hook parameters
+	 * @param array<string, mixed> $parameters Hook parameters
 	 * @param CommonObject $object Object the hook works on
 	 * @param string $action Current action
 	 * @param HookManager $hookmanager Hook manager
@@ -122,7 +122,7 @@ class ActionsPeppolpeppyrus
 	/**
 	 * Overloading the doMassActions function
 	 *
-	 * @param array $parameters Hook parameters
+	 * @param array<string, mixed> $parameters Hook parameters
 	 * @param CommonObject $object Object the hook works on
 	 * @param string $action Current action
 	 * @param HookManager $hookmanager Hook manager
@@ -174,7 +174,7 @@ class ActionsPeppolpeppyrus
 	/**
 	 * Overloading the addMoreMassActions function
 	 *
-	 * @param array $parameters Hook parameters
+	 * @param array<string, mixed> $parameters Hook parameters
 	 * @param CommonObject $object Object the hook works on
 	 * @param string $action Current action
 	 * @param HookManager $hookmanager Hook manager
@@ -199,7 +199,7 @@ class ActionsPeppolpeppyrus
 	/**
 	 * Execute action beforePDFCreation
 	 *
-	 * @param array $parameters Hook parameters
+	 * @param array<string, mixed> $parameters Hook parameters
 	 * @param CommonObject $object Object the hook works on
 	 * @param string $action Current action
 	 * @return int 0 to continue, >0 to replace the standard code, <0 on error
@@ -216,7 +216,7 @@ class ActionsPeppolpeppyrus
 	/**
 	 * Execute action afterPDFCreation
 	 *
-	 * @param array $parameters Hook parameters
+	 * @param array<string, mixed> $parameters Hook parameters
 	 * @param object $pdfhandler PDF or ODT generator
 	 * @param string $action Current action
 	 * @return int 0 to continue, >0 to replace the standard code, <0 on error
@@ -281,7 +281,7 @@ class ActionsPeppolpeppyrus
 	/**
 	 * Execute action afterODTCreation
 	 *
-	 * @param array $parameters Hook parameters
+	 * @param array<string, mixed> $parameters Hook parameters
 	 * @param object $pdfhandler PDF or ODT generator
 	 * @param string $action Current action
 	 * @return int 0 to continue, >0 to replace the standard code, <0 on error
@@ -341,7 +341,7 @@ class ActionsPeppolpeppyrus
 	/**
 	 * Overloading the loadDataForCustomReports function
 	 *
-	 * @param array $parameters Hook parameters
+	 * @param array<string, mixed> $parameters Hook parameters
 	 * @param string $action Current action
 	 * @param HookManager $hookmanager Hook manager
 	 * @return int 0 to continue, >0 to replace the standard code, <0 on error
@@ -378,7 +378,7 @@ class ActionsPeppolpeppyrus
 	/**
 	 * Overloading the restrictedArea function
 	 *
-	 * @param array $parameters Hook parameters
+	 * @param array<string, mixed> $parameters Hook parameters
 	 * @param string $action Current action
 	 * @param HookManager $hookmanager Hook manager
 	 * @return int 0 to continue, >0 to replace the standard code, <0 on error
@@ -403,7 +403,7 @@ class ActionsPeppolpeppyrus
 	/**
 	 * getFormMail : auto join pdf and peppol files
 	 *
-	 * @param array $parameters Hook parameters
+	 * @param array<string, mixed> $parameters Hook parameters
 	 * @param CommonObject $object Object the hook works on
 	 * @param string $action Current action
 	 * @param HookManager $hookmanager Hook manager
@@ -459,7 +459,7 @@ class ActionsPeppolpeppyrus
 	/**
 	 * Overloading the formObjectOptions function
 	 *
-	 * @param array $parameters Hook parameters
+	 * @param array<string, mixed> $parameters Hook parameters
 	 * @param CommonObject $object Object the hook works on
 	 * @param string $action Current action
 	 * @param HookManager $hookmanager Hook manager
@@ -485,7 +485,7 @@ class ActionsPeppolpeppyrus
 	/**
 	 * Overloading the addMoreActionsButtons function
 	 *
-	 * @param array $parameters Hook parameters
+	 * @param array<string, mixed> $parameters Hook parameters
 	 * @param CommonObject $object Object the hook works on
 	 * @param string $action Current action
 	 * @param HookManager $hookmanager Hook manager
@@ -537,7 +537,7 @@ class ActionsPeppolpeppyrus
 	/**
 	 * Overloading the formConfirm function
 	 *
-	 * @param array $parameters Hook parameters
+	 * @param array<string, mixed> $parameters Hook parameters
 	 * @param CommonObject $object Object the hook works on
 	 * @param string $action Current action
 	 * @param HookManager $hookmanager Hook manager

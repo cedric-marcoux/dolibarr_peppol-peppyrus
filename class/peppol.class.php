@@ -62,9 +62,13 @@ class Peppol
 	/** Decimals of the unit price in the XML: Dolibarr stores unit prices with up to 8 decimals (from the original module, #15) */
 	const PEPPOL_UNIT_PRICE_DECIMALS = 8;
 
+	/** @var string */
 	public $error = '';
+	/** @var string[] */
 	public $errors = [];
+	/** @var \DoliDB|null */
 	public $db;
+	/** @var object|null */
 	private $_invoice;
 
 
@@ -971,7 +975,7 @@ class Peppol
 	/**
 	 * do base checks againts object
 	 *
-	 * @param array $checklist Fields to check, updated in place
+	 * @param array<string, array<string, mixed>> $checklist Fields to check, updated in place
 	 * @param object $obj Object to check (third party or contact)
 	 * @return void
 	 */
@@ -1003,7 +1007,7 @@ class Peppol
 	 * Search PEPPOL Directory API
 	 *
 	 * @param string $query Search query (company name, VAT number, etc.)
-	 * @return array|false Array of results or false on error
+	 * @return array<string, mixed>|false Array of results or false on error
 	 */
 	static public function searchPeppolDirectory($query)
 	{

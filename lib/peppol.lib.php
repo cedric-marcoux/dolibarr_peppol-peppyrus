@@ -386,7 +386,7 @@ function peppolCheckToken()
 /**
  * Prepare admin pages header
  *
- * @return array
+ * @return array<int, array<int, string>>
  */
 function peppolAdminPrepareHead()
 {
@@ -463,7 +463,7 @@ function peppolAmountToFloat($str)
  * Convert Dolibarr payment codes to UNCL4461 codes
  *
  * @param   string  $search  Dolibarr payment code
- * @return  array|null       UNCL4461 code and label
+ * @return  array<string, string|null>|null       UNCL4461 code and label
  */
 function dolibarrToPeppolMeansCode($search)
 {
@@ -521,7 +521,7 @@ function peppolGetRetainedWarrantyAmount($invoice, $rounding = 'MT')
  * Get list of files linked to object
  *
  * @param   CommonObject  $obj  Object
- * @return  array               List of files
+ * @return  array<string, string>               List of files
  */
 function peppolListOfFilesLinkedTo(CommonObject $obj)
 {

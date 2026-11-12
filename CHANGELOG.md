@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.13.2
+
+- **Types in the doc blocks completed** (parameters, return values, properties and array shapes). Only PHPDoc: no code changes, no difference in use. PHPStan reports far fewer missing types; the baseline is smaller.
+
+**After updating:** flush memcached and restart PHP. The module does not need to be disabled and enabled.
+
 ## 2.13.1
 
 - **Security, stricter:** `Peppolimport::fetchAll()` accepted raw SQL through the key `customsql`. The module never uses it, but it was an open door. It is removed; a filter can only be a plain column (`t.<column>`).
