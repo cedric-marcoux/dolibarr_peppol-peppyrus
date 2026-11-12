@@ -55,13 +55,13 @@ class Peppolimport extends \CommonObject
 	public $table_element = 'peppol_peppolimport';
 
 	/**
-	 * @var int  Does this object support multicompany module ?
+	 * Does this object support multicompany module? (type from CommonObject, it differs per Dolibarr version)
 	 * 0=No test on entity, 1=Test with field entity, 'field@table'=Test with link by field@table
 	 */
 	public $ismultientitymanaged = 1;
 
 	/**
-	 * @var int  Does object support extrafields ? 0=No, 1=Yes
+	 * @var int<0,1>  Does object support extrafields ? 0=No, 1=Yes
 	 */
 	public $isextrafieldmanaged = 0;
 
@@ -105,12 +105,12 @@ class Peppolimport extends \CommonObject
 
 	// BEGIN MODULEBUILDER PROPERTIES
 	/**
-	 * @var array  Array with all fields and their property. Do not use it as a static var. It may be modified by constructor.
+	 * Array with all fields and their property (type from CommonObject). Do not use it as a static var. It may be modified by constructor.
 	 */
 	public $fields = array(
-		'rowid' => array('type' => 'integer', 'label' => 'TechnicalID', 'enabled' => '1', 'position' => 1, 'notnull' => 1, 'visible' => 0, 'noteditable' => '1', 'index' => 1, 'css' => 'left', 'comment' => "Id"),
+		'rowid' => array('type' => 'integer', 'label' => 'TechnicalID', 'enabled' => '1', 'position' => 1, 'notnull' => 1, 'visible' => 0, 'noteditable' => 1, 'index' => 1, 'css' => 'left', 'comment' => "Id"),
 		'entity' => array('type' => 'integer', 'label' => 'Entity', 'default' => 1, 'enabled' => 1, 'visible' => -2, 'notnull' => 1, 'position' => 20, 'index' => 1),
-		'ref' => array('type' => 'varchar(128)', 'label' => 'Ref', 'enabled' => '1', 'position' => 10, 'notnull' => 1, 'visible' => 4, 'noteditable' => '1', 'default' => '(PROV)', 'index' => 1, 'searchall' => 1, 'showoncombobox' => '1', 'comment' => "Reference of object", 'csslist' => 'nowraponall'),
+		'ref' => array('type' => 'varchar(128)', 'label' => 'Ref', 'enabled' => '1', 'position' => 10, 'notnull' => 1, 'visible' => 4, 'noteditable' => 1, 'default' => '(PROV)', 'index' => 1, 'searchall' => 1, 'showoncombobox' => '1', 'comment' => "Reference of object", 'csslist' => 'nowraponall'),
 		'filename' => array('type' => 'varchar(255)', 'label' => 'Filename', 'enabled' => '1', 'position' => 30, 'notnull' => 0, 'visible' => 1, 'searchall' => 1, 'css' => 'minwidth300', 'help' => "Help text", 'showoncombobox' => '1', 'csslist' => 'tdoverflowmax200'),
 		'sha1' => array('type' => 'varchar(40)', 'label' => 'SHA1', 'enabled' => '1', 'position' => 31, 'notnull' => 0, 'visible' => -1, 'css' => 'minwidth300', 'help' => "SHA1 CheckSum",),
 		'peppolid' => array('type' => 'varchar(255)', 'label' => 'peppolid', 'enabled' => '1', 'position' => 40, 'notnull' => 0, 'visible' => -1, 'css' => 'minwidth300', 'help' => "",),
@@ -222,7 +222,7 @@ class Peppolimport extends \CommonObject
 	/**
 	 * Constructor
 	 *
-	 * @param DoliDb $db Database handler
+	 * @param \DoliDB $db Database handler
 	 */
 	public function __construct(\DoliDB $db)
 	{
@@ -271,9 +271,9 @@ class Peppolimport extends \CommonObject
 	/**
 	 * Create object into database
 	 *
-	 * @param  User $user      User that creates
+	 * @param  \User $user      User that creates
 	 * @param  bool $notrigger false=launch triggers after, true=disable triggers
-	 * @return int             <0 if KO, Id of created object if OK
+	 * @return int             Result: <0 if KO, Id of created object if OK
 	 */
 	public function create(\User $user, $notrigger = false)
 	{
@@ -294,7 +294,7 @@ class Peppolimport extends \CommonObject
 	/**
 	 * Clone an object into another one
 	 *
-	 * @param  	User 	$user      	User that creates
+	 * @param  	\User 	$user      	User that creates
 	 * @param  	int 	$fromid     Id of object to clone
 	 * @return 	mixed 				New object created, <0 if KO
 	 */
@@ -320,26 +320,16 @@ class Peppolimport extends \CommonObject
 		//	$line->fetch_optionals();
 
 		// Reset some properties
-		unset($object->id);
+		$object->id = 0;
 		unset($object->fk_user_creat);
 		unset($object->import_key);
 
 		// Clear fields
-		if (property_exists($object, 'ref')) {
-			$object->ref = empty($this->fields['ref']['default']) ? "Copy_Of_" . $object->ref : $this->fields['ref']['default'];
-		}
-		if (property_exists($object, 'label')) {
-			$object->label = empty($this->fields['label']['default']) ? $langs->trans("CopyOf") . " " . $object->label : $this->fields['label']['default'];
-		}
-		if (property_exists($object, 'status')) {
-			$object->status = self::STATUS_DRAFT;
-		}
-		if (property_exists($object, 'date_creation')) {
-			$object->date_creation = dol_now();
-		}
-		if (property_exists($object, 'date_modification')) {
-			$object->date_modification = null;
-		}
+		$object->ref = empty($this->fields['ref']['default']) ? "Copy_Of_" . $object->ref : $this->fields['ref']['default'];
+		$object->label = empty($this->fields['label']['default']) ? $langs->trans("CopyOf") . " " . $object->label : $this->fields['label']['default'];
+		$object->status = self::STATUS_DRAFT;
+		$object->date_creation = dol_now();
+		$object->date_modification = null;
 		// ...
 		// Clear extrafields that are unique
 		if (is_array($object->array_options) && count($object->array_options) > 0) {
@@ -371,7 +361,7 @@ class Peppolimport extends \CommonObject
 
 		if (!$error) {
 			// copy external contacts if same company
-			if (property_exists($this, 'socid') && $this->socid == $object->socid) {
+			if ($this->socid == $object->socid) {
 				if ($this->copy_linked_contact($object, 'external') < 0) {
 					$error++;
 				}
@@ -395,15 +385,15 @@ class Peppolimport extends \CommonObject
 	 *
 	 * @param int    $id   Id object
 	 * @param string $ref  Ref
-	 * @param int    $peppolid   Peppol Id object
-	 * @return int         <0 if KO, 0 if not found, >0 if OK
+	 * @param string $peppolid   Peppol id of the message; empty to search on id or ref
+	 * @return int         Result: <0 if KO, 0 if not found, >0 if OK
 	 */
 	public function fetch($id, $ref = null, $peppolid = "")
 	{
 		if ($peppolid != "") {
 			$sql = 'SELECT rowid';
 			$sql .= ' FROM ' . MAIN_DB_PREFIX . $this->table_element . ' as t';
-			if (isset($this->ismultientitymanaged) && $this->ismultientitymanaged == 1) {
+			if ($this->ismultientitymanaged == 1) {
 				$sql .= ' WHERE t.entity IN (' . getEntity($this->table_element) . ')';
 			} else {
 				$sql .= ' WHERE 1 = 1';
@@ -429,7 +419,7 @@ class Peppolimport extends \CommonObject
 	/**
 	 * Load object lines in memory from the database
 	 *
-	 * @return int         <0 if KO, 0 if not found, >0 if OK
+	 * @return int         Result: <0 if KO, 0 if not found, >0 if OK
 	 */
 	public function fetchLines()
 	{
@@ -462,7 +452,7 @@ class Peppolimport extends \CommonObject
 		$sql = 'SELECT ';
 		$sql .= $this->getFieldList();
 		$sql .= ' FROM ' . MAIN_DB_PREFIX . $this->table_element . ' as t';
-		if (isset($this->ismultientitymanaged) && $this->ismultientitymanaged == 1) {
+		if ($this->ismultientitymanaged == 1) {
 			$sql .= ' WHERE t.entity IN (' . getEntity($this->table_element) . ')';
 		} else {
 			$sql .= ' WHERE 1 = 1';
@@ -472,26 +462,27 @@ class Peppolimport extends \CommonObject
 		$filtermode = (strtoupper((string) $filtermode) === 'OR') ? 'OR' : 'AND';
 		if (count($filter) > 0) {
 			foreach ($filter as $key => $value) {
-				// Only a plain column name (t.<column>) or the internal customsql filter of this module
-				if ($key !== 'customsql' && !preg_match('/^t\.[a-z0-9_]+$/i', (string) $key)) {
+				// Only a plain column name (t.<column>); no raw SQL (customsql) any more
+				if (!preg_match('/^t\.[a-z0-9_]+$/i', (string) $key)) {
 					continue;
 				}
+				$veld = substr((string) $key, 2);
 				if ($key == 't.rowid') {
 					$sqlwhere[] = $key . ' = ' . ((int) $value);
-				} elseif (isset($this->fields[$key]['type']) && in_array($this->fields[$key]['type'], array('date', 'datetime', 'timestamp'))) {
+				} elseif (isset($this->fields[$veld]['type']) && in_array($this->fields[$veld]['type'], array('date', 'datetime', 'timestamp'))) {
 					$sqlwhere[] = $key . ' = \'' . $this->db->idate($value) . '\'';
-				} elseif ($key == 'customsql') {
-					$sqlwhere[] = $value;
-				} elseif (strpos($value, '%') === false) {
-					$sqlwhere[] = $key . ' IN (' . $this->db->sanitize($this->db->escape($value)) . ')';
+				} elseif (preg_match('/^\d+(,\d+)*$/', (string) $value)) {
+					$sqlwhere[] = $key . ' IN (' . $this->db->sanitize((string) $value) . ')';
+				} elseif (strpos((string) $value, '%') === false) {
+					$sqlwhere[] = $key . ' = \'' . $this->db->escape((string) $value) . '\'';
 				} else {
-					$sqlwhere[] = $key . ' LIKE \'%' . $this->db->escape($value) . '%\'';
+					$sqlwhere[] = $key . ' LIKE \'%' . $this->db->escape((string) $value) . '%\'';
 				}
 			}
 		}
 		if (count($sqlwhere) > 0) {
-			// beveiliging-uitzondering: sql-escape elk deel van $sqlwhere is hierboven al op de plek zelf gecast of ge-escaped; customsql komt alleen uit de module zelf
-			$sql .= ' AND (' . implode(' ' . $filtermode . ' ', $sqlwhere) . ')'; // @phan-suppress-current-line SqlInjection -- delen hierboven veilig opgebouwd
+			// Every part of $sqlwhere above is cast, or built with sanitize() or escape() between quotes, on a column name matching ^t\.[a-z0-9_]+$
+			$sql .= ' AND (' . implode(' ' . $filtermode . ' ', $sqlwhere) . ')'; // @phan-suppress-current-line SqlInjection -- parts built safely above
 		}
 
 		if (!empty($sortfield)) {
@@ -529,9 +520,9 @@ class Peppolimport extends \CommonObject
 	/**
 	 * Update object into database
 	 *
-	 * @param  User $user      User that modifies
+	 * @param  \User $user      User that modifies
 	 * @param  bool $notrigger false=launch triggers after, true=disable triggers
-	 * @return int             <0 if KO, >0 if OK
+	 * @return int             Result: <0 if KO, >0 if OK
 	 */
 	public function update(\User $user, $notrigger = false)
 	{
@@ -542,9 +533,9 @@ class Peppolimport extends \CommonObject
 	/**
 	 * Delete object in database
 	 *
-	 * @param User $user       User that deletes
+	 * @param \User $user       User that deletes
 	 * @param bool $notrigger  false=launch triggers after, true=disable triggers
-	 * @return int             <0 if KO, >0 if OK
+	 * @return int             Result: <0 if KO, >0 if OK
 	 */
 	public function delete(\User $user, $notrigger = false)
 	{
@@ -573,7 +564,7 @@ class Peppolimport extends \CommonObject
 	/**
 	 *  Delete a line of object in database
 	 *
-	 *	@param  User	$user       User that delete
+	 *	@param  \User	$user       User that delete
 	 *  @param	int		$idline		Id of line to delete
 	 *  @param 	bool 	$notrigger  false=launch triggers after, true=disable triggers
 	 *  @return int         		>0 if OK, <0 if KO
@@ -593,9 +584,9 @@ class Peppolimport extends \CommonObject
 	/**
 	 *	Validate object
 	 *
-	 *	@param		User	$user     		User making status change
+	 *	@param		\User	$user     		User making status change
 	 *  @param		int		$notrigger		1=Does not execute triggers, 0= execute triggers
-	 *	@return  	int						<=0 if OK, 0=Nothing done, >0 if KO
+	 *	@return  	int						Result: <=0 if OK, 0=Nothing done, >0 if KO
 	 */
 	public function validate($user, $notrigger = 0)
 	{
@@ -628,7 +619,7 @@ class Peppolimport extends \CommonObject
 		$this->db->begin();
 
 		// Define new ref
-		if (!$error && (preg_match('/^[\(]?PROV/i', $this->ref) || empty($this->ref))) { // empty should not happened, but when it occurs, the test save life
+		if (preg_match('/^[\(]?PROV/i', $this->ref) || empty($this->ref)) { // empty should not happened, but when it occurs, the test save life
 			$num = $this->getNextNumRef();
 		} else {
 			$num = $this->ref;
@@ -726,9 +717,9 @@ class Peppolimport extends \CommonObject
 	/**
 	 *	Set draft status
 	 *
-	 *	@param	User	$user			Object user that modify
+	 *	@param	\User	$user			Object user that modify
 	 *  @param	int		$notrigger		1=Does not execute triggers, 0=Execute triggers
-	 *	@return	int						<0 if KO, >0 if OK
+	 *	@return	int						Result: <0 if KO, >0 if OK
 	 */
 	public function setDraft($user, $notrigger = 0)
 	{
@@ -750,9 +741,9 @@ class Peppolimport extends \CommonObject
 	/**
 	 *	Set cancel status
 	 *
-	 *	@param	User	$user			Object user that modify
+	 *	@param	\User	$user			Object user that modify
 	 *  @param	int		$notrigger		1=Does not execute triggers, 0=Execute triggers
-	 *	@return	int						<0 if KO, 0=Nothing done, >0 if OK
+	 *	@return	int						Result: <0 if KO, 0=Nothing done, >0 if OK
 	 */
 	public function cancel($user, $notrigger = 0)
 	{
@@ -806,9 +797,9 @@ class Peppolimport extends \CommonObject
 	/**
 	 *	Set back to validated status
 	 *
-	 *	@param	User	$user			Object user that modify
+	 *	@param	\User	$user			Object user that modify
 	 *  @param	int		$notrigger		1=Does not execute triggers, 0=Execute triggers
-	 *	@return	int						<0 if KO, 0=Nothing done, >0 if OK
+	 *	@return	int						Result: <0 if KO, 0=Nothing done, >0 if OK
 	 */
 	public function reopen($user, $notrigger = 0)
 	{
@@ -1081,7 +1072,7 @@ class Peppolimport extends \CommonObject
 	 * 	Return next free value
 	 *
 	 *  @param  Object		$object		Object we need next value for
-	 *  @return string      			Value if KO, <0 if KO
+	 *  @return string      			Next reference, or '-1' on error
 	 */
 	public function getNextValue($object)
 	{
@@ -1105,7 +1096,7 @@ class Peppolimport extends \CommonObject
 			else $max = 0;
 		} else {
 			dol_syslog("peppolimport::getNextValue", LOG_DEBUG);
-			return -1;
+			return '-1';
 		}
 
 		//$date=time();
@@ -1121,7 +1112,7 @@ class Peppolimport extends \CommonObject
 	 *  Create a document onto disk according to template module.
 	 *
 	 *  @param	    string		$modele			Force template to use ('' to not force)
-	 *  @param		Translate	$outputlangs	objet lang a utiliser pour traduction
+	 *  @param		\Translate	$outputlangs	objet lang a utiliser pour traduction
 	 *  @param      int			$hidedetails    Hide details of lines
 	 *  @param      int			$hidedesc       Hide description
 	 *  @param      int			$hideref        Hide ref
@@ -1130,30 +1121,8 @@ class Peppolimport extends \CommonObject
 	 */
 	public function generateDocument($modele, $outputlangs, $hidedetails = 0, $hidedesc = 0, $hideref = 0, $moreparams = null)
 	{
-		global $conf, $langs;
-
-		$result = 0;
-		$includedocgeneration = 0;
-
-		$langs->load("peppol@peppolpeppyrus");
-
-		if (!dol_strlen($modele)) {
-			$modele = 'standard_peppolimport';
-
-			if (!empty($this->model_pdf)) {
-				$modele = $this->model_pdf;
-			} elseif (!empty(getDolGlobalString('PEPPOLIMPORT_ADDON_PDF'))) {
-				$modele = getDolGlobalString('PEPPOLIMPORT_ADDON_PDF');
-			}
-		}
-
-		$modelpath = "core/modules/peppol/doc/";
-
-		if ($includedocgeneration && !empty($modele)) {
-			$result = $this->commonGenerateDocument($modelpath, $modele, $outputlangs, $hidedetails, $hidedesc, $hideref, $moreparams);
-		}
-
-		return $result;
+		// This module has no document models for an import: no document is generated
+		return 0;
 	}
 
 	/**
@@ -1181,24 +1150,10 @@ class Peppolimport extends \CommonObject
 	}
 
 	/**
-	 * Import a list of documents
-	 *
-	 * @param array $list List of imports
-	 * @return int >0 if OK, <0 on error
-	 */
-	public function importInvoices($list)
-	{
-		global $db, $user;
-		foreach ($list as $key => $fi) {
-			//TODO
-		}
-	}
-
-	/**
 	 * force to import now a file even if it's in "later" queue
 	 *
 	 * @param   int     $fournID           to force supplier (fournisseur)
-	 * @return  [type]  [return description]
+	 * @return  mixed  Result
 	 */
 	public function importNow($fournID = -1)
 	{
@@ -1217,7 +1172,7 @@ class Peppolimport extends \CommonObject
 	/**
 	 * return true if file exist, false in other case
 	 *
-	 * @return  [type]  [return description]
+	 * @return  mixed  Result
 	 */
 	public function fileExist()
 	{
@@ -1254,7 +1209,7 @@ class Peppolimport extends \CommonObject
 	 * return full file name : database store only filename
 	 * and full file path is made from id and local setup
 	 *
-	 * @return  [type]  [return description]
+	 * @return  mixed  Result
 	 */
 	public function fullFilename()
 	{
@@ -1273,16 +1228,6 @@ class Peppolimport extends \CommonObject
 			dol_syslog("peppol ask for fullFilename but peppolid is empty !");
 		}
 		return $ret;
-	}
-
-	/**
-	 * double check if that import is really a success (ie user did not delete invoice and forget to delete Peppolimport entry )
-	 *
-	 * @return bool|null Not implemented yet
-	 */
-	public function fullImportSuccess()
-	{
-		//TODO
 	}
 
 	/**
@@ -1366,7 +1311,7 @@ class Peppolimport extends \CommonObject
 	 * Extract the embedded PDF from the UBL XML and save it
 	 *
 	 * @param string $xml UBL XML document
-	 * @return int >0 if a PDF was found and saved
+	 * @return bool true when a PDF was found and saved
 	 */
 	public function extractPDFfromXML($xml)
 	{
@@ -1420,14 +1365,14 @@ class PeppolimportLine extends \CommonObjectLine
 	// We should have a field rowid, fk_peppolimport and position
 
 	/**
-	 * @var int  Does object support extrafields ? 0=No, 1=Yes
+	 * @var int<0,1>  Does object support extrafields ? 0=No, 1=Yes
 	 */
 	public $isextrafieldmanaged = 0;
 
 	/**
 	 * Constructor
 	 *
-	 * @param DoliDb $db Database handler
+	 * @param \DoliDB $db Database handler
 	 */
 	public function __construct(\DoliDB $db)
 	{

@@ -91,7 +91,6 @@ class ActionsPeppolpeppyrus
 	{
 		global $conf, $user, $langs;
 
-		$error = 0;
 
 		$contextArray = explode(':', $parameters['context'] ?? '');
 		switch ($action) {
@@ -117,14 +116,7 @@ class ActionsPeppolpeppyrus
 				break;
 		}
 
-		if (!$error) {
-			$this->results = array('myreturn' => 999);
-			$this->resprints = 'A text to show';
-			return 0;
-		} else {
-			$this->errors[] = 'Error message';
-			return -1;
-		}
+		return 0;
 	}
 
 	/**
@@ -140,7 +132,6 @@ class ActionsPeppolpeppyrus
 	{
 		global $conf, $user, $langs, $db;
 
-		$error = 0;
 		dol_syslog(get_class($this) . '::doMassActions peppolpeppyrus massaction=' . ($parameters['massaction'] ?? ''));
 
 		$contextArray = explode(':', $parameters['context']);
@@ -177,14 +168,7 @@ class ActionsPeppolpeppyrus
 			}
 		}
 
-		if (!$error) {
-			$this->results = array('myreturn' => 999);
-			$this->resprints = 'A text to show';
-			return 0;
-		} else {
-			$this->errors[] = 'Error message';
-			return -1;
-		}
+		return 0;
 	}
 
 	/**
@@ -202,21 +186,14 @@ class ActionsPeppolpeppyrus
 		$langs->load("peppol@peppolpeppyrus");
 		dol_syslog(get_class($this) . '::addMoreMassActions peppolpeppyrus');
 
-		$error = 0;
-		$disabled = 0;
 
 		$contextArray = explode(':', $parameters['context']);
 		if (in_array('invoicelist', $contextArray)) {
 			dol_syslog(get_class($this) . '::addMoreMassActions peppolpeppyrus 2');
-			$this->resprints = '<option value="peppolZip"' . ($disabled ? ' disabled="disabled"' : '') . '>' . $langs->trans("PeppolMassActionZip") . '</option>';
+			$this->resprints = '<option value="peppolZip">' . $langs->trans("PeppolMassActionZip") . '</option>';
 		}
 
-		if (!$error) {
-			return 0;
-		} else {
-			$this->errors[] = 'Error message';
-			return -1;
-		}
+		return 0;
 	}
 
 	/**
@@ -518,7 +495,6 @@ class ActionsPeppolpeppyrus
 	{
 		global $conf, $user, $langs;
 
-		$error = 0;
 
 		dol_syslog("PEPPOLPEPPYRUS HOOK addMoreActionsButtons called - context: " . $parameters['context']);
 
@@ -555,12 +531,7 @@ class ActionsPeppolpeppyrus
 			print '<div class="inline-block divButAction"><a class="butAction classfortooltip" title="' . dol_escape_htmltag($langs->trans("peppolFindPeppolIDPopupTitle")) . '" href="' . $urlto . '">' . $langs->trans("peppolBtnFindPeppolID") . '</a></div>';
 		}
 
-		if (! $error) {
-			return 0;
-		} else {
-			array_push($this->errors, 'Error message 002');
-			return -1;
-		}
+		return 0;
 	}
 
 	/**
@@ -577,8 +548,6 @@ class ActionsPeppolpeppyrus
 		global $conf, $langs, $user;
 
 		$ret = 0;
-		$error = 0;
-		$errors = array();
 		$formconfirm = '';
 		$form = new Form($this->db);
 
@@ -619,12 +588,7 @@ class ActionsPeppolpeppyrus
 				$height
 			);
 		}
-		if (! $error) {
-			$this->resprints = $formconfirm;
-			return $ret;
-		} else {
-			$this->errors = $errors;
-			return -1;
-		}
+		$this->resprints = $formconfirm;
+		return $ret;
 	}
 }

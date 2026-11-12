@@ -9,7 +9,7 @@
 
 // Load Dolibarr environment
 $res = 0;
-if (!$res && !empty($_SERVER["CONTEXT_DOCUMENT_ROOT"])) {
+if (!empty($_SERVER["CONTEXT_DOCUMENT_ROOT"])) {
 	$res = @include $_SERVER["CONTEXT_DOCUMENT_ROOT"] . "/main.inc.php";
 }
 $tmp = empty($_SERVER['SCRIPT_FILENAME']) ? '' : $_SERVER['SCRIPT_FILENAME'];
@@ -123,7 +123,7 @@ if ($action == 'select' && $socid > 0) {
 	}
 	restrictedArea($user, 'societe', $socid, '&societe', '', 'fk_soc', 'rowid', 0);
 	$participantid = GETPOST('participantid', 'alphanohtml');
-	if (!empty($participantid) && $thirdparty) {
+	if (!empty($participantid)) {
 		$thirdparty->array_options['options_peppol_id'] = $participantid;
 		// Save extrafield - update() alone doesn't save extrafields in Dolibarr!
 		$thirdparty->insertExtraFields();

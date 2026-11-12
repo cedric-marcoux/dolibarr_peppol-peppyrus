@@ -26,7 +26,7 @@ abstract class PeppolAP
 	/**
 	 * Constructor
 	 *
-	 * @param DoliDB $db Database handler
+	 * @param \DoliDB $db Database handler
 	 */
 	public function __construct($db)
 	{
@@ -36,7 +36,7 @@ abstract class PeppolAP
 	/**
 	 * Validate API configuration
 	 *
-	 * @return  int <= 0 if configuration invalid, > 0 if valid
+	 * @return  int Result: <= 0 if configuration invalid, > 0 if valid
 	 */
 	abstract protected function validateConfiguration();
 
@@ -51,9 +51,9 @@ abstract class PeppolAP
 	/**
 	 * check your access point
 	 *
-	 * @param   [type]  $object  [$object description]
+	 * @param   mixed   $object   Value
 	 *
-	 * @return  int <= 0 in case of error, > 0 on success
+	 * @return  int Result: <= 0 in case of error, > 0 on success
 	 */
 	abstract public function checkAccessPoint($object);
 
@@ -63,16 +63,16 @@ abstract class PeppolAP
 	 * @param   string  $filename  path to the XML file
 	 * @param   object  $object    object (Facture)
 	 *
-	 * @return  int <= 0 in case of error, > 0 on success
+	 * @return  int Result: <= 0 in case of error, > 0 on success
 	 */
 	abstract public function sendToAccessPoint($filename, $object);
 
 	/**
 	 * check thirdpart identify thanks to peppol id
 	 *
-	 * @param   Societe  $thirdpart  dolibarr thirdpart
+	 * @param   \Societe  $thirdpart  dolibarr thirdpart
 	 *
-	 * @return  int <= 0 in case of error, > 0 on success
+	 * @return  int Result: <= 0 in case of error, > 0 on success
 	 */
 	abstract public function checkThirdparty(\Societe $thirdpart);
 
@@ -80,7 +80,7 @@ abstract class PeppolAP
 	/**
 	 * get all invoices waiting into your peppol AP
 	 *
-	 * @return  int <= 0 in case of error, > 0 on success
+	 * @return  int Result: <= 0 in case of error, > 0 on success
 	 */
 	abstract public function getSupplierInvoicesList();
 
@@ -89,7 +89,7 @@ abstract class PeppolAP
 	 *
 	 * @param   Peppolimport  $pi  peppolimport object to import
 	 *
-	 * @return  int <= 0 in case of error, > 0 on success
+	 * @return  int Result: <= 0 in case of error, > 0 on success
 	 */
 	abstract public function getSupplierInvoice(Peppolimport $pi);
 
@@ -98,7 +98,7 @@ abstract class PeppolAP
 	 *
 	 * @param   Peppolimport  $pi  peppolimport object to import
 	 *
-	 * @return  int <= 0 in case of error, > 0 on success
+	 * @return  int Result: <= 0 in case of error, > 0 on success
 	 */
 	abstract public function getSupplierInvoicePdf(Peppolimport $pi);
 
@@ -107,7 +107,7 @@ abstract class PeppolAP
 	 *
 	 * @param   Peppolimport  $pi  peppolimport object to import
 	 *
-	 * @return  int <= 0 in case of error, > 0 on success
+	 * @return  int Result: <= 0 in case of error, > 0 on success
 	 */
 	abstract public function confirmSupplierInvoice(Peppolimport $pi);
 
@@ -117,7 +117,7 @@ abstract class PeppolAP
 	 * @param   Peppolimport  $pi  peppolimport object to import
 	 * @param   string        $reason  reason for rejection
 	 *
-	 * @return  int <= 0 in case of error, > 0 on success
+	 * @return  int Result: <= 0 in case of error, > 0 on success
 	 */
 	abstract public function rejectSupplierInvoice(Peppolimport $pi, $reason);
 }

@@ -4,46 +4,10 @@
 // New reports make the check fail; fix them instead of adding them here.
 $ignoreErrors = [];
 $ignoreErrors[] = [
-	'message' => '#^Call to function is_array\\(\\) with array\\{non\\-falsy\\-string, non\\-falsy\\-string\\} will always evaluate to true\\.$#',
-	'identifier' => 'function.alreadyNarrowedType',
-	'count' => 2,
-	'path' => __DIR__ . '/../../class/peppol.class.php',
-];
-$ignoreErrors[] = [
 	'message' => '#^Call to function is_array\\(\\) with array\\{totalHT\\: \\(float\\|int\\), totalTVA\\: \\(float\\|int\\)\\} will always evaluate to true\\.$#',
 	'identifier' => 'function.alreadyNarrowedType',
 	'count' => 1,
 	'path' => __DIR__ . '/../../class/peppol.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Call to function property_exists\\(\\) with \\$this\\(custom\\\\peppolpeppyrus\\\\Peppolimport\\) and \'socid\' will always evaluate to true\\.$#',
-	'identifier' => 'function.alreadyNarrowedType',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Call to function property_exists\\(\\) with custom\\\\peppolpeppyrus\\\\Peppolimport and \'date_creation\' will always evaluate to true\\.$#',
-	'identifier' => 'function.alreadyNarrowedType',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Call to function property_exists\\(\\) with custom\\\\peppolpeppyrus\\\\Peppolimport and \'date_modification\' will always evaluate to true\\.$#',
-	'identifier' => 'function.alreadyNarrowedType',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Call to function property_exists\\(\\) with custom\\\\peppolpeppyrus\\\\Peppolimport and \'ref\' will always evaluate to true\\.$#',
-	'identifier' => 'function.alreadyNarrowedType',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Call to function property_exists\\(\\) with custom\\\\peppolpeppyrus\\\\Peppolimport and \'status\' will always evaluate to true\\.$#',
-	'identifier' => 'function.alreadyNarrowedType',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
 ];
 $ignoreErrors[] = [
 	'message' => '#^Constant custom\\\\peppolpeppyrus\\\\PeppolVatExemption\\:\\:TAX_CATEGORIES type has no value type specified in iterable type array\\.$#',
@@ -56,12 +20,6 @@ $ignoreErrors[] = [
 	'identifier' => 'missingType.iterableValue',
 	'count' => 1,
 	'path' => __DIR__ . '/../../class/peppolvatexemption.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Default value of the parameter \\#3 \\$peppolid \\(string\\) of method custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:fetch\\(\\) is incompatible with type int\\.$#',
-	'identifier' => 'parameter.defaultValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
 ];
 $ignoreErrors[] = [
 	'message' => '#^Function dolibarrToPeppolMeansCode\\(\\) return type has no value type specified in iterable type array\\.$#',
@@ -82,52 +40,16 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/../../lib/peppol.lib.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Function peppolFindFileToUse\\(\\) should return string but returns int\\.$#',
-	'identifier' => 'return.type',
-	'count' => 1,
-	'path' => __DIR__ . '/../../lib/peppol.lib.php',
-];
-$ignoreErrors[] = [
 	'message' => '#^Function peppolListOfFilesLinkedTo\\(\\) return type has no value type specified in iterable type array\\.$#',
 	'identifier' => 'missingType.iterableValue',
 	'count' => 1,
 	'path' => __DIR__ . '/../../lib/peppol.lib.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^If condition is always false\\.$#',
-	'identifier' => 'if.alwaysFalse',
-	'count' => 1,
-	'path' => __DIR__ . '/../../peppol_tab.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^If condition is always false\\.$#',
-	'identifier' => 'if.alwaysFalse',
-	'count' => 1,
-	'path' => __DIR__ . '/../../peppolimport_list.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Left side of && is always false\\.$#',
-	'identifier' => 'booleanAnd.leftAlwaysFalse',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
 	'message' => '#^Left side of && is always true\\.$#',
 	'identifier' => 'booleanAnd.leftAlwaysTrue',
 	'count' => 2,
 	'path' => __DIR__ . '/../../class/peppolvatexemption.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Left side of \\|\\| is always true\\.$#',
-	'identifier' => 'booleanOr.leftAlwaysTrue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../peppolimport_card.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Loose comparison using \\=\\= between \'MyObject\' and \'MyObject\' will always evaluate to true\\.$#',
-	'identifier' => 'equal.alwaysTrue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../core/modules/modPeppolpeppyrus.class.php',
 ];
 $ignoreErrors[] = [
 	'message' => '#^Method ActionsPeppolpeppyrus\\:\\:addMoreActionsButtons\\(\\) has parameter \\$parameters with no value type specified in iterable type array\\.$#',
@@ -208,72 +130,6 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/../../class/actions_peppolpeppyrus.class.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Method InterfacePeppolTriggers\\:\\:runTrigger\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../core/triggers/interface_99_modPeppol_PeppolTriggers.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\PeppolAP\\:\\:checkAccessPoint\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolap.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\PeppolAP\\:\\:checkAccessPoint\\(\\) has parameter \\$object with no type specified\\.$#',
-	'identifier' => 'missingType.parameter',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolap.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\PeppolAP\\:\\:checkThirdparty\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolap.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\PeppolAP\\:\\:confirmSupplierInvoice\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolap.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\PeppolAP\\:\\:getSupplierInvoicePdf\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolap.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\PeppolAP\\:\\:getSupplierInvoice\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolap.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\PeppolAP\\:\\:getSupplierInvoicesList\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolap.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\PeppolAP\\:\\:rejectSupplierInvoice\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolap.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\PeppolAP\\:\\:sendToAccessPoint\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolap.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\PeppolAP\\:\\:validateConfiguration\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolap.class.php',
-];
-$ignoreErrors[] = [
 	'message' => '#^Method custom\\\\peppolpeppyrus\\\\PeppolVatExemption\\:\\:generatePeppolLineTaxCategory\\(\\) return type has no value type specified in iterable type array\\.$#',
 	'identifier' => 'missingType.iterableValue',
 	'count' => 1,
@@ -316,24 +172,6 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/../../class/peppol.class.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppol\\:\\:getModNumber\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppol.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppol\\:\\:getModNumber\\(\\) has parameter \\$modName with no type specified\\.$#',
-	'identifier' => 'missingType.parameter',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppol.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppol\\:\\:idprof\\(\\) is unused\\.$#',
-	'identifier' => 'method.unused',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppol.class.php',
-];
-$ignoreErrors[] = [
 	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppol\\:\\:iec6523Code\\(\\) has no return type specified\\.$#',
 	'identifier' => 'missingType.return',
 	'count' => 1,
@@ -346,76 +184,10 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/../../class/peppol.class.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppol\\:\\:isLineFromExternalModule\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppol.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppol\\:\\:isLineFromExternalModule\\(\\) has parameter \\$element with no type specified\\.$#',
-	'identifier' => 'missingType.parameter',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppol.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppol\\:\\:isLineFromExternalModule\\(\\) has parameter \\$line with no type specified\\.$#',
-	'identifier' => 'missingType.parameter',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppol.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppol\\:\\:isLineFromExternalModule\\(\\) has parameter \\$searchName with no type specified\\.$#',
-	'identifier' => 'missingType.parameter',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppol.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppol\\:\\:isLineFromExternalModule\\(\\) is unused\\.$#',
-	'identifier' => 'method.unused',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppol.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppol\\:\\:makePDF\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppol.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppol\\:\\:makePDF\\(\\) has parameter \\$orig_pdf with no type specified\\.$#',
-	'identifier' => 'missingType.parameter',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppol.class.php',
-];
-$ignoreErrors[] = [
 	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppol\\:\\:searchPeppolDirectory\\(\\) return type has no value type specified in iterable type array\\.$#',
 	'identifier' => 'missingType.iterableValue',
 	'count' => 1,
 	'path' => __DIR__ . '/../../class/peppol.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:cancel\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:create\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:delete\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:extractPDFfromXML\\(\\) should return int but returns true\\.$#',
-	'identifier' => 'return.type',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
 ];
 $ignoreErrors[] = [
 	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:fetchAll\\(\\) has parameter \\$filter with no value type specified in iterable type array\\.$#',
@@ -426,36 +198,6 @@ $ignoreErrors[] = [
 $ignoreErrors[] = [
 	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:fetchAll\\(\\) return type has no value type specified in iterable type array\\.$#',
 	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:fetchLines\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:fetch\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:fileExist\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:fullFilename\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:fullImportSuccess\\(\\) should return bool\\|null but return statement is missing\\.$#',
-	'identifier' => 'return.missing',
 	'count' => 1,
 	'path' => __DIR__ . '/../../class/peppolimport.class.php',
 ];
@@ -472,76 +214,10 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/../../class/peppolimport.class.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:getNextValue\\(\\) should return string but returns int\\.$#',
-	'identifier' => 'return.type',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:importInvoices\\(\\) has parameter \\$list with no value type specified in iterable type array\\.$#',
-	'identifier' => 'missingType.iterableValue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:importInvoices\\(\\) should return int but return statement is missing\\.$#',
-	'identifier' => 'return.missing',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:importNow\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:reopen\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:setDraft\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
 	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:setValues\\(\\) has parameter \\$array with no value type specified in iterable type array\\.$#',
 	'identifier' => 'missingType.iterableValue',
 	'count' => 1,
 	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:update\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:validate\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppyrus\\:\\:checkAccessPoint\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppyrus\\:\\:checkThirdparty\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppyrus\\:\\:confirmSupplierInvoice\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
 ];
 $ignoreErrors[] = [
 	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppyrus\\:\\:findPeppolIdByVat\\(\\) return type has no value type specified in iterable type array\\.$#',
@@ -563,18 +239,6 @@ $ignoreErrors[] = [
 ];
 $ignoreErrors[] = [
 	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppyrus\\:\\:getSupplierInvoicePdf\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppyrus\\:\\:getSupplierInvoice\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppyrus\\:\\:getSupplierInvoicesList\\(\\) has no return type specified\\.$#',
 	'identifier' => 'missingType.return',
 	'count' => 1,
 	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
@@ -610,319 +274,13 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppyrus\\:\\:sendToAccessPoint\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Method custom\\\\peppolpeppyrus\\\\Peppyrus\\:\\:validateConfiguration\\(\\) has no return type specified\\.$#',
-	'identifier' => 'missingType.return',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Negated boolean expression is always true\\.$#',
-	'identifier' => 'booleanNot.alwaysTrue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../admin/about.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Negated boolean expression is always true\\.$#',
-	'identifier' => 'booleanNot.alwaysTrue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../admin/setup.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Negated boolean expression is always true\\.$#',
-	'identifier' => 'booleanNot.alwaysTrue',
-	'count' => 5,
-	'path' => __DIR__ . '/../../class/actions_peppolpeppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Negated boolean expression is always true\\.$#',
-	'identifier' => 'booleanNot.alwaysTrue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppol.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Negated boolean expression is always true\\.$#',
-	'identifier' => 'booleanNot.alwaysTrue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Negated boolean expression is always true\\.$#',
-	'identifier' => 'booleanNot.alwaysTrue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../index.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Negated boolean expression is always true\\.$#',
-	'identifier' => 'booleanNot.alwaysTrue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../peppol_candidates.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Negated boolean expression is always true\\.$#',
-	'identifier' => 'booleanNot.alwaysTrue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../peppol_list.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Negated boolean expression is always true\\.$#',
-	'identifier' => 'booleanNot.alwaysTrue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../peppol_search_directory.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Negated boolean expression is always true\\.$#',
-	'identifier' => 'booleanNot.alwaysTrue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../peppol_tab.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Negated boolean expression is always true\\.$#',
-	'identifier' => 'booleanNot.alwaysTrue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../peppolimport_card.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Negated boolean expression is always true\\.$#',
-	'identifier' => 'booleanNot.alwaysTrue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../peppolimport_list.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Negated boolean expression is always true\\.$#',
-	'identifier' => 'booleanNot.alwaysTrue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../search.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Offset 0 on array\\{non\\-falsy\\-string, non\\-falsy\\-string\\} in empty\\(\\) always exists and is not falsy\\.$#',
-	'identifier' => 'empty.offset',
-	'count' => 2,
-	'path' => __DIR__ . '/../../class/peppol.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @param for parameter \\$db with type custom\\\\peppolpeppyrus\\\\DoliDb is not subtype of native type DoliDB\\.$#',
-	'identifier' => 'parameter.phpDocType',
-	'count' => 2,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @param for parameter \\$invoice with type custom\\\\peppolpeppyrus\\\\Facture is not subtype of native type Facture\\.$#',
-	'identifier' => 'parameter.phpDocType',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppol.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @param for parameter \\$thirdpart with type custom\\\\peppolpeppyrus\\\\Societe is not subtype of native type Societe\\.$#',
-	'identifier' => 'parameter.phpDocType',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolap.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @param for parameter \\$thirdparty with type custom\\\\peppolpeppyrus\\\\Societe is not subtype of native type Societe\\.$#',
-	'identifier' => 'parameter.phpDocType',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @param for parameter \\$user with type custom\\\\peppolpeppyrus\\\\User is not subtype of native type User\\.$#',
-	'identifier' => 'parameter.phpDocType',
-	'count' => 5,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @param has invalid value \\(\\[type\\]  \\$object  \\[\\$object description\\]\\)\\: Unexpected token "\\[", expected type at offset 49 on line 4$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolap.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @param has invalid value \\(\\[type\\]  \\$orig_pdf  \\[\\$orig_pdf description\\]\\)\\: Unexpected token "\\[", expected type at offset 58 on line 4$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppol.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @return has invalid value \\(\\[type\\]             \\[return description\\]\\)\\: Unexpected token "\\[", expected type at offset 118 on line 6$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppol.class.php',
-];
-$ignoreErrors[] = [
 	'message' => '#^PHPDoc tag @return has invalid value \\(\\[type\\]  \\[return description\\]\\)\\: Unexpected token "\\[", expected type at offset 102 on line 4$#',
 	'identifier' => 'phpDoc.parseError',
 	'count' => 1,
 	'path' => __DIR__ . '/../../class/peppol.class.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @return has invalid value \\(\\[type\\]  \\[return description\\]\\)\\: Unexpected token "\\[", expected type at offset 133 on line 5$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @return has invalid value \\(\\[type\\]  \\[return description\\]\\)\\: Unexpected token "\\[", expected type at offset 154 on line 5$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @return has invalid value \\(\\[type\\]  \\[return description\\]\\)\\: Unexpected token "\\[", expected type at offset 72 on line 4$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @return has invalid value \\(int						\\<0 if KO, 0\\=Nothing done, \\>0 if OK\\)\\: Unexpected token "if", expected \'\\>\' at offset 179 on line 6$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @return has invalid value \\(int						\\<0 if KO, 0\\=Nothing done, \\>0 if OK\\)\\: Unexpected token "if", expected \'\\>\' at offset 190 on line 6$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @return has invalid value \\(int						\\<0 if KO, \\>0 if OK\\)\\: Unexpected token "if", expected \'\\>\' at offset 178 on line 6$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @return has invalid value \\(int						\\<\\=0 if OK, 0\\=Nothing done, \\>0 if KO\\)\\: Unexpected token "\\=", expected type at offset 186 on line 6$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @return has invalid value \\(int              		\\<0 if KO, 0 if no triggered ran, \\>0 if OK\\)\\: Unexpected token "if", expected \'\\>\' at offset 404 on line 11$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../core/triggers/interface_99_modPeppol_PeppolTriggers.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @return has invalid value \\(int             \\<0 if KO, Id of created object if OK\\)\\: Unexpected token "if", expected \'\\>\' at offset 196 on line 6$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @return has invalid value \\(int             \\<0 if KO, \\>0 if OK\\)\\: Unexpected token "if", expected \'\\>\' at offset 194 on line 6$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @return has invalid value \\(int             \\<0 if KO, \\>0 if OK\\)\\: Unexpected token "if", expected \'\\>\' at offset 197 on line 6$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @return has invalid value \\(int         \\<0 if KO, 0 if not found, \\>0 if OK\\)\\: Unexpected token "if", expected \'\\>\' at offset 188 on line 7$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @return has invalid value \\(int         \\<0 if KO, 0 if not found, \\>0 if OK\\)\\: Unexpected token "if", expected \'\\>\' at offset 85 on line 4$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @return has invalid value \\(int \\<\\= 0 if configuration invalid, \\> 0 if valid\\)\\: Unexpected token "\\=", expected type at offset 57 on line 4$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @return has invalid value \\(int \\<\\= 0 if configuration invalid, \\> 0 if valid\\)\\: Unexpected token "\\=", expected type at offset 57 on line 4$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolap.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @return has invalid value \\(int \\<\\= 0 in case of error, \\> 0 on success\\)\\: Unexpected token "\\=", expected type at offset 107 on line 6$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @return has invalid value \\(int \\<\\= 0 in case of error, \\> 0 on success\\)\\: Unexpected token "\\=", expected type at offset 110 on line 6$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolap.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @return has invalid value \\(int \\<\\= 0 in case of error, \\> 0 on success\\)\\: Unexpected token "\\=", expected type at offset 132 on line 6$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolap.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @return has invalid value \\(int \\<\\= 0 in case of error, \\> 0 on success\\)\\: Unexpected token "\\=", expected type at offset 134 on line 6$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @return has invalid value \\(int \\<\\= 0 in case of error, \\> 0 on success\\)\\: Unexpected token "\\=", expected type at offset 134 on line 6$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolap.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @return has invalid value \\(int \\<\\= 0 in case of error, \\> 0 on success\\)\\: Unexpected token "\\=", expected type at offset 135 on line 6$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @return has invalid value \\(int \\<\\= 0 in case of error, \\> 0 on success\\)\\: Unexpected token "\\=", expected type at offset 140 on line 6$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @return has invalid value \\(int \\<\\= 0 in case of error, \\> 0 on success\\)\\: Unexpected token "\\=", expected type at offset 140 on line 6$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolap.class.php',
-];
-$ignoreErrors[] = [
 	'message' => '#^PHPDoc tag @return has invalid value \\(int \\<\\= 0 in case of error, \\> 0 on success\\)\\: Unexpected token "\\=", expected type at offset 152 on line 6$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @return has invalid value \\(int \\<\\= 0 in case of error, \\> 0 on success\\)\\: Unexpected token "\\=", expected type at offset 152 on line 6$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolap.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @return has invalid value \\(int \\<\\= 0 in case of error, \\> 0 on success\\)\\: Unexpected token "\\=", expected type at offset 198 on line 7$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @return has invalid value \\(int \\<\\= 0 in case of error, \\> 0 on success\\)\\: Unexpected token "\\=", expected type at offset 198 on line 7$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolap.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @return has invalid value \\(int \\<\\= 0 in case of error, \\> 0 on success\\)\\: Unexpected token "\\=", expected type at offset 214 on line 7$#',
 	'identifier' => 'phpDoc.parseError',
 	'count' => 1,
 	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
@@ -931,43 +289,7 @@ $ignoreErrors[] = [
 	'message' => '#^PHPDoc tag @return has invalid value \\(int \\<\\= 0 in case of error, \\> 0 on success\\)\\: Unexpected token "\\=", expected type at offset 214 on line 7$#',
 	'identifier' => 'phpDoc.parseError',
 	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolap.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @return has invalid value \\(int \\<\\= 0 in case of error, \\> 0 on success\\)\\: Unexpected token "\\=", expected type at offset 75 on line 4$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
 	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc tag @return has invalid value \\(int \\<\\= 0 in case of error, \\> 0 on success\\)\\: Unexpected token "\\=", expected type at offset 75 on line 4$#',
-	'identifier' => 'phpDoc.parseError',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolap.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc type array of property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$fields is not covariant with PHPDoc type array\\<string, array\\{type\\: string, label\\: string, enabled\\: int\\<0, 2\\>\\|string, position\\: int, visible\\: int\\<\\-6, 6\\>\\|string, langfile\\?\\: string, notnull\\?\\: int\\<\\-1, 1\\>, noteditable\\?\\: int\\<0, 1\\>, \\.\\.\\.\\}\\> of overridden property CommonObject\\:\\:\\$fields\\.$#',
-	'identifier' => 'property.phpDocType',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc type int of property custom\\\\peppolpeppyrus\\\\PeppolimportLine\\:\\:\\$isextrafieldmanaged is not covariant with PHPDoc type int\\<0, 1\\> of overridden property CommonObject\\:\\:\\$isextrafieldmanaged\\.$#',
-	'identifier' => 'property.phpDocType',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc type int of property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$isextrafieldmanaged is not covariant with PHPDoc type int\\<0, 1\\> of overridden property CommonObject\\:\\:\\$isextrafieldmanaged\\.$#',
-	'identifier' => 'property.phpDocType',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^PHPDoc type int of property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$ismultientitymanaged is not covariant with PHPDoc type int\\<0, 1\\>\\|string\\|null of overridden property CommonObject\\:\\:\\$ismultientitymanaged\\.$#',
-	'identifier' => 'property.phpDocType',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
 ];
 $ignoreErrors[] = [
 	'message' => '#^Parameter \\#1 \\$db of class Product constructor expects DoliDB, custom\\\\peppolpeppyrus\\\\DoliDB given\\.$#',
@@ -982,28 +304,10 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/../../class/peppolvatexemption.class.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Parameter \\#1 \\$links of function dol_get_fiche_head expects array, string given\\.$#',
-	'identifier' => 'argument.type',
-	'count' => 1,
-	'path' => __DIR__ . '/../../peppolimport_card.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Parameter \\#1 \\$links of function dol_get_fiche_head expects array\\<int, array\\<int\\<0, 5\\>, string\\>\\>, \'\' given\\.$#',
-	'identifier' => 'argument.type',
-	'count' => 1,
-	'path' => __DIR__ . '/../../peppolimport_card.php',
-];
-$ignoreErrors[] = [
 	'message' => '#^Parameter \\#1 \\$number of function number_format expects float, string\\|null given\\.$#',
 	'identifier' => 'argument.type',
 	'count' => 1,
 	'path' => __DIR__ . '/../../lib/peppol.lib.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Parameter \\#1 \\$user of method CommonObject\\:\\:setStatusCommon\\(\\) expects User, custom\\\\peppolpeppyrus\\\\User given\\.$#',
-	'identifier' => 'argument.type',
-	'count' => 3,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
 ];
 $ignoreErrors[] = [
 	'message' => '#^Parameter \\#2 \\$customer of method custom\\\\peppolpeppyrus\\\\PeppolVatExemption\\:\\:determineExemptionCode\\(\\) expects custom\\\\peppolpeppyrus\\\\Societe, Societe given\\.$#',
@@ -1018,36 +322,6 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/../../class/peppolvatexemption.class.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Parameter \\#2 \\$rounding of function peppolGetRetainedWarrantyAmount expects int, true given\\.$#',
-	'identifier' => 'argument.type',
-	'count' => 2,
-	'path' => __DIR__ . '/../../class/peppol.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Parameter \\#2 \\$user of method CommonObject\\:\\:call_trigger\\(\\) expects User, custom\\\\peppolpeppyrus\\\\User given\\.$#',
-	'identifier' => 'argument.type',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Parameter \\#2 \\$user of method CommonObject\\:\\:call_trigger\\(\\) expects User\\|null, custom\\\\peppolpeppyrus\\\\User given\\.$#',
-	'identifier' => 'argument.type',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Parameter \\#3 \\$outputlangs of method CommonObject\\:\\:commonGenerateDocument\\(\\) expects Translate, custom\\\\peppolpeppyrus\\\\Translate given\\.$#',
-	'identifier' => 'argument.type',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Parameter \\#4 \\$status of function peppolAddLog expects string, int given\\.$#',
-	'identifier' => 'argument.type',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
-];
-$ignoreErrors[] = [
 	'message' => '#^Property ActionsPeppolpeppyrus\\:\\:\\$errors type has no value type specified in iterable type array\\.$#',
 	'identifier' => 'missingType.iterableValue',
 	'count' => 1,
@@ -1060,12 +334,6 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/../../class/actions_peppolpeppyrus.class.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Property CommonObject\\:\\:\\$array_options \\(array\\<string, mixed\\>\\) in isset\\(\\) is not nullable\\.$#',
-	'identifier' => 'isset.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
-];
-$ignoreErrors[] = [
 	'message' => '#^Property CommonObject\\:\\:\\$date_modification \\(int\\|string\\) does not accept null\\.$#',
 	'identifier' => 'assign.propertyType',
 	'count' => 1,
@@ -1073,12 +341,6 @@ $ignoreErrors[] = [
 ];
 $ignoreErrors[] = [
 	'message' => '#^Property Societe\\:\\:\\$idprof1 \\(string\\) on left side of \\?\\? is not nullable\\.$#',
-	'identifier' => 'nullCoalesce.property',
-	'count' => 1,
-	'path' => __DIR__ . '/../../lib/peppol.lib.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Property Societe\\:\\:\\$name \\(string\\) on left side of \\?\\? is not nullable\\.$#',
 	'identifier' => 'nullCoalesce.property',
 	'count' => 1,
 	'path' => __DIR__ . '/../../lib/peppol.lib.php',
@@ -1252,12 +514,6 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/../../class/peppolimport.class.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$ismultientitymanaged \\(int\\) in isset\\(\\) is not nullable\\.$#',
-	'identifier' => 'isset.property',
-	'count' => 2,
-	'path' => __DIR__ . '/../../class/peppolimport.class.php',
-];
-$ignoreErrors[] = [
 	'message' => '#^Property custom\\\\peppolpeppyrus\\\\Peppolimport\\:\\:\\$labelStatus has no type specified\\.$#',
 	'identifier' => 'missingType.property',
 	'count' => 1,
@@ -1406,48 +662,6 @@ $ignoreErrors[] = [
 	'identifier' => 'missingType.iterableValue',
 	'count' => 1,
 	'path' => __DIR__ . '/../../core/modules/modPeppolpeppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Right side of && is always true\\.$#',
-	'identifier' => 'booleanAnd.rightAlwaysTrue',
-	'count' => 1,
-	'path' => __DIR__ . '/../../peppol_search_directory.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Ternary operator condition is always false\\.$#',
-	'identifier' => 'ternary.alwaysFalse',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/actions_peppolpeppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Unreachable statement \\- code above always terminates\\.$#',
-	'identifier' => 'deadCode.unreachable',
-	'count' => 1,
-	'path' => __DIR__ . '/../../core/modules/modPeppolpeppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Unreachable statement \\- code above always terminates\\.$#',
-	'identifier' => 'deadCode.unreachable',
-	'count' => 1,
-	'path' => __DIR__ . '/../../lib/peppol.lib.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Variable \\$buyerIdent in empty\\(\\) always exists and is always falsy\\.$#',
-	'identifier' => 'empty.variable',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/peppol.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Variable \\$content in empty\\(\\) always exists and is not falsy\\.$#',
-	'identifier' => 'empty.variable',
-	'count' => 1,
-	'path' => __DIR__ . '/../../class/ap-peppyrus.class.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Variable \\$contextpage in empty\\(\\) always exists and is not falsy\\.$#',
-	'identifier' => 'empty.variable',
-	'count' => 1,
-	'path' => __DIR__ . '/../../peppolimport_list.php',
 ];
 
 return ['parameters' => ['ignoreErrors' => $ignoreErrors]];

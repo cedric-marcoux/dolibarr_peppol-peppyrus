@@ -46,7 +46,7 @@ function peppolDirectorySearchCandidates($thirdparty)
 	if ($profid1 !== '' && strlen($profid1) >= 6 && !in_array($profid1, $candidates, true)) {
 		$candidates['profid1'] = $profid1;
 	}
-	$name = trim(preg_replace('/\s+/', ' ', (string) ($thirdparty->name ?? '')));
+	$name = trim(preg_replace('/\s+/', ' ', (string) $thirdparty->name));
 	if ($name !== '') {
 		$candidates['name'] = $name;
 	}
@@ -503,14 +503,14 @@ function peppolNextRefLine()
 /**
  * Get amount of RetainedWarranty
  *
- * @param   object  $invoice   Invoice object
- * @param   int     $rounding  Rounding
- * @return  float              Retained warranty amount
+ * @param   object      $invoice   Invoice object
+ * @param   int|string  $rounding  Rounding as Facture::getRetainedWarrantyAmount() accepts it ('MT', 'MU' or a number of decimals)
+ * @return  float                  Retained warranty amount, 0 when there is none
  */
-function peppolGetRetainedWarrantyAmount($invoice, $rounding)
+function peppolGetRetainedWarrantyAmount($invoice, $rounding = 'MT')
 {
 	if (is_callable(array($invoice, 'getRetainedWarrantyAmount'))) {
-		return $invoice->getRetainedWarrantyAmount($rounding);
+		// Dolibarr returns -1 when there is no retained warranty; that is 0 here
 		$retainedDataReturnValue = $invoice->getRetainedWarrantyAmount($rounding);
 		return $retainedDataReturnValue == -1 ? 0 : $retainedDataReturnValue;
 	}
@@ -561,7 +561,7 @@ function peppolListOfFilesLinkedTo(CommonObject $obj)
  *
  * @param   CommonObject  $obj          Object
  * @param   string        $defaultPath  Default path
- * @return  string                      File name
+ * @return  string|int                  File name, or -1 when there is no XML file
  */
 function peppolFindFileToUse(CommonObject $obj, $defaultPath)
 {

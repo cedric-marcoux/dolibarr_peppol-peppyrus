@@ -48,7 +48,7 @@ class Peppyrus extends PeppolAP
 	/**
 	 * Validate API configuration
 	 *
-	 * @return  int <= 0 if configuration invalid, > 0 if valid
+	 * @return  int Result: <= 0 if configuration invalid, > 0 if valid
 	 */
 	protected function validateConfiguration()
 	{
@@ -197,7 +197,7 @@ class Peppyrus extends PeppolAP
 					$errorMsg .= '<br>- ' . dol_escape_htmltag(is_string($e) ? $e : (string) json_encode($e));
 				}
 			}
-		} elseif (!empty($content)) {
+		} else {
 			// Fallback: the raw content without HTML tags, escaped
 			$errorMsg = dol_escape_htmltag(strip_tags($content));
 		}
@@ -257,7 +257,7 @@ class Peppyrus extends PeppolAP
 	 *
 	 * @param   object  $object  object description
 	 *
-	 * @return  int <= 0 in case of error, > 0 on success
+	 * @return  int Result: <= 0 in case of error, > 0 on success
 	 */
 	public function checkAccessPoint($object)
 	{
@@ -343,7 +343,7 @@ class Peppyrus extends PeppolAP
 	 * @param   string  $filename  path to the XML file
 	 * @param   object  $object    object (Facture)
 	 *
-	 * @return  int <= 0 in case of error, > 0 on success
+	 * @return  int Result: <= 0 in case of error, > 0 on success
 	 */
 	public function sendToAccessPoint($filename, $object)
 	{
@@ -475,9 +475,9 @@ class Peppyrus extends PeppolAP
 	/**
 	 * Check thirdparty identity thanks to peppol id
 	 *
-	 * @param   Societe  $thirdparty  dolibarr thirdparty
+	 * @param   \Societe  $thirdparty  dolibarr thirdparty
 	 *
-	 * @return  int <= 0 in case of error, > 0 on success
+	 * @return  int Result: <= 0 in case of error, > 0 on success
 	 */
 	public function checkThirdparty(\Societe $thirdparty)
 	{
@@ -492,7 +492,7 @@ class Peppyrus extends PeppolAP
 
 		$apiKey = $this->getApiKey();
 
-		if (!isset($thirdparty->array_options) || empty($thirdparty->array_options)) {
+		if (empty($thirdparty->array_options)) {
 			$thirdparty->fetch_optionals();
 		}
 
@@ -551,7 +551,7 @@ class Peppyrus extends PeppolAP
 	/**
 	 * Get all invoices waiting into your peppol AP
 	 *
-	 * @return  int <= 0 in case of error, > 0 on success
+	 * @return  int Result: <= 0 in case of error, > 0 on success
 	 */
 	public function getSupplierInvoicesList()
 	{
@@ -788,7 +788,7 @@ class Peppyrus extends PeppolAP
 	 *
 	 * @param   Peppolimport  $pi  peppolimport object to import
 	 *
-	 * @return  int <= 0 in case of error, > 0 on success
+	 * @return  int Result: <= 0 in case of error, > 0 on success
 	 */
 	public function getSupplierInvoice(Peppolimport $pi)
 	{
@@ -898,7 +898,7 @@ class Peppyrus extends PeppolAP
 	 *
 	 * @param   Peppolimport  $pi  peppolimport object to import
 	 *
-	 * @return  int <= 0 in case of error, > 0 on success
+	 * @return  int Result: <= 0 in case of error, > 0 on success
 	 */
 	public function confirmSupplierInvoice(Peppolimport $pi)
 	{
@@ -952,7 +952,7 @@ class Peppyrus extends PeppolAP
 
 		// Log the confirmation action
 		if (function_exists('peppolAddLog')) {
-			peppolAddLog('peppyrus', $pi->fk_invoice, 2, $result['http_code'] ?? 0, $message, json_encode($result));
+			peppolAddLog('peppyrus', $pi->fk_invoice, 2, (string) ($result['http_code'] ?? 0), $message, json_encode($result));
 		}
 
 		return $ret;

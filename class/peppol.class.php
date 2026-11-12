@@ -75,7 +75,7 @@ class Peppol
 	 * Constructor
 	 *
 	 * @param \DoliDB $db Database handler
-	 * @param Facture $invoice Customer invoice
+	 * @param \Facture $invoice Customer invoice
 	 */
 	public function __construct($db, \Facture $invoice)
 	{
@@ -94,9 +94,9 @@ class Peppol
 	/**
 	 * build PDF with Peppol XML around
 	 *
-	 * @param   [type]  $orig_pdf  [$orig_pdf description]
+	 * @param   mixed   $orig_pdf   Value
 	 *
-	 * @return  [type]             [return description]
+	 * @return  mixed  Result
 	 */
 	public function makePDF($orig_pdf)
 	{
@@ -451,10 +451,8 @@ class Peppol
 				if ($enableVatForThatInvoice) {
 					if (getDolGlobalString('PEPPOL_FORCE_XML_WITH_VATNULL')) {
 						dol_syslog("PEPPOL_FORCE_XML_WITH_VATNULL is enabled", LOG_WARNING);
-						if (empty($buyerIdent)) {
-							$baseErrors[] = $langs->trans("BuyerDoesNotHaveVATDetails");
-							$baseErrors[] = $langs->trans("BuyerDoesNotHaveVATDetailsForce") . "<br />";
-						}
+						$baseErrors[] = $langs->trans("BuyerDoesNotHaveVATDetails");
+						$baseErrors[] = $langs->trans("BuyerDoesNotHaveVATDetailsForce") . "<br />";
 						$buyerVAT = null;
 					} else {
 						$baseErrors[] = $langs->trans("BuyerDoesNotHaveVATDetails");
@@ -534,21 +532,13 @@ class Peppol
 			if ($stateCodeBuyer == "BU") {
 				$stateCodeBuyer = "B";
 				if (preg_match('/(SECTOR.)/i', str_replace(" ", "", $cityBuyer), $matches)) {
-					if (is_array($matches) && !empty($matches[0])) {
-						$cityBuyer = strtoupper($matches[0]);
-					} else {
-						$baseErrors[] = $langs->trans("PeppolCheckErrorSellerBucarestNoSector");
-					}
+					$cityBuyer = strtoupper($matches[0]);
 				}
 			}
 			if ($stateCodeSeller == "BU") {
 				$stateCodeSeller = "B";
 				if (preg_match('/(SECTOR.)/i', str_replace(" ", "", $citySeller), $matches)) {
-					if (is_array($matches) && !empty($matches[0])) {
-						$citySeller = strtoupper($matches[0]);
-					} else {
-						$baseErrors[] = $langs->trans("PeppolCheckErrorBuyerBucarestNoSector");
-					}
+					$citySeller = strtoupper($matches[0]);
 				}
 			}
 			$delivery->setSubdivision($objFacture->thirdparty->country_code . '-' . $stateCodeBuyer)
@@ -582,10 +572,10 @@ class Peppol
 		// exit;
 
 		//retenue de garantie
-		$retenue_garantie = peppolGetRetainedWarrantyAmount($objFacture, true);
+		$retenue_garantie = peppolGetRetainedWarrantyAmount($objFacture, 'MT');
 		$paymentTerms = "";
 		if ($retenue_garantie > 0) {
-			$reste = $objFacture->total_ttc - peppolGetRetainedWarrantyAmount($objFacture, true);;
+			$reste = $objFacture->total_ttc - $retenue_garantie;
 			$paymentTerms .= "TOTAL HT : " . price($objFacture->total_ht, 0, '', 1, -1, -1, 'auto') . "\n";
 			$paymentTerms .= "TVA : " . price($objFacture->total_tva, 0, '', 1, -1, -1, 'auto') . "\n";
 			$paymentTerms .= "TOTAL TTC : " . price($objFacture->total_ttc, 0, '', 1, -1, -1, 'auto') . "\n";
@@ -855,29 +845,27 @@ class Peppol
 				//VAT normale
 			}
 
-			// On a discount line the discount percentage is not used
-			if (!$remiseLigne) {
-				if (!empty($line->remise_percent)) {
-					// Fix PEPPOL-EN16931-R120: ensure allowance makes LineExtensionAmount = total_ht exactly
-					// abs(): for a credit note the line total is negative in Dolibarr and positive in the XML (#11)
-					$remise_abs = round($subprice - abs($line->total_ht), 2);
-					dol_syslog("  peppol line add remise (Allowance): " . $line->remise_percent . " absolute remise=" . $remise_abs);
-					$allowance = (new AllowanceOrCharge())->setReason('Discount')
-						->setReasonCode(95)
-						->setAmount($remise_abs);
+			// A discount line has been handled above (continue); only regular lines get here
+			if (!empty($line->remise_percent)) {
+				// Fix PEPPOL-EN16931-R120: ensure allowance makes LineExtensionAmount = total_ht exactly
+				// abs(): for a credit note the line total is negative in Dolibarr and positive in the XML (#11)
+				$remise_abs = round($subprice - abs($line->total_ht), 2);
+				dol_syslog("  peppol line add remise (Allowance): " . $line->remise_percent . " absolute remise=" . $remise_abs);
+				$allowance = (new AllowanceOrCharge())->setReason('Discount')
+					->setReasonCode(95)
+					->setAmount($remise_abs);
 
-					/*
-					error, with percentage -> voir #4
-					Element/context: /:Invoice[1]/cac:InvoiceLine[2]
-					XPath test: u:slack($lineExtensionAmount, ($quantity * ($priceAmount div $baseQuantity)) + $chargesTotal - $allowancesTotal, 0.02)
-					Error message: Invoice line net amount MUST equal (Invoiced quantity * (Item net price/item price base quantity) + Sum of invoice line charge amount - sum of invoice line allowance amount
-					// ->markAsPercentage()
-					// ->setAmount($line->remise_percent);
-					*/
+				/*
+				error, with percentage -> voir #4
+				Element/context: /:Invoice[1]/cac:InvoiceLine[2]
+				XPath test: u:slack($lineExtensionAmount, ($quantity * ($priceAmount div $baseQuantity)) + $chargesTotal - $allowancesTotal, 0.02)
+				Error message: Invoice line net amount MUST equal (Invoiced quantity * (Item net price/item price base quantity) + Sum of invoice line charge amount - sum of invoice line allowance amount
+				// ->markAsPercentage()
+				// ->setAmount($line->remise_percent);
+				*/
 
-					$res = $peppolLine->addAllowance($allowance);
-					// print "<p>" . var_dump($res) . "</p>";
-				}
+				$res = $peppolLine->addAllowance($allowance);
+				// print "<p>" . var_dump($res) . "</p>";
 			}
 			$res = $inv->addLine($peppolLine);
 			// dol_syslog("  peppol line add debug is : " . var_dump($peppolLine));
@@ -978,78 +966,6 @@ class Peppol
 			default:
 		}
 		return $retour;
-	}
-
-	/**
-	 * Professional ID of the own company used as Peppol identifier
-	 *
-	 * @return string Professional ID of the company
-	 */
-	private function idprof()
-	{
-		global $mysoc;
-		$retour = "";
-		switch ($mysoc->country_code) {
-			case 'BE':
-				$retour = $mysoc->idprof1;
-				break;
-			case 'DE':
-			case 'FR':
-				$retour = $mysoc->idprof2;
-				break;
-			default:
-				$retour = $mysoc->idprof2;
-		}
-		return $this->removeSpaces($retour);
-	}
-
-
-	/************************************************
-	 *    Check line type from external module ?
-	 *
-	 * @param  object $line       line we work on
-	 * @param  string $element    line object element (for special case like shipping)
-	 * @param  string $searchName module name we look for
-	 * @return boolean                        true if the line is a special one and was created by the module we ask for
-	 ************************************************/
-	private function isLineFromExternalModule($line, $element, $searchName)
-	{
-		if ($element == 'shipping' || $element == 'delivery') {
-			$fk_origin_line    = $line->fk_origin_line;
-			$line            = new \OrderLine($this->db);
-			$line->fetch($fk_origin_line);
-		}
-		if ($line->product_type == 9 && $line->special_code == $this->getModNumber($searchName)) {
-			return true;
-		} else {
-			return false;
-		}
-	}
-
-	/************************************************
-	 *    Find module number
-	 *
-	 * @param  string $modName module name we look for
-	 * @return integer                        -1 if KO, 0 not found or module number if Ok
-	 ************************************************/
-	private function getModNumber($modName)
-	{
-		if (class_exists($modName)) {
-			$objMod    = new $modName($this->db);
-			return $objMod->numero;
-		}
-		return 0;
-	}
-
-	/**
-	 * Remove the spaces from a text
-	 *
-	 * @param string $str Text
-	 * @return string Text without spaces
-	 */
-	private function removeSpaces($str)
-	{
-		return preg_replace('/\s+/', '', $str);
 	}
 
 	/**

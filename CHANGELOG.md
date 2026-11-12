@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.13.1
+
+- **Security, stricter:** `Peppolimport::fetchAll()` accepted raw SQL through the key `customsql`. The module never uses it, but it was an open door. It is removed; a filter can only be a plain column (`t.<column>`).
+- **Fixed in the same function:** a text value went into the SQL without quotes and was read as a column name; now `= 'value'`. The filter on a date column was never recognised; now it is.
+- **Fixed: the retained warranty was rounded to one decimal.** The function received `true` as rounding, which Dolibarr read as unit price rounding. Now the rounding for totals (`MT`), as Dolibarr does itself. This only matters for invoices with a retained warranty.
+- **Fixed: the next number of an import returned a number instead of text on a database error.** Now `'-1'`, as the caller already expected.
+- **Cleaned up after PHPStan** (no difference in use):
+  - leftovers of the Dolibarr module template: checks that were always true or false, an unused error variable in the hooks, the document models that were never used when enabling the module, and two empty functions (`importInvoices`, `fullImportSuccess`);
+  - unused private functions in the Peppol class (`idprof`, `removeSpaces`, `isLineFromExternalModule`, `getModNumber`);
+  - the types in the doc blocks match what the functions do again.
+- The generated Peppol XML is unchanged (compared byte for byte on a test invoice).
+
+**After updating:** flush memcached and restart PHP. The module does not need to be disabled and enabled.
+
 ## 2.13.0
 
 - **Reject an incoming invoice.** The card of an incoming Peppol document has a button **Reject**. You choose a reason (the Peppol code list: prices incorrect, quantity incorrect, other reason with an explanation, ...). The supplier receives an Invoice Response "Rejected" with that reason through Peppol (Peppol BIS 63). After that the document can no longer be booked. When the supplier cannot receive such a message (according to the Peppol directory), the rejection is only stored here, with a message to inform the supplier yourself. When Peppyrus returns an error, nothing changes and you can try again.
