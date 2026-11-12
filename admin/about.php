@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 /**
  * \file    peppol/admin/about.php
@@ -9,7 +10,7 @@
 // Load Dolibarr environment
 $res = 0;
 // Try main.inc.php into web root known defined into CONTEXT_DOCUMENT_ROOT (not always defined)
-if (!$res && !empty($_SERVER["CONTEXT_DOCUMENT_ROOT"])) $res = @include $_SERVER["CONTEXT_DOCUMENT_ROOT"] . "/main.inc.php";
+if (!empty($_SERVER["CONTEXT_DOCUMENT_ROOT"])) $res = @include $_SERVER["CONTEXT_DOCUMENT_ROOT"] . "/main.inc.php";
 // Try main.inc.php into web root detected using web root calculated from SCRIPT_FILENAME
 $tmp = empty($_SERVER['SCRIPT_FILENAME']) ? '' : $_SERVER['SCRIPT_FILENAME'];
 $tmp2 = realpath(__FILE__);
@@ -26,6 +27,15 @@ if (!$res && file_exists("../../main.inc.php")) $res = @include "../../main.inc.
 if (!$res && file_exists("../../../main.inc.php")) $res = @include "../../../main.inc.php";
 if (!$res) die("Include of main fails");
 
+
+/**
+ * @var Conf $conf
+ * @var DoliDB $db
+ * @var HookManager $hookmanager
+ * @var Societe $mysoc
+ * @var Translate $langs
+ * @var User $user
+ */
 // Libraries
 require_once DOL_DOCUMENT_ROOT . '/core/lib/admin.lib.php';
 require_once DOL_DOCUMENT_ROOT . '/core/lib/functions2.lib.php';
@@ -68,7 +78,31 @@ $head = peppolAdminPrepareHead();
 print dol_get_fiche_head($head, 'about',  $langs->trans($page_name), -1, 'peppol@peppolpeppyrus');
 
 dol_include_once('/peppolpeppyrus/core/modules/modPeppolpeppyrus.class.php');
+require_once DOL_DOCUMENT_ROOT . '/core/lib/parsemd.lib.php';
 $tmpmodule = new \modPeppolpeppyrus($db);
+
+print peppolDolibarrRecommendedNotice();
+
+// Version of the files and version activated in this entity (they differ until the module is reactivated)
+$activeVersion = getDolGlobalString('PEPPOL_MODULE_VERSION');
+print '<div class="info">';
+print '<strong>' . $langs->trans('Version') . ':</strong> ' . dol_escape_htmltag($tmpmodule->version);
+if ($activeVersion !== '' && $activeVersion !== $tmpmodule->version) {
+	print ' &nbsp; <span class="warning">' . $langs->trans('peppolAboutReactivate', dol_escape_htmltag($activeVersion)) . '</span>';
+}
+print '<br><a href="' . dol_escape_htmltag($tmpmodule->editor_url) . '" target="_blank" rel="noopener noreferrer">' . dol_escape_htmltag($tmpmodule->editor_url) . '</a>';
+print '</div>';
+
+// What changed: the most recent versions of CHANGELOG.md (in English, like the file)
+$changelogFile = dirname(__DIR__) . '/CHANGELOG.md';
+if (is_readable($changelogFile)) {
+	print load_fiche_titre($langs->trans('peppolAboutChangelog'), '', '');
+	print '<div class="opacitymedium small marginbottomonly">' . $langs->trans('peppolAboutChangelogHelp') . '</div>';
+	print '<div class="peppol-changelog">' . dolMd2Html(peppolChangelogExcerpt((string) file_get_contents($changelogFile), 5), 'parsedown') . '</div>';
+	print '<br>';
+}
+
+print load_fiche_titre($langs->trans('peppolAboutReadme'), '', '');
 print $tmpmodule->getDescLong();
 
 // Page end

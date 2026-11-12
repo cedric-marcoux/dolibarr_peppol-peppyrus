@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 /**
  *   	\file       peppolimport_card.php
@@ -30,7 +31,7 @@
 // Load Dolibarr environment
 $res = 0;
 // Try main.inc.php into web root known defined into CONTEXT_DOCUMENT_ROOT (not always defined)
-if (!$res && !empty($_SERVER["CONTEXT_DOCUMENT_ROOT"])) {
+if (!empty($_SERVER["CONTEXT_DOCUMENT_ROOT"])) {
 	$res = @include $_SERVER["CONTEXT_DOCUMENT_ROOT"] . "/main.inc.php";
 }
 // Try main.inc.php into web root detected using web root calculated from SCRIPT_FILENAME
@@ -62,6 +63,15 @@ if (!$res) {
 	die("Include of main fails");
 }
 
+
+/**
+ * @var Conf $conf
+ * @var DoliDB $db
+ * @var HookManager $hookmanager
+ * @var Societe $mysoc
+ * @var Translate $langs
+ * @var User $user
+ */
 require_once DOL_DOCUMENT_ROOT . '/core/class/html.formcompany.class.php';
 require_once DOL_DOCUMENT_ROOT . '/core/class/html.formfile.class.php';
 require_once DOL_DOCUMENT_ROOT . '/core/class/html.formprojet.class.php';
@@ -111,22 +121,31 @@ if (empty($action) && empty($id) && empty($ref)) {
 // Load object
 include DOL_DOCUMENT_ROOT . '/core/actions_fetchobject.inc.php'; // Must be include, not include_once.
 
-$permissiontoaccess = $user->rights->peppolpeppyrus->read;
-$permissiontoadd = $user->rights->peppolpeppyrus->write;
-$permissiontodelete = $user->rights->peppolpeppyrus->delete;
+$permissiontoaccess = $user->hasRight('peppolpeppyrus', 'read');
+$permissiontoadd = $user->hasRight('peppolpeppyrus', 'write');
+$permissiontodelete = $user->hasRight('peppolpeppyrus', 'delete');
 // Security check - Protection if external user
 /*
-Note: vérification des droits associés et nécessaires:
-	- lire les tiers societe->lire;
-	- créer des tiers societe->creer
-	- etendre societe->client->voir
-	- lire les fournisseurs (?) fournisseur->lire
-	- lire les factures fournisseur (recherche doublons) fournisseur->facture->lire
-	- créer facture fournisseur fournisseur->facture->creer
-	- lire les produits (?) produit->lire
-	- lire les services service->lire
-	.../...?
+Note: rights needed to import a supplier document:
+	- read third parties: societe, lire
+	- create third parties: societe, creer
+	- see all third parties: societe, client, voir
+	- read suppliers: fournisseur, lire
+	- read supplier invoices (duplicate check): fournisseur, facture, lire
+	- create supplier invoices: fournisseur, facture, creer
+	- read products: produit, lire
+	- read services: service, lire
 */
+$otherModulesRights = [
+	$user->hasRight('societe', 'lire'),
+	$user->hasRight('societe', 'creer'),
+	$user->hasRight('societe', 'client', 'voir'),
+	$user->hasRight('fournisseur', 'lire'),
+	$user->hasRight('fournisseur', 'facture', 'lire'),
+	$user->hasRight('fournisseur', 'facture', 'creer'),
+	$user->hasRight('produit', 'lire'),
+	$user->hasRight('service', 'lire')
+];
 // Security check - Protection if external user
 if ($user->socid > 0) {
 	accessforbidden();
@@ -136,10 +155,10 @@ if ($user->socid > 0) {
 }
 $isdraft = (($object->statut == $object::STATUS_DRAFT) ? 1 : 0);
 //$result = restrictedArea($user, 'peppolpeppyrus', $id, '');
-if (!peppolUserCanImport($user)) {
+if (!isModEnabled('peppolpeppyrus') || empty($permissiontoaccess)) {
 	accessforbidden();
 }
-// Multicompany: the document must belong to one of the entities of the user
+// Multicompany: the document must belong to one of the entities of the user (fetch() by id does not check this)
 if ($object->id > 0 && !peppolObjectIsInUserEntities($object)) {
 	accessforbidden();
 }
@@ -200,10 +219,49 @@ if (empty($reshook)) {
 	// include DOL_DOCUMENT_ROOT.'/core/actions_sendmails.inc.php';
 
 
-	// Analyze hands the document over to another module with a fresh token: write right and token required
-	if ($action == 'analyze') {
-		if (!$permissiontoadd || !peppolTokenIsValid(GETPOST('token', 'alpha'), currentToken())) {
-			accessforbidden();
+	// Book as supplier invoice: supplier, lines, check of the total, validation, PDF and XML attached
+	if ($action == 'book' && $object->id > 0) {
+		if (!peppolCheckToken()) {
+			accessforbidden($langs->trans('ErrorBadValueForParameter', 'token'));
+		}
+		dol_include_once('/peppolpeppyrus/class/peppolbooking.class.php');
+		$booking = new PeppolBooking($db);
+		$res = $booking->book($object, $user);
+		if ($booking->invoiceId > 0) {
+			$invoiceUrl = DOL_URL_ROOT . '/fourn/facture/card.php?id=' . ((int) $booking->invoiceId);
+			$msg = $langs->trans($res > 0 ? ($booking->validated ? 'peppolBookDoneValidated' : 'peppolBookDoneDraft') : 'peppolBookAlreadyBooked');
+			$msg .= ($booking->supplierCreated ? ' ' . $langs->trans('peppolBookSupplierCreated') : '');
+			$msg .= ' <a href="' . dol_escape_htmltag($invoiceUrl) . '">' . $langs->trans('peppolBookOpenInvoice') . '</a>';
+			setEventMessages($msg, $booking->warnings, ($res > 0 && !count($booking->warnings)) ? 'mesgs' : 'warnings');
+			setEventMessages('', $booking->notices, 'mesgs');
+		} else {
+			setEventMessages(dol_escape_htmltag($booking->error), null, 'errors');
+		}
+		$object->fetch($object->id);
+		$action = '';
+	}
+
+	// Since 2.13.0: reject with a reason, the supplier receives an Invoice Response
+	if ($action == 'confirm_reject' && $confirm == 'yes' && $object->id > 0) {
+		if (!peppolCheckToken()) {
+			accessforbidden($langs->trans('ErrorBadValueForParameter', 'token'));
+		}
+		dol_include_once('/peppolpeppyrus/class/peppolbooking.class.php');
+		$booking = new PeppolBooking($db);
+		$res = $booking->reject($object, $user, GETPOST('reject_reason', 'aZ09'), GETPOST('reject_text', 'alphanohtml'));
+		if ($res > 0) {
+			setEventMessages('', $booking->notices, 'mesgs');
+			setEventMessages('', $booking->warnings, 'warnings');
+		} else {
+			setEventMessages(dol_escape_htmltag($booking->error), null, 'errors');
+		}
+		$object->fetch($object->id);
+		$action = '';
+	}
+
+	if ($action == 'analyze' && $permissiontoadd) {
+		if (!peppolCheckToken()) {
+			accessforbidden($langs->trans('ErrorBadValueForParameter', 'token'));
 		}
 		$res = $object->importNow();
 	}
@@ -328,7 +386,7 @@ if (($id || $ref) && $action == 'edit') {
 if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'create'))) {
 	$res = $object->fetch_optionals();
 
-	$head = ""; //peppolimportPrepareHead($object);
+	$head = array(); //peppolimportPrepareHead($object);
 	print dol_get_fiche_head($head, 'card', $langs->trans("PeppolImport"), -1, $object->picto);
 
 	$formconfirm = '';
@@ -346,6 +404,19 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 		// Create an array for form
 		$formquestion = array();
 		$formconfirm = $form->formconfirm($_SERVER["PHP_SELF"] . '?id=' . $object->id, $langs->trans('ToClone'), $langs->trans('ConfirmCloneAsk', $object->ref), 'confirm_clone', $formquestion, 'yes', 1);
+	}
+
+	// Reject: reason and explanation (since 2.13.0)
+	if ($action == 'reject' && peppolRejectUrl($object, $user) !== '') {
+		$reasons = array();
+		foreach (peppolRejectReasons() as $code => $key) {
+			$reasons[$code] = $langs->trans($key);
+		}
+		$formquestion = array(
+			array('type' => 'select', 'name' => 'reject_reason', 'label' => $langs->trans('peppolRejectReason'), 'values' => $reasons, 'default' => 'OTH'),
+			array('type' => 'text', 'name' => 'reject_text', 'label' => $langs->trans('peppolRejectText'), 'value' => '', 'moreattr' => 'maxlength="200"', 'morecss' => 'minwidth300'),
+		);
+		$formconfirm = $form->formconfirm($_SERVER["PHP_SELF"] . '?id=' . $object->id, $langs->trans('peppolReject'), $langs->trans('peppolRejectConfirm'), 'confirm_reject', $formquestion, 'no', 1, 300, 600);
 	}
 
 	// Call Hook formConfirm
@@ -419,12 +490,19 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 	//unset($object->fields['fk_soc']);					// Hide field already shown in banner
 	include DOL_DOCUMENT_ROOT . '/core/tpl/commonfields_view.tpl.php';
 
+	// Answer to the supplier (since 2.13.0)
+	if (!empty($object->response_code) && isset(peppolResponseCodes()[(string) $object->response_code])) {
+		print '<tr><td>' . $langs->trans('peppolResponseToSupplier') . '</td><td>' . $langs->trans(peppolResponseCodes()[(string) $object->response_code]);
+		print ' <span class="opacitymedium">' . dol_print_date($db->jdate($object->response_date), 'dayhour') . '</span>';
+		print ((string) $object->response_note !== '' ? '<br>' . dol_escape_htmltag((string) $object->response_note) : '') . '</td></tr>';
+	}
+
 	// Other attributes. Fields from hook formObjectOptions and Extrafields.
 	// include DOL_DOCUMENT_ROOT.'/core/tpl/extrafields_view.tpl.php';
 
 	print '<tr><td colspan="2">';
 
-	$tmpout .= DOL_URL_ROOT.'/document.php?modulepart=peppol&amp;entity='.$entity.'&amp;file='.urlencode(dol_sanitizeFileName($object->ref).'/'.dol_sanitizeFileName($object->peppolid) . ".pdf");
+	$tmpout = DOL_URL_ROOT.'/document.php?modulepart=peppolpeppyrus&amp;entity='.((int) $object->entity).'&amp;file='.urlencode(dol_sanitizeFileName($object->ref).'/'.dol_sanitizeFileName($object->peppolid) . ".pdf");
 	print "<object data=\"" .  $tmpout . "\" type=\"application/pdf\" style=\"min-width: 40vw; min-height: 80vh;\">\n";
 
 	// print '<textarea id="txtXml" rows="25" cols="80" readonly="readonly" style="border:none;">';
@@ -495,16 +573,10 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 			// 	print dolGetButtonAction($langs->trans('SendMail'), '', 'default', $_SERVER["PHP_SELF"].'?id='.$object->id.'&action=presend&mode=init#formmailbeforetitle');
 			// }
 
-			$pdffile = basename(str_replace(".xml", ".pdf", $object->fullFilename()));
-			$ecmfile = new \EcmFiles($db);
-			$result = $ecmfile->fetch(0, '', 'peppol/' . $pdffile, '', '', 'peppol_peppolimport', $object->id);
-			if ($result) {
-				$url = DOL_URL_ROOT . '/document.php?token=' . newToken() . '?modulepart=peppol&file=' . $pdffile;
-				if (empty($ecmfile->share)) {
-					$ecmfile->share = getRandomPassword(true);
-					$ecmfile->update($user);
-				}
-				$url .= "&hashp=" . $ecmfile->share;
+			// Download through document.php with the module read right (no public share link)
+			$pdffullname = str_replace(".xml", ".pdf", $object->fullFilename());
+			if ($pdffullname !== '' && dol_is_file($pdffullname)) {
+				$url = DOL_URL_ROOT . '/document.php?modulepart=peppolpeppyrus&entity=' . ((int) $object->entity) . '&file=' . urlencode(dol_sanitizeFileName($object->ref) . '/' . basename($pdffullname));
 				print dolGetButtonAction($langs->trans('PeppolDownloadPDF'), '', 'default', $url);
 			}
 
@@ -512,7 +584,21 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 			// 	print dolGetButtonAction($langs->trans('AnalyzeNow'), '', 'default', $_SERVER["PHP_SELF"] . '?id=' . $object->id . '&action=analyze&mode=now');
 			// }
 
-			if ($object->status == $object::STATUS_HALFSUCCESS || $object->status == $object::STATUS_ERROR || $object->status == $object::STATUS_DRAFT) {
+			// Book as supplier invoice in one click (class/peppolbooking.class.php)
+			$bookingUrl = peppolBookingUrl($object, $user);
+			if ($bookingUrl !== '') {
+				print dolGetButtonAction($langs->trans('peppolBookInvoiceHelp'), $langs->trans('peppolBookInvoice'), 'default', $bookingUrl);
+			}
+
+			// Reject with a reason (since 2.13.0)
+			$rejectUrl = peppolRejectUrl($object, $user);
+			if ($rejectUrl !== '') {
+				print dolGetButtonAction($langs->trans('peppolRejectHelp'), $langs->trans('peppolReject'), 'delete', $rejectUrl);
+			}
+
+			// Manual import page of the original module: only when that page is installed
+			if (($object->status == $object::STATUS_HALFSUCCESS || $object->status == $object::STATUS_ERROR || $object->status == $object::STATUS_DRAFT)
+				&& is_file(dol_buildpath('/peppolpeppyrus/importinvoice.php', 0))) {
 				$target = dol_buildpath("/peppolpeppyrus/importinvoice.php", 1) . "?filenamePDF=" . urlencode($object->filename) . '&action=create';
 				$target .= "&peppolimportId=" . $object->id;
 				if ($object->fk_supplier > 0) {
@@ -562,12 +648,12 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 			}
 			*/
 			if (isModEnabled('scaninvoices')) {
-				print dolGetButtonAction($langs->trans('PeppolImportThanksToScanInvoices'), '', 'import', $_SERVER['PHP_SELF'] . '?id=' . $object->id . '&action=analyze&token=' . newToken(), '', (int) ($permissiontoadd));
+				print dolGetButtonAction($langs->trans('PeppolImportThanksToScanInvoices'), '', 'import', $_SERVER['PHP_SELF'] . '?id=' . ((int) $object->id) . '&action=analyze&token=' . newToken(), '', (int) ($permissiontoadd));
 			}
 
 			// Delete (need delete permission, or if draft, just need create/modify permission)
 			if ($permissiontodelete) {
-				print dolGetButtonAction($langs->trans('Delete'), '', 'delete', $_SERVER['PHP_SELF'] . '?id=' . $object->id . '&action=delete', '', (int) ($permissiontodelete || ($object->status == $object::STATUS_DRAFT && $permissiontoadd)));
+				print dolGetButtonAction($langs->trans('Delete'), '', 'delete', $_SERVER['PHP_SELF'] . '?id=' . $object->id . '&action=delete', '', 1);
 			}
 		}
 		print '</div>' . "\n";
@@ -575,7 +661,7 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 
 
 	// Select mail models is same action as presend
-	if (GETPOST('modelselected')) {
+	if (GETPOST('modelselected', 'alpha')) {
 		$action = 'presend';
 	}
 
@@ -589,9 +675,9 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 			$objref = dol_sanitizeFileName($object->ref);
 			$objpeppol = dol_sanitizeFileName($object->peppolid);
 			$relativepath = $objref . '/' . $objpeppol . '%';
-			$filedir = DOL_DATA_ROOT . '/peppol/' . dol_sanitizeFileName($object->ref);
+			$filedir = $object->getFileDir();
 			$urlsource = $_SERVER["PHP_SELF"] . "?id=" . $object->id;
-			print $formfile->showdocuments('peppol', $objref, $filedir, $urlsource, 0, 0, '', 1, 0, 0, 28, 0, '', '', '', $langs->defaultlang);
+			print $formfile->showdocuments('peppolpeppyrus', $objref, $filedir, $urlsource, 0, 0, '', 1, 0, 0, 28, 0, '', '', '', $langs->defaultlang);
 
 		// Show links to link elements
 		$linktoelem = $form->showLinkToObjectBlock($object, null, array('peppolimport'));
@@ -615,7 +701,7 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 	}
 
 	//Select mail models is same action as presend
-	if (GETPOST('modelselected')) {
+	if (GETPOST('modelselected', 'alpha')) {
 		$action = 'presend';
 	}
 

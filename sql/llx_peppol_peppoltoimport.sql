@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: GPL-3.0-or-later
 -- Copyright (C) ---Put here your own copyright and developer email---
 --
 -- This program is free software: you can redistribute it and/or modify
@@ -47,6 +48,9 @@ CREATE TABLE llx_peppol_peppolimport(
 	fk_user_creat integer NOT NULL,
 	fk_user_modif integer,
 	import_key varchar(14),
-	status smallint DEFAULT '0'
+	status smallint DEFAULT '0',
+	response_code varchar(4) DEFAULT NULL,
+	response_date datetime DEFAULT NULL,
+	response_note varchar(255) DEFAULT NULL
 	-- END MODULEBUILDER FIELDS
 ) ENGINE=innodb;

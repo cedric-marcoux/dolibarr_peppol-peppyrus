@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 /**
  *      \file       peppol_tab.php
@@ -29,7 +30,7 @@
 // Load Dolibarr environment
 $res = 0;
 // Try main.inc.php into web root known defined into CONTEXT_DOCUMENT_ROOT (not always defined)
-if (!$res && !empty($_SERVER["CONTEXT_DOCUMENT_ROOT"])) {
+if (!empty($_SERVER["CONTEXT_DOCUMENT_ROOT"])) {
 	$res = @include $_SERVER["CONTEXT_DOCUMENT_ROOT"] . "/main.inc.php";
 }
 // Try main.inc.php into web root detected using web root calculated from SCRIPT_FILENAME
@@ -61,6 +62,15 @@ if (!$res) {
 	die("Include of main fails");
 }
 
+
+/**
+ * @var Conf $conf
+ * @var DoliDB $db
+ * @var HookManager $hookmanager
+ * @var Societe $mysoc
+ * @var Translate $langs
+ * @var User $user
+ */
 require_once DOL_DOCUMENT_ROOT . '/core/class/html.formcompany.class.php';
 require_once DOL_DOCUMENT_ROOT . '/core/class/html.formfile.class.php';
 require_once DOL_DOCUMENT_ROOT . '/core/class/html.formprojet.class.php';
@@ -89,7 +99,7 @@ $object = new Facture($db);
 $res = 0;
 // Load object
 if ($id > 0 || !empty($ref)) {
-	$res = $object->fetch($id, $ref, '', '', (!empty($conf->global->INVOICE_USE_SITUATION) ? $conf->global->INVOICE_USE_SITUATION : 0));
+	$res = $object->fetch($id, $ref, '', '', getDolGlobalInt('INVOICE_USE_SITUATION'));
 }
 if ($res < 0) {
 	accessforbidden();
@@ -103,9 +113,12 @@ if ($user->socid) {
 }
 $hookmanager->initHooks(array('invoicepeppol'));
 
-$result = restrictedArea($user, 'facture', $id, '');
+if (!isModEnabled('peppolpeppyrus') || !$user->hasRight('peppolpeppyrus', 'read')) {
+	accessforbidden();
+}
+$result = restrictedArea($user, 'facture', $object->id, '');
 
-$usercancreate = $user->hasRight("facture", "lire");
+$usercancreate = $user->hasRight("facture", "creer");
 
 /*
  * Actions
@@ -168,20 +181,12 @@ if ($id > 0 || !empty($ref)) {
 	if (isModEnabled('project')) {
 		$langs->load("projects");
 		$morehtmlref .= '<br>';
-		if (0) {
-			$morehtmlref .= img_picto($langs->trans("Project"), 'project', 'class="pictofixedwidth"');
-			if ($action != 'classify') {
-				$morehtmlref .= '<a class="editfielda" href="' . $_SERVER['PHP_SELF'] . '?action=classify&token=' . newToken() . '&id=' . $object->id . '">' . img_edit($langs->transnoentitiesnoconv('SetProject')) . '</a> ';
-			}
-			$morehtmlref .= $form->form_project($_SERVER['PHP_SELF'] . '?id=' . $object->id, $object->socid, $object->fk_project, ($action == 'classify' ? 'projectid' : 'none'), 0, 0, 0, 1, '', 'maxwidth300');
-		} else {
-			if (!empty($object->fk_project)) {
-				$proj = new Project($db);
-				$proj->fetch($object->fk_project);
-				$morehtmlref .= $proj->getNomUrl(1);
-				if ($proj->title) {
-					$morehtmlref .= '<span class="opacitymedium"> - ' . dol_escape_htmltag($proj->title) . '</span>';
-				}
+		if (!empty($object->fk_project)) {
+			$proj = new Project($db);
+			$proj->fetch($object->fk_project);
+			$morehtmlref .= $proj->getNomUrl(1);
+			if ($proj->title) {
+				$morehtmlref .= '<span class="opacitymedium"> - ' . dol_escape_htmltag($proj->title) . '</span>';
 			}
 		}
 	}
@@ -200,54 +205,42 @@ if ($id > 0 || !empty($ref)) {
 	print "<p>" . $langs->trans("PeppolTrackDocumentInAP") . "</p>";
 
 
-	$sql = "SELECT * FROM " . MAIN_DB_PREFIX . "peppol WHERE fk_object = " . ((int) $object->id) . " AND object_typeid=1 ORDER BY tms";
+	$sql = "SELECT status, message, fulldata FROM " . MAIN_DB_PREFIX . "peppol WHERE fk_object = " . ((int) $object->id) . " AND object_typeid = 1";
+	$sql .= " AND entity IN (" . getEntity('invoice') . ") ORDER BY tms";
 	$dupres = $db->query($sql);
 
 	while ($obj = $db->fetch_object($dupres)) {
-		print "<p>Etat : " . dol_escape_htmltag($obj->status) . "</p>";
-		print "<p>Message : " . dol_escape_htmltag($obj->message) . "</p>";
-		$json_pretty = json_encode(json_decode($obj->fulldata), JSON_PRETTY_PRINT);
+		print "<p>" . $langs->trans("Status") . " : " . dol_escape_htmltag($obj->status) . "</p>";
+		print "<p>" . $langs->trans("Message") . " : " . dol_escape_htmltag($obj->message) . "</p>";
+		print "<p>" . $langs->trans("Details") . " : <br /><pre>" . dol_escape_htmltag((string) $obj->fulldata) . "</pre></p>";
+	}
 
-		print "<p>Détails : <br /><pre>" . dol_escape_htmltag((string) $json_pretty) . "</pre></p>";
-
-		// Display delivery report from Access Point if available
-		$object->fetch_optionals();
-		$peppolMessageId = isset($object->array_options['options_peppol_id']) ? $object->array_options['options_peppol_id'] : '';
-
-		if (!empty($peppolMessageId)) {
-			$ap = peppolGetAPObject();
-			if ($ap && method_exists($ap, 'getMessageReport')) {
-				$report = $ap->getMessageReport($peppolMessageId);
-				if (is_array($report)) {
-					print '<div class="fichecenter" style="margin-top: 20px;">';
-					print '<h3>' . $langs->trans('peppolDeliveryReport') . '</h3>';
-					print '<table class="border centpercent">';
-
-					if (isset($report['status'])) {
-						print '<tr><td class="titlefield">' . $langs->trans('Status') . '</td>';
-						print '<td>' . dol_escape_htmltag($report['status']) . '</td></tr>';
-					}
-					if (isset($report['delivered'])) {
-						print '<tr><td>' . $langs->trans('Delivered') . '</td>';
-						print '<td>' . ($report['delivered'] ? $langs->trans('Yes') : $langs->trans('No')) . '</td></tr>';
-					}
-					if (isset($report['deliveryDate'])) {
-						print '<tr><td>' . $langs->trans('DeliveryDate') . '</td>';
-						print '<td>' . dol_escape_htmltag($report['deliveryDate']) . '</td></tr>';
-					}
-					if (isset($report['recipient'])) {
-						print '<tr><td>' . $langs->trans('Recipient') . '</td>';
-						print '<td>' . dol_escape_htmltag($report['recipient']) . '</td></tr>';
-					}
-					if (isset($report['error'])) {
-						print '<tr><td>' . $langs->trans('Error') . '</td>';
-						print '<td class="error">' . dol_escape_htmltag($report['error']) . '</td></tr>';
-					}
-
-					print '</table>';
-					print '</div>';
+	// Since 2.12.0: the Peppyrus report once (not per log line), with the fields Peppyrus really returns: the validation
+	// rules (FATAL or WARNING) and the transmission rules
+	$object->fetch_optionals();
+	$peppolMessageId = isset($object->array_options['options_peppol_id']) ? (string) $object->array_options['options_peppol_id'] : '';
+	if ($peppolMessageId !== '') {
+		$ap = peppolGetAPObject();
+		if ($ap && method_exists($ap, 'getMessageReport')) {
+			$report = peppolReportRules($ap->getMessageReport($peppolMessageId));
+			print '<div class="fichecenter" style="margin-top: 20px;">';
+			print '<h3>' . $langs->trans('peppolDeliveryReport') . '</h3>';
+			print '<table class="border centpercent">';
+			print '<tr><td class="titlefield">' . $langs->trans('peppolReportTransmission') . '</td><td>' . ($report['transport'] !== '' ? dol_escape_htmltag($report['transport']) : '<span class="opacitymedium">' . $langs->trans('peppolReportNone') . '</span>') . '</td></tr>';
+			print '<tr><td>' . $langs->trans('peppolReportValidation') . '</td><td>';
+			if (empty($report['rules'])) {
+				print img_picto('', 'tick') . ' ' . $langs->trans('peppolReportNoRules');
+			} else {
+				print '<table class="noborder centpercent"><tr class="liste_titre"><th>' . $langs->trans('Type') . '</th><th>' . $langs->trans('peppolReportRule') . '</th><th>' . $langs->trans('peppolReportLocation') . '</th><th>' . $langs->trans('Message') . '</th></tr>';
+				foreach ($report['rules'] as $r) {
+					print '<tr class="oddeven"><td class="nowraponall' . ($r['type'] === 'FATAL' ? ' error' : '') . '">' . dol_escape_htmltag($r['type']) . '</td><td class="nowraponall">' . dol_escape_htmltag($r['id']) . '</td>';
+					print '<td class="small">' . dol_escape_htmltag($r['location']) . '</td><td>' . dol_escape_htmltag($r['message']) . '</td></tr>';
 				}
+				print '</table>';
 			}
+			print '</td></tr>';
+			print '</table>';
+			print '</div>';
 		}
 	}
 

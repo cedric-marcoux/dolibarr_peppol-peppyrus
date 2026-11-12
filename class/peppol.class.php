@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 /**
  * \file    peppol/class/peppol.class.php
@@ -58,20 +59,27 @@ use Einvoicing\InvoiceReference;
  */
 class Peppol
 {
+	/** Decimals of the unit price in the XML: Dolibarr stores unit prices with up to 8 decimals (from the original module, #15) */
+	const PEPPOL_UNIT_PRICE_DECIMALS = 8;
+
+	/** @var string */
 	public $error = '';
+	/** @var string[] */
 	public $errors = [];
+	/** @var \DoliDB|null */
 	public $db;
+	/** @var object|null */
 	private $_invoice;
 
-
-	/** Decimals of the unit price written in the XML (Dolibarr stores unit prices with up to 8 decimals) */
-	const PEPPOL_UNIT_PRICE_DECIMALS = 8;
 
 	const PEPPOL_CUSTOMER_INVOICE = 1;
 	const PEPPOL_SUPPLIER_INVOICE = 2;
 
 	/**
 	 * Constructor
+	 *
+	 * @param \DoliDB $db Database handler
+	 * @param \Facture $invoice Customer invoice
 	 */
 	public function __construct($db, \Facture $invoice)
 	{
@@ -90,25 +98,30 @@ class Peppol
 	/**
 	 * build PDF with Peppol XML around
 	 *
-	 * @param   [type]  $orig_pdf  [$orig_pdf description]
+	 * @param   mixed   $orig_pdf   Value
 	 *
-	 * @return  [type]             [return description]
+	 * @return  mixed  Result
 	 */
 	public function makePDF($orig_pdf)
 	{
 		global $conf, $user, $langs, $mysoc;
 
 		$enableVatForThatInvoice = true;
-		$enableVatReverseChargeForThatInvoice = false;
 		$ret = 0;
+		// VAT category of 0% lines (see the loop on the lines): reverse charge (AE), intra-community supply (K),
+		// exempt supply (E, with PEPPOL_VAT_EXEMPT_CODE) or not subject to VAT (O)
+		$enableVatReverseChargeForThatInvoice = false;
+		$isIntraCommunity = false;
+		$vatExemptCode = '';
+		$vatExemptReason = '';
 		$buyerIdent = null;
 		$objFacture = $this->_invoice; //migrating code from dolibar
-		dol_syslog("peppol:: makePDF for invoice " . json_encode($objFacture));
+		dol_syslog("peppol:: makePDF for invoice id=" . (is_object($objFacture) ? ((int) $objFacture->id) : 0));
 
 		//check module version vs last init version in database
 		if (isset($this->db)) {
 			$tmpmodule = new \modPeppolpeppyrus($this->db);
-			if ($tmpmodule->version != $conf->global->PEPPOL_MODULE_VERSION) {
+			if ($tmpmodule->version != getDolGlobalString('PEPPOL_MODULE_VERSION')) {
 				setEventMessages($langs->trans("ErrorPeppolModuleVersionDatabase"), null, 'errors');
 				// return -100;
 			}
@@ -137,6 +150,17 @@ class Peppol
 		// );
 
 
+		// Reverse charge: set on the invoice (Dolibarr 20 and later) or on the customer
+		$enableVatReverseChargeForThatInvoice = (property_exists($objFacture, 'vat_reverse_charge') && !empty($objFacture->vat_reverse_charge))
+			|| !empty($objFacture->thirdparty->vat_reverse_charge);
+		// Intra-community supply: buyer in another EU member state than the seller
+		require_once DOL_DOCUMENT_ROOT . '/core/lib/company.lib.php';
+		$isIntraCommunity = ((string) $objFacture->thirdparty->country_code !== '' && (string) $objFacture->thirdparty->country_code !== (string) $mysoc->country_code
+			&& isInEEC($objFacture->thirdparty) && isInEEC($mysoc));
+		// Exemption reason for exempt supplies (category E); empty = old behaviour, category O
+		$vatExemptCode = peppolVatExemptCode();
+		$vatExemptReason = ($vatExemptCode !== '') ? PeppolVatExemption::VAT_EXEMPT_CODES[$vatExemptCode] : '';
+
 		if ($objFacture->thirdparty->tva_assuj != '1') {
 			dol_syslog("peppol:: makePDF for a non VAT concerned thirdpart, tva_assuj=" . $objFacture->thirdparty->tva_assuj);
 			$enableVatForThatInvoice = false;
@@ -144,20 +168,27 @@ class Peppol
 			dol_syslog("peppol:: makePDF thirdpart tva_assuj=" . $objFacture->thirdparty->tva_assuj);
 		}
 
-		if ($objFacture->thirdparty->typent_code == 'TE_PRIVATE') {
-			dol_syslog("peppol:: makePDF for a private people : " . $objFacture->thirdparty->typent_code);
+		// Private customers are not on the Peppol network: skip silently (no message), the PDF is made as usual.
+		// A customer counts as private when its third party type is "Private individual" (TE_PRIVATE), or when no
+		// type is set and it has neither a Peppol ID nor a VAT number. A business type without these details keeps the warnings.
+		if (empty($objFacture->thirdparty->array_options) || !array_key_exists('options_peppol_id', $objFacture->thirdparty->array_options)) {
+			$objFacture->thirdparty->fetch_optionals();
+		}
+		$typentcode = (string) ($objFacture->thirdparty->typent_code ?? '');
+		$hasPeppolId = !empty($objFacture->thirdparty->array_options['options_peppol_id']);
+		$hasVatNumber = trim((string) ($objFacture->thirdparty->tva_intra ?? '')) !== '';
+		$isPrivate = ($typentcode == 'TE_PRIVATE') || (in_array($typentcode, array('', 'TE_UNKNOWN')) && !$hasPeppolId && !$hasVatNumber);
+		if ($isPrivate) {
+			dol_syslog("peppol:: makePDF for a private customer, typent_code=" . $typentcode);
 			$enableVatForThatInvoice = false;
 			if (getDolGlobalString('PEPPOL_FORCE_XML_WITH_VATNULL')) {
-				dol_syslog("peppol:: makePDF for a private people but PEPPOL_FORCE_XML_WITH_VATNULL is set, continue");
+				dol_syslog("peppol:: makePDF for a private customer but PEPPOL_FORCE_XML_WITH_VATNULL is set, continue");
 			} else {
-				dol_syslog("peppol:: makePDF for a private people -> no xml output", LOG_INFO);
-				$this->error = $langs->trans("PeppolErrorPrivateCustomer");
-				$this->errors[] = $langs->trans("PeppolErrorPrivateCustomer");
-				setEventMessages($langs->trans("PeppolErrorPrivateCustomer"), null, 'warnings');
-				return -3;
+				dol_syslog("peppol:: makePDF for a private customer -> no xml output, no message", LOG_INFO);
+				return 0;
 			}
 		} else {
-			dol_syslog("peppol:: makePDF for a typent_code=" . $objFacture->thirdparty->typent_code);
+			dol_syslog("peppol:: makePDF for a typent_code=" . $typentcode);
 		}
 
 		$baseErrors = [];
@@ -204,9 +235,9 @@ class Peppol
 				}
 			}
 		} else {
-			dol_syslog("Peppol: getIdShippingContact " . json_encode($shippings));
+			dol_syslog("Peppol: no shipping contact");
 		}
-		dol_syslog("Peppol: shipping is " . json_encode($shipping));
+		dol_syslog("Peppol: shipping contact " . (is_object($shipping) ? "used" : "not used"));
 
 		//billing address could be a linked contact
 		$billings = $objFacture->getIdBillingContact();
@@ -225,9 +256,9 @@ class Peppol
 				}
 			}
 		} else {
-			dol_syslog("Peppol: getIdBillingContact " . json_encode($billings));
+			dol_syslog("Peppol: no billing contact");
 		}
-		dol_syslog("Peppol: billing is " . json_encode($billing));
+		dol_syslog("Peppol: billing contact " . (is_object($billing) ? "used" : "not used"));
 
 		//add more messages
 		foreach ($otherBaseErrorsToCheck as $key => $details) {
@@ -244,16 +275,14 @@ class Peppol
 		$objFacture->fetch_thirdparty();
 		// Force load extrafields - array_options may be empty array even after fetch_thirdparty
 		$objFacture->thirdparty->fetch_optionals();
-		dol_syslog("Peppol: thirdparty array_options after fetch_optionals = " . json_encode($objFacture->thirdparty->array_options));
 		if (!empty($objFacture->thirdparty->array_options['options_peppol_id'])) {
-			dol_syslog("Peppol: specific peppol id " . json_encode($objFacture->thirdparty->array_options['options_peppol_id']));
-			//9938:00000000000
+			dol_syslog("Peppol: thirdparty has a specific peppol id");
+			//9938:20225000264
 			if (strpos($objFacture->thirdparty->array_options['options_peppol_id'], ':')) {
 				$code = explode(':', $objFacture->thirdparty->array_options['options_peppol_id']);
-				dol_syslog("Peppol: buyer Ident code is " . json_encode($code));
 				if (!empty($code[0]) && !empty($code[1])) {
 					$buyerIdent = new Identifier($code[1], $code[0]);
-					dol_syslog("Peppol: buyer Ident is now " . json_encode($buyerIdent));
+					dol_syslog("Peppol: buyer Ident set from the specific peppol id");
 				} else {
 					if (empty($code[0])) {
 						$baseErrors[] = $langs->trans("PeppolCheckErrorCustomerPeppolIDpartA");
@@ -304,7 +333,8 @@ class Peppol
 		// 	// do something only for the context 'somecontext1' or 'somecontext2'
 		// }
 
-		$note_pub = $objFacture->note_public ? $objFacture->note_public : "note";
+		// Only the public note when there is one, without HTML; no fixed text "note" (2.11.0)
+		$note_pub = trim(dol_string_nohtmltag((string) $objFacture->note_public, 0));
 		$ladate = new \DateTime(dol_print_date($objFacture->date, 'dayrfc'));
 		$ladatepaiement = new \DateTime(dol_print_date($objFacture->date_lim_reglement, 'dayrfc'));
 		$currency = $objFacture->multicurrency_code ?? '';
@@ -330,11 +360,10 @@ class Peppol
 				$delivery->setPostalCode($objFacture->thirdparty->zip);
 			}
 		}
-		dol_syslog("Peppol: delivery is " . json_encode($delivery));
 
 		// Create PEPPOL invoice instance
 		$inv = new Invoice(Presets\Peppol::class);
-		// Amounts with 2 decimals (preset), unit prices with the precision of Dolibarr (#15)
+		// Amounts with 2 decimals, unit prices with the precision of Dolibarr (#15)
 		$inv->setRoundingMatrix(array('' => 2, 'line/price' => self::PEPPOL_UNIT_PRICE_DECIMALS));
 
 		if ($objFacture->type == \Facture::TYPE_CREDIT_NOTE) {
@@ -360,8 +389,10 @@ class Peppol
 		$inv->setNumber($objFacture->ref)
 			->setIssueDate($ladate)
 			->setDelivery($delivery)
-			->setDueDate($ladatepaiement)
-			->addNote($note_pub);
+			->setDueDate($ladatepaiement);
+		if ($note_pub !== '') {
+			$inv->addNote($note_pub);
+		}
 
 		if (!empty($currency)) {
 			$inv->setCurrency($currency);
@@ -402,7 +433,6 @@ class Peppol
 			$seller->setPostalCode($mysoc->zip);
 		}
 		$inv->setSeller($seller);
-		dol_syslog("Peppol: seller is " . json_encode($seller));
 
 		// Si Bénéficiaire <=> vendeur ?
 		//$inv->setPayee($seller);
@@ -425,10 +455,8 @@ class Peppol
 				if ($enableVatForThatInvoice) {
 					if (getDolGlobalString('PEPPOL_FORCE_XML_WITH_VATNULL')) {
 						dol_syslog("PEPPOL_FORCE_XML_WITH_VATNULL is enabled", LOG_WARNING);
-						if (empty($buyerIdent)) {
-							$baseErrors[] = $langs->trans("BuyerDoesNotHaveVATDetails");
-							$baseErrors[] = $langs->trans("BuyerDoesNotHaveVATDetailsForce") . "<br />";
-						}
+						$baseErrors[] = $langs->trans("BuyerDoesNotHaveVATDetails");
+						$baseErrors[] = $langs->trans("BuyerDoesNotHaveVATDetailsForce") . "<br />";
 						$buyerVAT = null;
 					} else {
 						$baseErrors[] = $langs->trans("BuyerDoesNotHaveVATDetails");
@@ -439,7 +467,13 @@ class Peppol
 				} else {
 					dol_syslog("Buyer does not have a VAT number, but is a private people or non vat aware organisation", LOG_WARNING);
 					$buyerVAT = null;
-					$buyer->setElectronicAddress(new Identifier($objFacture->thirdparty->email, '0007'));
+					$buyerEmail = trim((string) ($objFacture->thirdparty->email ?? ''));
+					if (empty($buyerEmail)) {
+						dol_syslog("Buyer has no Peppol ID, no VAT number and no email address, Peppol export disabled", LOG_WARNING);
+						setEventMessages($langs->trans("PeppolError"), array($langs->trans("BuyerDoesNotHaveEmailOrPeppolID")), 'warnings');
+						return -1;
+					}
+					$buyer->setElectronicAddress(new Identifier($buyerEmail, '0007'));
 				}
 				dol_syslog("peppol Identifier stay empty");
 			}
@@ -502,21 +536,13 @@ class Peppol
 			if ($stateCodeBuyer == "BU") {
 				$stateCodeBuyer = "B";
 				if (preg_match('/(SECTOR.)/i', str_replace(" ", "", $cityBuyer), $matches)) {
-					if (is_array($matches) && !empty($matches[0])) {
-						$cityBuyer = strtoupper($matches[0]);
-					} else {
-						$baseErrors[] = $langs->trans("PeppolCheckErrorSellerBucarestNoSector");
-					}
+					$cityBuyer = strtoupper($matches[0]);
 				}
 			}
 			if ($stateCodeSeller == "BU") {
 				$stateCodeSeller = "B";
 				if (preg_match('/(SECTOR.)/i', str_replace(" ", "", $citySeller), $matches)) {
-					if (is_array($matches) && !empty($matches[0])) {
-						$citySeller = strtoupper($matches[0]);
-					} else {
-						$baseErrors[] = $langs->trans("PeppolCheckErrorBuyerBucarestNoSector");
-					}
+					$citySeller = strtoupper($matches[0]);
 				}
 			}
 			$delivery->setSubdivision($objFacture->thirdparty->country_code . '-' . $stateCodeBuyer)
@@ -527,16 +553,9 @@ class Peppol
 				->setCity($citySeller);
 		}
 
-		//20220217 - add more informations about buyer if private person
-		if ($objFacture->thirdparty->typent_code == 'TE_PRIVATE') {
-			$buyer->setContactName($objFacture->thirdparty->name);
-			$buyer->setContactPhone($objFacture->thirdparty->phone);
-			if (!empty($objFacture->thirdparty->email)) {
-				$buyer->setContactEmail($objFacture->thirdparty->email);
-			}
-		}
+		// Since 2.11.0 no phone number and email address of a private customer in the message: they are not needed to
+		// approve the invoice, and every party on the Peppol route gets a copy of the message
 		$inv->setBuyer($buyer);
-		dol_syslog("Peppol: buyer is " . json_encode($buyer));
 
 		//Inversion Purchase / Sales - vu juin 2023
 		$buyerReference = "no buyer ref.";
@@ -557,10 +576,10 @@ class Peppol
 		// exit;
 
 		//retenue de garantie
-		$retenue_garantie = peppolGetRetainedWarrantyAmount($objFacture, true);
+		$retenue_garantie = peppolGetRetainedWarrantyAmount($objFacture, 'MT');
 		$paymentTerms = "";
 		if ($retenue_garantie > 0) {
-			$reste = $objFacture->total_ttc - peppolGetRetainedWarrantyAmount($objFacture, true);;
+			$reste = $objFacture->total_ttc - $retenue_garantie;
 			$paymentTerms .= "TOTAL HT : " . price($objFacture->total_ht, 0, '', 1, -1, -1, 'auto') . "\n";
 			$paymentTerms .= "TVA : " . price($objFacture->total_tva, 0, '', 1, -1, -1, 'auto') . "\n";
 			$paymentTerms .= "TOTAL TTC : " . price($objFacture->total_ttc, 0, '', 1, -1, -1, 'auto') . "\n";
@@ -582,14 +601,13 @@ class Peppol
 
 		//default bank account in global dolibarr settings ?
 		// Payment informations
-		$bankid = (($objFacture->fk_account > 0) ? $objFacture->fk_account : $conf->global->FACTURE_RIB_NUMBER);
+		$bankid = (($objFacture->fk_account > 0) ? $objFacture->fk_account : getDolGlobalInt('FACTURE_RIB_NUMBER'));
 		if (!empty($bankid)) {
 			$payment = new Payment();
 			$transfert = new Transfer();
 			$bank = new \Account($this->db);
 			$bankres = $bank->fetch($bankid);
 			if ($bankres) {
-				dol_syslog("peppol bank : " . json_encode($bank));
 				// mode_reglement
 				if ($objFacture->mode_reglement_code == "VIR" && empty($bank->iban)) {
 					$baseErrors[] = $langs->trans("BankAccountLinkedWithoutIBAN") . "<br />";
@@ -669,9 +687,10 @@ class Peppol
 			}
 
 			//chez peppol il faut donner le montant * quantité, la division est faite de l'autre côté
-			// The unit price keeps the precision Dolibarr stores (EN 16931 allows more than 2 decimals for the
-			// item net price BT-146, see PEPPOL_UNIT_PRICE_DECIMALS): the line amount is then the Dolibarr line
-			// total to the cent, and PEPPOL-EN16931-R120 holds because the XML carries that same price (#15)
+			// The unit price keeps the precision of Dolibarr (EN 16931 allows more than 2 decimals for BT-146):
+			// the line amount is then the line total of Dolibarr to the cent, and PEPPOL-EN16931-R120 holds because
+			// the XML contains that same price. Before, the price was rounded to 2 decimals, so line and
+			// invoice totals could differ (from the original module, #15).
 			$unitPrice = round(($line->subprice ? $line->subprice : 0.00), self::PEPPOL_UNIT_PRICE_DECIMALS);
 			$subprice = round($unitPrice * $qty, 2);
 
@@ -691,14 +710,15 @@ class Peppol
 				}
 			} else {
 				// Credit note: Dolibarr stores a positive quantity, a negative unit price and negative totals.
-				// A Peppol CreditNote (type 381) carries positive quantities and amounts: the document type
-				// already says it is a credit, and the item net price shall not be negative (BR-27).
+				// A Peppol CreditNote (type 381) has positive quantities and amounts: the document type already says
+				// it is a credit, and the net price may not be negative (BR-27). Before, the quantity
+				// was made negative, which gave the credit note negative totals (from the original module, #11).
 				$unitPrice = abs($unitPrice);
 				$qty = abs($qty);
 				$subprice = round($unitPrice * $qty, 2);
 			}
 
-			// print "<p>Ajout d'une ligne : $qty, $subprice</p>";
+			// print "<p>Add a line: $qty, $subprice</p>";
 			$tva_tx = $line->tva_tx ? $line->tva_tx : 0;
 			$description = strip_tags(trim($line->desc ? $line->desc : ""));
 			$lineref = trim($line->ref ? $line->ref : peppolNextRefLine());
@@ -714,7 +734,7 @@ class Peppol
 			//do not add empty lines in XML file (cleaner)
 			//note: it remove subtotal lines from ATM plugin for example
 			if (empty($description) && $subprice == 0) {
-				dol_syslog("Peppol : empty line (" . json_encode($line) . "), next");
+				dol_syslog("Peppol : empty line (id=" . ((int) ($line->id ?? 0)) . "), next");
 				continue;
 			}
 
@@ -762,7 +782,7 @@ class Peppol
 					$peppolLine->setDescription($description);
 				}
 			}
-			// print "<p>Ajout d'une ligne : qty=$qty, price=$subprice, tx_tva=$tva_tx</p>";
+			// print "<p>Add a line: qty=$qty, price=$subprice, vat_rate=$tva_tx</p>";
 
 			if (!empty($productAccountingNumber)) {
 				$peppolLine->setBuyerAccountingReference($productAccountingNumber);
@@ -792,16 +812,24 @@ class Peppol
 					- Categories E, AE : pas de taux mais motif d'exoneration requis (BT-120)
 					- Categorie K : taux = 0% obligatoire + motif d'exoneration
 				*/
-				if ($enableVatReverseChargeForThatInvoice || $objFacture->thirdparty->vat_reverse_charge) {
+				if ($enableVatReverseChargeForThatInvoice) {
 					$peppolLine
 						->setVatCategory('AE')
 						->setVatExemptionReasonCode('VATEX-EU-AE')
-						->setVatExemptionReason('Reverse Carge');
-				} elseif ($enableVatForThatInvoice) {
+						->setVatExemptionReason('Reverse charge');
+				} elseif ($enableVatForThatInvoice && $isIntraCommunity) {
+					// Category K only for a VAT registered buyer in another EU member state (BR-IC rules)
 					$peppolLine
 						->setVatCategory('K')
 						->setVatExemptionReasonCode('VATEX-EU-IC')
 						->setVatExemptionReason('VAT exempt for EEA intra-community supply of goods and services');
+				} elseif ($vatExemptCode !== '') {
+					// Exempt supply (for example medical or home care, article 132 of Directive 2006/112/EC):
+					// category E with the exemption reason; the VAT numbers of seller and buyer stay on the invoice
+					$peppolLine
+						->setVatCategory('E')
+						->setVatExemptionReasonCode($vatExemptCode)
+						->setVatExemptionReason($vatExemptReason);
 				} else {
 					//Tax Category O MUST be used when exemption reason code is VATEX-EU-O
 					//note La catégorie "O" (Not subject to VAT) est très restrictive dans PEPPOL. Elle est réservée aux opérations totalement hors du champ d'application de la TVA, par exemple :
@@ -821,29 +849,27 @@ class Peppol
 				//VAT normale
 			}
 
-			//Si on est déjà sur une ligne de remise on ne regarde pas le % de remise
-			if (!$remiseLigne) {
-				if (!empty($line->remise_percent)) {
-					// Fix PEPPOL-EN16931-R120: ensure allowance makes LineExtensionAmount = total_ht exactly
-					// abs(): credit note line totals are negative in Dolibarr, the UBL line amounts are positive
-					$remise_abs = round($subprice - abs($line->total_ht), 2);
-					dol_syslog("  peppol line add remise (Allowance): " . $line->remise_percent . " absolute remise=" . $remise_abs);
-					$allowance = (new AllowanceOrCharge())->setReason('Discount')
-						->setReasonCode(95)
-						->setAmount($remise_abs);
+			// A discount line has been handled above (continue); only regular lines get here
+			if (!empty($line->remise_percent)) {
+				// Fix PEPPOL-EN16931-R120: ensure allowance makes LineExtensionAmount = total_ht exactly
+				// abs(): for a credit note the line total is negative in Dolibarr and positive in the XML (#11)
+				$remise_abs = round($subprice - abs($line->total_ht), 2);
+				dol_syslog("  peppol line add remise (Allowance): " . $line->remise_percent . " absolute remise=" . $remise_abs);
+				$allowance = (new AllowanceOrCharge())->setReason('Discount')
+					->setReasonCode(95)
+					->setAmount($remise_abs);
 
-					/*
-					error, with percentage -> voir #4
-					Element/context: /:Invoice[1]/cac:InvoiceLine[2]
-					XPath test: u:slack($lineExtensionAmount, ($quantity * ($priceAmount div $baseQuantity)) + $chargesTotal - $allowancesTotal, 0.02)
-					Error message: Invoice line net amount MUST equal (Invoiced quantity * (Item net price/item price base quantity) + Sum of invoice line charge amount - sum of invoice line allowance amount
-					// ->markAsPercentage()
-					// ->setAmount($line->remise_percent);
-					*/
+				/*
+				error, with percentage -> voir #4
+				Element/context: /:Invoice[1]/cac:InvoiceLine[2]
+				XPath test: u:slack($lineExtensionAmount, ($quantity * ($priceAmount div $baseQuantity)) + $chargesTotal - $allowancesTotal, 0.02)
+				Error message: Invoice line net amount MUST equal (Invoiced quantity * (Item net price/item price base quantity) + Sum of invoice line charge amount - sum of invoice line allowance amount
+				// ->markAsPercentage()
+				// ->setAmount($line->remise_percent);
+				*/
 
-					$res = $peppolLine->addAllowance($allowance);
-					// print "<p>" . var_dump($res) . "</p>";
-				}
+				$res = $peppolLine->addAllowance($allowance);
+				// print "<p>" . var_dump($res) . "</p>";
 			}
 			$res = $inv->addLine($peppolLine);
 			// dol_syslog("  peppol line add debug is : " . var_dump($peppolLine));
@@ -869,20 +895,20 @@ class Peppol
 			}
 		}
 
-		$embeddedAttachment = (new Attachment())
-			->setId(new Identifier($objFacture->ref))
-			->setFilename($objFacture->ref . '.pdf')
-			->setMimeCode('application/pdf')
-			->setContents(file_get_contents($orig_pdf));
-		$inv->addAttachment($embeddedAttachment);
-
-		if (!empty($objFacture->getLastMainDocLink('facture'))) {
-			$externalAttachment = (new Attachment())
-				->setId(new Identifier($objFacture->ref . '-online'))
-				->setDescription('A link to PDF invoice')
-				->setExternalUrl($objFacture->getLastMainDocLink('facture'));
-			$inv->addAttachment($externalAttachment);
+		// The PDF in the message is optional (setting PEPPOL_EMBED_PDF, on by default): in Peppol the message itself
+		// is the invoice. Turn it off when the PDF holds data the recipient does not need, for example care data.
+		if (getDolGlobalInt('PEPPOL_EMBED_PDF', 1) === 1 && file_exists($orig_pdf)) {
+			$embeddedAttachment = (new Attachment())
+				->setId(new Identifier($objFacture->ref))
+				->setFilename($objFacture->ref . '.pdf')
+				->setMimeCode('application/pdf')
+				->setContents(file_get_contents($orig_pdf));
+			$inv->addAttachment($embeddedAttachment);
 		}
+
+		// Since 2.11.0 no link to the PDF online: that public link works without login for everyone who sees the
+		// message (access points on the route, and anyone they pass it on to), so the invoice could be read
+		// without the sender or the customer knowing.
 
 		try {
 			$inv->validate();
@@ -903,8 +929,8 @@ class Peppol
 			// }
 		} catch (ValidationException $e) {
 			dol_syslog(get_class($this) . '::executeHooks peppol error: ' . $e);
-			$baseErrors[] = $langs->trans("PeppolWarningAutoValidate", dol_escape_htmltag($e->getMessage()));
-			$this->errors[] = $langs->trans("PeppolWarningAutoValidate", dol_escape_htmltag($e->getMessage()));
+			$baseErrors[] = $langs->trans("PeppolWarningAutoValidate", $e);
+			$this->errors[] = $langs->trans("PeppolWarningAutoValidate", $e);
 		}
 
 		if (implode('', $baseErrors) != '') {
@@ -927,7 +953,7 @@ class Peppol
 	 *
 	 * @return [type]  [return description]
 	 */
-	private function IEC_6523_code()
+	private function iec6523Code()
 	{
 		global $mysoc;
 		$retour = "";
@@ -946,70 +972,12 @@ class Peppol
 		return $retour;
 	}
 
-	private function idprof()
-	{
-		global $mysoc;
-		$retour = "";
-		switch ($mysoc->country_code) {
-			case 'BE':
-				$retour = $mysoc->idprof1;
-				break;
-			case 'DE':
-			case 'FR':
-				$retour = $mysoc->idprof2;
-				break;
-			default:
-				$retour = $mysoc->idprof2;
-		}
-		return $this->remove_spaces($retour);
-	}
-
-
-	/************************************************
-	 *    Check line type from external module ?
-	 *
-	 * @param  object $line       line we work on
-	 * @param  string $element    line object element (for special case like shipping)
-	 * @param  string $searchName module name we look for
-	 * @return boolean                        true if the line is a special one and was created by the module we ask for
-	 ************************************************/
-	private function isLineFromExternalModule($line, $element, $searchName)
-	{
-		if ($element == 'shipping' || $element == 'delivery') {
-			$fk_origin_line    = $line->fk_origin_line;
-			$line            = new \OrderLine($this->db);
-			$line->fetch($fk_origin_line);
-		}
-		if ($line->product_type == 9 && $line->special_code == $this->get_mod_number($searchName)) {
-			return true;
-		} else {
-			return false;
-		}
-	}
-
-	/************************************************
-	 *    Find module number
-	 *
-	 * @param  string $searchName module name we look for
-	 * @return integer                        -1 if KO, 0 not found or module number if Ok
-	 ************************************************/
-	private function get_mod_number($modName)
-	{
-		if (class_exists($modName)) {
-			$objMod    = new $modName($this->db);
-			return $objMod->numero;
-		}
-		return 0;
-	}
-
-	private function remove_spaces($str)
-	{
-		return preg_replace('/\s+/', '', $str);
-	}
-
 	/**
 	 * do base checks againts object
 	 *
+	 * @param array<string, array<string, mixed>> $checklist Fields to check, updated in place
+	 * @param object $obj Object to check (third party or contact)
+	 * @return void
 	 */
 	private function _checkBaseErrors(&$checklist, $obj)
 	{
@@ -1039,47 +1007,14 @@ class Peppol
 	 * Search PEPPOL Directory API
 	 *
 	 * @param string $query Search query (company name, VAT number, etc.)
-	 * @return array|false Array of results or false on error
+	 * @return array<string, mixed>|false Array of results or false on error
 	 */
 	static public function searchPeppolDirectory($query)
 	{
-		$apiUrl = 'https://directory.peppol.eu/search/1.0/json';
-
-		// Build query parameters
-		$params = array(
-			'q' => $query
-		);
-
-		$url = $apiUrl . '?' . http_build_query($params);
-
-		$headers = [
-			'Accept' => 'application/json',
-			'User-Agent' => 'Dolibarr-PEPPOL-Module'
-		];
-
-		// Use Dolibarr's getURLContent function
-		$result = getURLContent($url, 'GET', '', 1, $headers, array('http', 'https'), 0);
-
-		// Check for errors
-		if (empty($result['content'])) {
-			if (!empty($result['curl_error_msg'])) {
-				return array('error' => 'Connection error: ' . $result['curl_error_msg']);
-			}
-			return array('error' => 'Empty response from PEPPOL Directory');
+		// Same request through peppolApiRequest(): HTTPS only, and the search term stays out of the log
+		if (!function_exists('peppolDirectorySearch')) {
+			dol_include_once('/peppolpeppyrus/lib/peppol.lib.php');
 		}
-
-		// Check HTTP code
-		if (!empty($result['http_code']) && $result['http_code'] != 200) {
-			return array('error' => 'HTTP error: ' . $result['http_code']);
-		}
-
-		// Decode JSON response
-		$data = json_decode($result['content'], true);
-
-		if (json_last_error() !== JSON_ERROR_NONE) {
-			return array('error' => 'JSON decode error: ' . json_last_error_msg());
-		}
-
-		return $data;
+		return peppolDirectorySearch($query);
 	}
 }

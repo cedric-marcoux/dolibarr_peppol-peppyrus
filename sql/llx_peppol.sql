@@ -1,7 +1,9 @@
+-- SPDX-License-Identifier: GPL-3.0-or-later
 CREATE TABLE llx_peppol
 (
 	-- BEGIN MODULEBUILDER FIELDS
 	rowid integer AUTO_INCREMENT PRIMARY KEY NOT NULL,
+	entity integer DEFAULT 1 NOT NULL,
 	fk_object integer,
 	object_typeid integer, -- CUSTOMER INVOICE (1) OR SUPPLIER INVOICE (2)
 	status varchar(16),

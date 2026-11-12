@@ -1,0 +1,77 @@
+# PHPStan on the module, against the source of Dolibarr 18.0 and 24.0 (the supported range).
+# Locally:  DOLIBARR_HTDOCS=/path/to/dolibarr/htdocs phpstan analyse
+# The settings are those of Dolibarr itself (phpstan.neon.dist of the core, also used by DoliMods):
+# level 10, without the checks the hand-written PHPDoc of Dolibarr cannot meet (checkNullables,
+# checkUnionTypes, reportMaybes, treatPhpDocTypesAsCertain, ...).
+# The baseline records what was reported when PHPStan was introduced (mostly code of the original
+# module); new reports make the check fail.
+includes:
+	- dev/phpstan/baseline.php
+
+parameters:
+	customRulesetUsed: true
+	level: 10
+	phpVersion:
+		min: 70100
+		max: 80499
+	polluteScopeWithLoopInitialAssignments: false
+	polluteScopeWithAlwaysIterableForeach: false
+	checkClassCaseSensitivity: true
+	checkFunctionArgumentTypes: true
+	checkFunctionNameCase: true
+	checkInternalClassCaseSensitivity: true
+	checkArgumentsPassedByReference: true
+	checkMaybeUndefinedVariables: true
+	checkNullables: false
+	checkThisOnly: true
+	checkUnionTypes: false
+	checkExplicitMixedMissingReturn: true
+	reportMaybes: false
+	reportMaybesInMethodSignatures: false
+	reportStaticMethodSignatures: false
+	reportMagicMethods: false
+	reportMagicProperties: false
+	treatPhpDocTypesAsCertain: false
+	universalObjectCratesClasses:
+		- stdClass
+		- SimpleXMLElement
+	paths:
+		- admin
+		- class
+		- core
+		- lib
+		- index.php
+		- peppol_candidates.php
+		- peppol_list.php
+		- peppol_search_directory.php
+		- peppol_tab.php
+		- peppolimport_card.php
+		- peppolimport_list.php
+		- search.php
+	excludePaths:
+		analyseAndScan:
+			- vendor/*
+			- backport/*
+			- %env.DOLIBARR_HTDOCS%/install/*
+			- %env.DOLIBARR_HTDOCS%/support/*
+			- %env.DOLIBARR_HTDOCS%/custom/*
+	scanDirectories:
+		- %env.DOLIBARR_HTDOCS%
+		- vendor
+	bootstrapFiles:
+		- dev/phpstan/bootstrap.php
+	tmpDir: .ci/phpstan-cache
+	dynamicConstantNames:
+		- DOL_VERSION
+		- DOL_MAJOR_VERSION
+	reportUnmatchedIgnoredErrors: false
+	ignoreErrors:
+		# A module page looks for main.inc.php with relative paths, because it does not know how deep it is
+		# under htdocs/custom. That only works in an installation, not in this repository.
+		-
+			message: '#^Path in (include|include_once|require|require_once)\(\) "[^"]*(main|master)\.inc\.php" is not a file or it does not exist\.$#'
+		-
+			message: '#^Path in (include|include_once|require|require_once)\(\) "[^"]*/custom/[^"]*" is not a file or it does not exist\.$#'
+		# Globals created by main.inc.php; outside an installation PHPStan does not see them.
+		-
+			message: '#^Variable \$(db|user|conf|langs|mysoc|hookmanager|form) might not be defined\.$#'

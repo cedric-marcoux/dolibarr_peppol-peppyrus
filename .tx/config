@@ -1,0 +1,12 @@
+[main]
+host = https://www.transifex.com
+
+# Translations as in DoliMods: langs/en_US is the only file edited by hand (the source),
+# every other language is synchronised with Transifex (dev/translation/txpush.sh and txpull.sh).
+# Organisation and project must exist on Transifex; change "realridrick" and
+# "dolibarr-peppol-peppyrus" here if they are created under another name.
+[o:realridrick:p:dolibarr-peppol-peppyrus:r:peppol]
+file_filter = langs/<lang>/peppol.lang
+source_file = langs/en_US/peppol.lang
+source_lang = en_US
+type        = MOZILLAPROPERTIES

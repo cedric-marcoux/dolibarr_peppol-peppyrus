@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 /**
  *   	\file       peppolimport_list.php
@@ -30,7 +31,7 @@
 // Load Dolibarr environment
 $res = 0;
 // Try main.inc.php into web root known defined into CONTEXT_DOCUMENT_ROOT (not always defined)
-if (!$res && !empty($_SERVER["CONTEXT_DOCUMENT_ROOT"])) {
+if (!empty($_SERVER["CONTEXT_DOCUMENT_ROOT"])) {
 	$res = @include $_SERVER["CONTEXT_DOCUMENT_ROOT"]."/main.inc.php";
 }
 // Try main.inc.php into web root detected using web root calculated from SCRIPT_FILENAME
@@ -59,24 +60,50 @@ if (!$res) {
 	die("Include of main fails");
 }
 
-$permissiontoaccess = $user->rights->peppolpeppyrus->import;
+
+/**
+ * @var Conf $conf
+ * @var DoliDB $db
+ * @var HookManager $hookmanager
+ * @var Societe $mysoc
+ * @var Translate $langs
+ * @var User $user
+ */
+$permissiontoaccess = $user->hasRight('peppolpeppyrus', 'import');
 /*
-Note: vérification des droits associés et nécessaires:
-	- lire les tiers societe->lire;
-	- créer des tiers societe->creer
-	- etendre societe->client->voir
-	- lire les fournisseurs (?) fournisseur->lire
-	- lire les factures fournisseur (recherche doublons) fournisseur->facture->lire
-	- créer facture fournisseur fournisseur->facture->creer
-	- lire les produits (?) produit->lire
-	- lire les services service->lire
-	.../...?
+Note: rights needed to import a supplier document:
+	- read third parties: societe, lire
+	- create third parties: societe, creer
+	- see all third parties: societe, client, voir
+	- read suppliers: fournisseur, lire
+	- read supplier invoices (duplicate check): fournisseur, facture, lire
+	- create supplier invoices: fournisseur, facture, creer
+	- read products: produit, lire
+	- read services: service, lire
 */
+$otherModulesRights = [
+	$user->hasRight('societe', 'lire'),
+	$user->hasRight('societe', 'creer'),
+	$user->hasRight('societe', 'client', 'voir'),
+	$user->hasRight('fournisseur', 'lire'),
+	$user->hasRight('fournisseur', 'facture', 'lire'),
+	$user->hasRight('fournisseur', 'facture', 'creer'),
+	$user->hasRight('produit', 'lire'),
+	$user->hasRight('service', 'lire')
+];
 // Security check - Protection if external user
 if ($user->socid > 0) {
 	accessforbidden();
 }
+if ($user->socid > 0) {
+	$socid = $user->socid;
+}
 
+foreach ($otherModulesRights as $perm) {
+	if (empty($perm)) {
+		accessforbidden($langs->trans('PeppolNeedPerms'));
+	}
+}
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.formcompany.class.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/date.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/company.lib.php';
@@ -108,7 +135,7 @@ $id = GETPOST('id', 'int');
 $limit = GETPOST('limit', 'int') ? GETPOST('limit', 'int') : $conf->liste_limit;
 $sortfield = GETPOST('sortfield', 'aZ09comma');
 $sortorder = GETPOST('sortorder', 'aZ09comma');
-$page = GETPOSTISSET('pageplusone') ? (GETPOST('pageplusone') - 1) : GETPOST("page", 'int');
+$page = GETPOSTISSET('pageplusone') ? (GETPOSTINT('pageplusone') - 1) : GETPOST("page", 'int');
 if (empty($page) || $page < 0 || GETPOST('button_search', 'alpha') || GETPOST('button_removefilter', 'alpha')) {
 	// If $page is not defined, or '' or -1 or if we click on clear filters
 	$page = 0;
@@ -144,6 +171,16 @@ foreach ($object->fields as $key => $val) {
 	}
 }
 
+// Since 2.13.0: the status filter also has "To process" (not booked or rejected yet). Without a choice in the
+// request the default of the setup applies (by default "To process").
+$object->fields['status']['arrayofkeyval'] = array('' => '', 'open' => 'peppolStatusOpen') + $object->fields['status']['arrayofkeyval'];
+if (!GETPOSTISSET('search_status')) {
+	$defaultStatus = peppolInboxDefaultStatus();
+	if ($defaultStatus !== '') {
+		$search['status'] = $defaultStatus;
+	}
+}
+
 // List of fields to search into when doing a "search in all"
 $fieldstosearchall = array();
 foreach ($object->fields as $key => $val) {
@@ -168,9 +205,9 @@ foreach ($object->fields as $key => $val) {
 	}
 }
 
-$permissiontoaccess = $user->rights->peppolpeppyrus->read;
-$permissiontoadd = $user->rights->peppolpeppyrus->write;
-$permissiontodelete = $user->rights->peppolpeppyrus->delete;
+$permissiontoaccess = $user->hasRight('peppolpeppyrus', 'read');
+$permissiontoadd = $user->hasRight('peppolpeppyrus', 'write');
+$permissiontodelete = $user->hasRight('peppolpeppyrus', 'delete');
 
 // Security check
 if (empty($conf->peppolpeppyrus->enabled)) {
@@ -181,11 +218,14 @@ if ($user->socid > 0) {	// Protection if external user
 	//$socid = $user->socid;
 	accessforbidden();
 }
-// The incoming documents need the module right "Import Peppol invoices (supplier)"
-if (!peppolUserCanImport($user)) {
-	accessforbidden();
-}
+//$result = restrictedArea($user, 'peppolpeppyrus', $id, '');
+//if (!$permissiontoread) accessforbidden();
 
+/**
+ * Header row of the import table
+ *
+ * @return string HTML of the header row
+ */
 function createTableHeader()
 {
 	global $langs;
@@ -199,6 +239,16 @@ function createTableHeader()
 	return $h;
 }
 
+/**
+ * One row of the import table
+ *
+ * @param int $nb Row number
+ * @param string $filename File name
+ * @param string $fourn Supplier (HTML)
+ * @param string $fact Invoice (HTML)
+ * @param string $justif Document (HTML)
+ * @return string HTML of the row
+ */
 function createTableRow($nb, $filename, $fourn, $fact, $justif)
 {
 	$h = "<tr>";
@@ -224,12 +274,14 @@ if (!GETPOST('confirmmassaction', 'alpha') && $massaction != 'presend' && $massa
 	$massaction = '';
 }
 
-// Refresh downloads the pending documents and confirms them to the access point: token and write right required
 if ($action == "refresh") {
-	if (!$permissiontoadd || !peppolTokenIsValid(GETPOST('token', 'alpha'), currentToken())) {
+	if (!$user->hasRight('peppolpeppyrus', 'write') || !peppolCheckToken()) {
 		accessforbidden();
 	}
+	// Fetches every new document from the access point: release the session meanwhile (a long action must not block the browser)
+	peppol_sessie_los();
 	peppolGetSupplierInvoicesList();
+	peppol_sessie_terug();
 }
 
 $parameters = array();
@@ -237,7 +289,7 @@ $reshook = $hookmanager->executeHooks('doActions', $parameters, $object, $action
 if ($reshook < 0) {
 	setEventMessages($hookmanager->error, $hookmanager->errors, 'errors');
 }
-$importHtml = $listeFichiers = $mesg = "";
+$importHtml = $listeFichiers = "";
 
 if (empty($reshook)) {
 	// Selection of new fields
@@ -266,9 +318,6 @@ if (empty($reshook)) {
 	$uploaddir = $conf->peppolpeppyrus->dir_output;
 	include DOL_DOCUMENT_ROOT.'/core/actions_massactions.inc.php';
 
-	if ($massaction == "analyze" && !$permissiontoadd) {
-		accessforbidden();
-	}
 	if ($massaction == "analyze") {
 		$importHtml = "<div class='div-table-responsive-no-min'><table class='PeppolStyled-table'>";
 		$importHtml .= "<thead>";
@@ -277,10 +326,7 @@ if (empty($reshook)) {
 		$importHtml .= "<tbody>";
 		$i = 0;
 		foreach ($toselect as $oid) {
-			// Multicompany: ignore documents of other entities
-			if ($object->fetch($oid) <= 0 || !peppolObjectIsInUserEntities($object)) {
-				continue;
-			}
+			$object->fetch($oid);
 			//Test si le fichier local existe encore ...
 			if ($object->fileExist()) {
 				// $res = $object->importNow();
@@ -298,7 +344,7 @@ if (empty($reshook)) {
 		}
 		$importHtml .= "</tbody>";
 		$importHtml .= "</table></div>";
-		dol_syslog("PeppolImport : Import Now returns " . json_encode($res));
+		dol_syslog("PeppolImport : Import Now done");
 	}
 }
 
@@ -347,6 +393,10 @@ foreach ($search as $key => $val) {
 		if ($key == 'status' && $search[$key] == -1) {
 			continue;
 		}
+		if ($key == 'status' && $search[$key] === 'open') {
+			$sql .= " AND t.status IN (" . $db->sanitize(implode(',', peppolInboxOpenStatuses())) . ")";
+			continue;
+		}
 		$mode_search = (($object->isInt($object->fields[$key]) || $object->isFloat($object->fields[$key])) ? 1 : 0);
 		if ((strpos($object->fields[$key]['type'], 'integer:') === 0) || (strpos($object->fields[$key]['type'], 'sellist:') === 0) || !empty($object->fields[$key]['arrayofkeyval'])) {
 			if ($search[$key] == '-1' || ($search[$key] === '0' && (empty($object->fields[$key]['arrayofkeyval']) || !array_key_exists('0', $object->fields[$key]['arrayofkeyval'])))) {
@@ -360,12 +410,13 @@ foreach ($search as $key => $val) {
 	} else {
 		if (preg_match('/(_dtstart|_dtend)$/', $key) && $search[$key] != '') {
 			$columnName = preg_replace('/(_dtstart|_dtend)$/', '', $key);
-			if (preg_match('/^(date|timestamp|datetime)/', $object->fields[$columnName]['type'])) {
+			// A column name cannot be quoted: only a defined field with a plain name (letters, digits, underscore)
+			if (isset($object->fields[$columnName]) && preg_match('/^[a-z0-9_]+$/i', $columnName) && preg_match('/^(date|timestamp|datetime)/', $object->fields[$columnName]['type'])) {
 				if (preg_match('/_dtstart$/', $key)) {
-					$sql .= " AND t.".$db->escape($columnName)." >= '".$db->idate($search[$key])."'";
+					$sql .= " AND t.".$db->escape($columnName)." >= '".$db->idate($search[$key])."'"; // @phan-suppress-current-line SqlInjectionUnquotedEscape -- column name of a defined field, checked above
 				}
 				if (preg_match('/_dtend$/', $key)) {
-					$sql .= " AND t.".$db->escape($columnName)." <= '".$db->idate($search[$key])."'";
+					$sql .= " AND t.".$db->escape($columnName)." <= '".$db->idate($search[$key])."'"; // @phan-suppress-current-line SqlInjectionUnquotedEscape -- column name of a defined field, checked above
 				}
 			}
 		}
@@ -465,7 +516,7 @@ $param = '';
 if (!empty($mode)) {
 	$param .= '&mode='.urlencode($mode);
 }
-if (!empty($contextpage) && $contextpage != $_SERVER["PHP_SELF"]) {
+if ($contextpage != $_SERVER["PHP_SELF"]) {
 	$param .= '&contextpage='.urlencode($contextpage);
 }
 if ($limit > 0 && $limit != $conf->liste_limit) {
@@ -495,15 +546,11 @@ $parameters = array();
 $reshook = $hookmanager->executeHooks('printFieldListSearchParam', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 $param .= $hookmanager->resPrint;
 
-if ($mesg) {
-	setEventMessages($mesg, [], 'errors');
-}
 
 // List of mass actions available
-$arrayofmassactions = array();
-if ($permissiontoadd) {
-	$arrayofmassactions['analyze'] = $langs->trans("AnalyzeNow");
-}
+$arrayofmassactions = array(
+	'analyze'=>$langs->trans("AnalyzeNow"),
+);
 if (!empty($permissiontodelete)) {
 	$arrayofmassactions['predelete'] = img_picto('', 'delete', 'class="pictofixedwidth"').$langs->trans("Delete");
 }
@@ -609,9 +656,16 @@ $newcardbutton = '';
 //$newcardbutton .= dolGetButtonTitle($langs->trans('ViewList'), '', 'fa fa-bars imgforviewmode', $_SERVER["PHP_SELF"].'?mode=common'.preg_replace('/(&|\?)*mode=[^&]+/', '', $param), '', ((empty($mode) || $mode == 'common') ? 2 : 1), array('morecss'=>'reposition'));
 //$newcardbutton .= dolGetButtonTitle($langs->trans('ViewKanban'), '', 'fa fa-th-list imgforviewmode', $_SERVER["PHP_SELF"].'?mode=kanban'.preg_replace('/(&|\?)*mode=[^&]+/', '', $param), '', ($mode == 'kanban' ? 2 : 1), array('morecss'=>'reposition'));
 //$newcardbutton .= dolGetButtonTitleSeparator();
-$newcardbutton .= dolGetButtonTitle($langs->trans('Refresh'), '', 'fa fa-repeat fas fa-redo', dol_buildpath('/peppolpeppyrus/peppolimport_list.php', 1) . '?action=refresh&token=' . newToken(), '', $permissiontoadd);
+$newcardbutton .= peppolCandidatesButton($user);
+$newcardbutton .= dolGetButtonTitle($langs->trans('Refresh'), '', 'fa fa-repeat fas fa-redo', dol_buildpath('/peppolpeppyrus/peppolimport_list.php?action=refresh&token='.newToken(), 1), '', $permissiontoadd);
 
 print_barre_liste($title, $page, $_SERVER["PHP_SELF"], $param, $sortfield, $sortorder, $massactionbutton, $num, $nbtotalofrecords, 'object_'.$object->picto, 0, $newcardbutton, '', $limit, 0, 0, 1);
+
+// When the documents were last fetched from the access point (by hand or by the daily scheduled job)
+$lastFetch = getDolGlobalInt('PEPPOL_INBOX_LAST_FETCH');
+print '<div class="opacitymedium marginbottomonly">';
+print $lastFetch > 0 ? $langs->trans('peppolInboxLastFetch', dol_print_date($lastFetch, 'dayhour', 'tzuserrel')) : $langs->trans('peppolInboxNeverFetched');
+print '</div>';
 
 // Add code for pre mass action (confirmation or email presend form)
 $topicmail = "SendPeppolimportRef";
@@ -685,7 +739,7 @@ foreach ($object->fields as $key => $val) {
 	if (!empty($arrayfields['t.'.$key]['checked'])) {
 		print '<td class="liste_titre'.($cssforfield ? ' '.$cssforfield : '').($key == 'status' ? ' parentonrightofpage' : '').'">';
 		if (!empty($val['arrayofkeyval']) && is_array($val['arrayofkeyval'])) {
-			print $form->selectarray('search_'.$key, $val['arrayofkeyval'], (isset($search[$key]) ? $search[$key] : ''), $val['notnull'], 0, 0, '', 1, 0, 0, '', 'maxwidth100'.($key == 'status' ? ' search_status width100 onrightofpage' : ''), 1);
+			print $form->selectarray('search_'.$key, $val['arrayofkeyval'], (isset($search[$key]) ? $search[$key] : ''), $val['notnull'], 0, 0, '', 1, 0, 0, '', 'maxwidth100'.($key == 'status' ? ' search_status minwidth125 onrightofpage' : ''), 1);
 		} elseif ((strpos($val['type'], 'integer:') === 0) || (strpos($val['type'], 'sellist:') === 0)) {
 			print $object->showInputField($val, $key, (isset($search[$key]) ? $search[$key] : ''), '', '', 'search_', $cssforfield.' maxwidth250', 1);
 		} elseif (preg_match('/^(date|timestamp|datetime)/', $val['type'])) {
@@ -849,6 +903,9 @@ while ($i < $imaxinloop) {
 					print $object->getLibStatut(5);
 				} elseif ($key == 'rowid') {
 					print $object->showOutputField($val, $key, $object->id, '');
+				} elseif ($key == 'fk_invoice' && empty($object->fk_invoice) && ($bookingUrl = peppolBookingUrl($object, $user)) !== '') {
+					// Not booked yet: book it as supplier invoice in one click
+					print '<a class="button smallpaddingimp" href="' . dol_escape_htmltag($bookingUrl) . '" title="' . dol_escape_htmltag($langs->trans('peppolBookInvoiceHelp')) . '">' . img_picto('', 'bill', 'class="pictofixedwidth"') . $langs->trans('peppolBookInvoice') . '</a>';
 				} else {
 					print $object->showOutputField($val, $key, $object->$key, '');
 				}
@@ -922,6 +979,8 @@ print '</table>'."\n";
 print '</div>'."\n";
 
 print '</form>'."\n";
+// Since 2.13.0: choosing another status refreshes the list at once (no click on the magnifier needed)
+print '<script>$(document).ready(function () { $("select[name=search_status]").on("change", function () { $(this).closest("form").submit(); }); });</script>'."\n";
 
 // if (in_array('builddoc', $arrayofmassactions) && ($nbtotalofrecords === '' || $nbtotalofrecords)) {
 // 	$hidegeneratedfilelistifempty = 1;

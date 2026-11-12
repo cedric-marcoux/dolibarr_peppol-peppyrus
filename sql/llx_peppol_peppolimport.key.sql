@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: GPL-3.0-or-later
 -- Copyright (C) ---Put here your own copyright and developer email---
 --
 -- This program is free software: you can redistribute it and/or modify
@@ -24,4 +25,3 @@ ALTER TABLE llx_peppol_peppolimport ADD INDEX idx_peppol_peppolimport_status (st
 --ALTER TABLE llx_peppol_peppolimport ADD UNIQUE INDEX uk_peppol_peppolimport_fieldxy(fieldx, fieldy);
 
 --ALTER TABLE llx_peppol_peppolimport ADD CONSTRAINT llx_peppol_peppolimport_fk_field FOREIGN KEY (fk_field) REFERENCES llx_scaninvoices_myotherobject(rowid);
-
